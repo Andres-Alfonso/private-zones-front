@@ -10,7 +10,6 @@ import "./tailwind.css";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 
-
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
@@ -20,7 +19,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Meta />
         <Links />
       </head>
-      <body>
+      <body className="bg-gray-50">
         {children}
         <ScrollRestoration />
         <Scripts />
@@ -32,11 +31,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <div className="flex flex-col min-h-screen">
-      <Header />
-      <main className="flex-grow container mx-auto px-4 py-8 mt-16">
+      {/* Descomenta el Header si lo necesitas para rutas no relacionadas con autenticación */}
+      {/* <Header /> */}
+      <main className="flex-grow">
         <Outlet />
       </main>
-      <Footer />
+      {/* Descomenta el Footer si lo necesitas para rutas no relacionadas con autenticación */}
+      {/* <Footer /> */}
     </div>
   );
 }

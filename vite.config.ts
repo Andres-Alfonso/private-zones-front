@@ -12,6 +12,14 @@ declare module "@remix-run/node" {
 export default defineConfig({
   plugins: [
     remix({
+      routes(defineRoutes) {
+        return defineRoutes((route) => {
+          route("auth", "routes/auth/_layout.tsx", () => {
+            route("register", "routes/auth/register.tsx");
+            route("login", "routes/auth/login.tsx");
+          });
+        });
+      },
       future: {
         v3_fetcherPersist: true,
         v3_relativeSplatPath: true,

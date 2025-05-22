@@ -31,4 +31,8 @@ export default defineConfig({
     tsconfigPaths(),
     tailwindcss(),
   ],
+  server: {
+    host: true, // permite conexiones externas (equivale a --host)
+    allowedHosts: ['cardio.klmsystem.test'], // permite este host personalizado
+  }
 });

@@ -11,10 +11,10 @@ export const API_CONFIG = {
     // Endpoints principales
     ENDPOINTS: {
       AUTH: {
-        LOGIN: '/auth/login',
-        REGISTER: '/auth/register',
-        REFRESH: '/auth/refresh',
-        LOGOUT: '/auth/logout',
+        LOGIN: '/v1/auth/login',
+        REGISTER: '/v1/auth/register',
+        REFRESH: '/v1/auth/refresh',
+        LOGOUT: '/v1/auth/logout',
       },
       USERS: {
         BASE: '/users',
@@ -25,6 +25,12 @@ export const API_CONFIG = {
           FIND_ALL: '/v1/gateway-payment/stripe/products',
           CREATE_CHECKOUT_SESSION: '/v1/gateway-payment/stripe/create-checkout-session'
         }
+      },
+      TENANTS: {
+        BASE: '/v1/tenants',
+        VALIDATE_DOMAIN: '/v1/tenants/validate-domain',
+        CHECK_STATUS: '/v1/tenants/check-status',
+        BY_DOMAIN: '/v1/tenants/by-domain'
       }
     },
   };

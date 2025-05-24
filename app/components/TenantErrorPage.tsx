@@ -79,7 +79,7 @@ export default function TenantErrorPage({ error, tenant }: TenantErrorPageProps)
           {/* Información del dominio */}
           <div className="bg-gray-50 rounded-md p-4 mb-6">
             <div className="text-sm text-gray-600">
-              <strong>Dominio:</strong> {currentDomain}
+              <strong>Cliente:</strong> {currentDomain}
             </div>
             {tenant && (
               <div className="text-sm text-gray-600 mt-1">

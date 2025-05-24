@@ -1,11 +1,12 @@
 // app/routes/auth/register.tsx
 import { json, redirect, ActionFunction } from '@remix-run/node';
-import { useActionData, Form, useNavigation } from '@remix-run/react';
+import { useActionData, Form, useNavigation, useLoaderData, useNavigate } from '@remix-run/react';
 import type { MetaFunction } from "@remix-run/node";
 import Input from '~/components/ui/Input';
 import Checkbox from '~/components/ui/Checkbox';
 import { validateRegisterForm, getErrorByField } from '~/utils/validation';
 import { AuthAPI } from '~/api/endpoints/auth';
+import SuccessModal from '~/components/ui/SuccessModal';
 
 export const meta: MetaFunction = () => {
   return [
@@ -22,6 +23,10 @@ interface ActionData {
 
 export const action: ActionFunction = async ({ request }) => {
   const formData = await request.formData();
+
+  // Obtener dominio desde el header Host
+  const url = new URL(request.url);
+  const domain = url.hostname;
   
   // Validar formulario
   const validation = validateRegisterForm(formData);
@@ -35,26 +40,29 @@ export const action: ActionFunction = async ({ request }) => {
   // Preparar datos para el API
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
-  const firstName = formData.get('first-name') as string;
+  const name = formData.get('first-name') as string;
   const lastName = formData.get('last-name') as string;
   
   // Combinar nombre completo
-  const name = `${firstName.trim()} ${lastName.trim()}`;
+  // const name = `${firstName.trim()} ${lastName.trim()}`;
 
   try {
     // Llamar al API de registro
     const response = await AuthAPI.register({ 
       email, 
       password, 
-      name 
+      name,
+      lastName,
+      tenantId: domain 
     });
     
     // Aquí podrías guardar el token en cookies/session automáticamente
     // o redirigir a una página de confirmación
     console.log('Registro exitoso:', response);
     
-    // Redirigir al dashboard o página de bienvenida
-    return redirect('/products');
+    return json<ActionData>({ 
+      success: true 
+    }, { status: 200 });
     
   } catch (error: any) {
     console.error('Error en registro:', error);
@@ -91,6 +99,7 @@ export const action: ActionFunction = async ({ request }) => {
 export default function RegisterPage() {
   const actionData = useActionData<ActionData>();
   const navigation = useNavigation();
+  const navigate = useNavigate();
   
   const isSubmitting = navigation.state === 'submitting';
   const errors = actionData?.errors || [];
@@ -219,6 +228,14 @@ export default function RegisterPage() {
           </a>
         </p>
       </div>
+      <SuccessModal
+        isOpen={actionData?.success === true}
+        onClose={() => window.location.href = '/auth/login'}
+        onConfirm={() => window.location.href = '/auth/login'}
+        title="¡Registro Exitoso!"
+        message="Tu cuenta ha sido creada correctamente. Ahora puedes iniciar sesión con tus credenciales."
+        confirmText="Ir al Login"
+      />
     </div>
   );
 }

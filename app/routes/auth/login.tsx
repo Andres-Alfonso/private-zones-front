@@ -41,9 +41,9 @@ export const action: ActionFunction = async ({ request }) => {
     
     // Aquí podrías guardar el token en cookies/session
     // Por ejemplo:
-    // const session = await getSession(request.headers.get("Cookie"));
-    // session.set("token", response.token);
-    // session.set("user", response.user);
+    const session = await getSession(request.headers.get("Cookie"));
+    session.set("token", response.token);
+    session.set("user", response.user);
     
     console.log('Login exitoso:', response);
     

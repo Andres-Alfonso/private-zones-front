@@ -1,6 +1,4 @@
 // app/api/types/auth.types.ts
-
-// Interfaces para requests
 export interface LoginRequest {
   email: string;
   password: string;
@@ -12,9 +10,9 @@ export interface RegisterRequest {
   name: string;
   lastName: string;
   tenantId: string;
+  role?: string;
 }
 
-// Interfaces para responses
 export interface LoginResponse {
   token: string;
   refreshToken: string;
@@ -22,7 +20,7 @@ export interface LoginResponse {
     id: string;
     email: string;
     name: string;
-    role: string;
+    roles: string[];
     createdAt?: string;
     updatedAt?: string;
   };
@@ -33,6 +31,8 @@ export interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  accessToken: string | null;
+  refreshToken: string | null;
 }
 
 // Interfaces para errores de API

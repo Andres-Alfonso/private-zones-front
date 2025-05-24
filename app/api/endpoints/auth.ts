@@ -1,3 +1,4 @@
+// app/api/endpoints/auth.ts
 import apiClient from '../client';
 import { API_CONFIG } from '../config';
 import { LoginRequest, LoginResponse, RegisterRequest } from '../types/auth.types';
@@ -11,7 +12,7 @@ export const AuthAPI = {
     );
     return response.data;
   },
-  
+
   // Registrar usuario
   register: async (userData: RegisterRequest): Promise<LoginResponse> => {
     const response = await apiClient.post(
@@ -21,12 +22,10 @@ export const AuthAPI = {
     return response.data;
   },
   
-  // Cerrar sesión
-  logout: async (): Promise<void> => {
-    await apiClient.post(API_CONFIG.ENDPOINTS.AUTH.LOGOUT);
+  logout: async (refreshToken: string): Promise<void> => {
+    await apiClient.post(API_CONFIG.ENDPOINTS.AUTH.LOGOUT, { refreshToken });
   },
   
-  // Refrescar token
   refreshToken: async (refreshToken: string): Promise<LoginResponse> => {
     const response = await apiClient.post(
       API_CONFIG.ENDPOINTS.AUTH.REFRESH, 
@@ -34,4 +33,9 @@ export const AuthAPI = {
     );
     return response.data;
   },
+
+  // getProfile: async (): Promise<LoginResponse['user']> => {
+  //   const response = await apiClient.get('/auth/me');
+  //   return response.data;
+  // },
 };

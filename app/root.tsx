@@ -1,4 +1,4 @@
-// app/root.tsx - Versión actualizada con middleware de tenant
+// app/root.tsx - Versión actualizada con AuthProvider
 
 import {
   Links,
@@ -9,12 +9,15 @@ import {
   useLoaderData,
 } from "@remix-run/react";
 import { json, LoaderFunction } from "@remix-run/node";
+import { useEffect } from "react";
 
 import "./tailwind.css";
 import { TenantProvider } from "./context/TenantContext";
+import { AuthProvider } from "./context/AuthContext";
 import TenantGuard from "./components/TenantGuard";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
+import { setAuthContext, setupAutoRefresh } from "./api/interceptors/authInterceptor";
 
 // Loader para obtener información del servidor (como el dominio)
 export const loader: LoaderFunction = async ({ request }) => {
@@ -54,29 +57,45 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Componente interno para configurar los interceptores
+function AppSetup({ children }: { children: React.ReactNode }) {
+  useEffect(() => {
+    // Configurar auto-refresh de tokens
+    const cleanup = setupAutoRefresh();
+    
+    return cleanup;
+  }, []);
+
+  return <>{children}</>;
+}
+
 export default function App() {
   const { domain } = useLoaderData<{ domain: string; isProduction: boolean }>();
 
   return (
     <TenantProvider initialDomain={domain}>
       <TenantGuard>
-        <div className="flex flex-col min-h-screen">
-          {/* Header comentado por defecto - descomenta según necesites */}
-          {/* <Header /> */}
-          
-          <main className="flex-grow">
-            <Outlet />
-          </main>
-          
-          {/* Footer comentado por defecto - descomenta según necesites */}
-          {/* <Footer /> */}
-        </div>
+        <AuthProvider>
+          <AppSetup>
+            <div className="flex flex-col min-h-screen">
+              {/* Header comentado por defecto - descomenta según necesites */}
+              <Header />
+              
+              <main className="flex-grow">
+                <Outlet />
+              </main>
+              
+              {/* Footer comentado por defecto - descomenta según necesites */}
+              {/* <Footer /> */}
+            </div>
+          </AppSetup>
+        </AuthProvider>
       </TenantGuard>
     </TenantProvider>
   );
 }
 
-// Error boundary mejorado para manejar errores de tenant
+// Error boundary mejorado para manejar errores de tenant y auth
 export function ErrorBoundary({ error }: { error: Error }) {
   console.error('App Error:', error);
   
@@ -110,12 +129,27 @@ export function ErrorBoundary({ error }: { error: Error }) {
                 </div>
               )}
               
-              <button
-                onClick={() => window.location.reload()}
-                className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition-colors"
-              >
-                Recargar página
-              </button>
+              <div className="space-y-3">
+                <button
+                  onClick={() => window.location.reload()}
+                  className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition-colors"
+                >
+                  Recargar página
+                </button>
+                
+                <button
+                  onClick={() => {
+                    // Limpiar storage y redirigir al inicio
+                    if (typeof window !== 'undefined') {
+                      localStorage.clear();
+                      window.location.href = '/';
+                    }
+                  }}
+                  className="w-full bg-gray-600 text-white py-2 px-4 rounded hover:bg-gray-700 transition-colors"
+                >
+                  Ir al inicio
+                </button>
+              </div>
             </div>
           </div>
         </div>

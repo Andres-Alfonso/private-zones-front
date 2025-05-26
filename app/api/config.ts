@@ -15,6 +15,8 @@ export const API_CONFIG = {
         REGISTER: '/v1/auth/register',
         REFRESH: '/v1/auth/refresh',
         LOGOUT: '/v1/auth/logout',
+        LOGOUT_ALL: '/v1/auth/logout-all',
+        ME: '/v1/auth/me',
       },
       USERS: {
         BASE: '/users',

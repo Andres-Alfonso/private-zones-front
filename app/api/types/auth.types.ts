@@ -13,8 +13,9 @@ export interface RegisterRequest {
   role?: string;
 }
 
+// Actualizada para coincidir con el backend
 export interface LoginResponse {
-  token: string;
+  accessToken: string;  // Cambiado de 'token' a 'accessToken'
   refreshToken: string;
   user: {
     id: string;
@@ -101,19 +102,46 @@ export const AUTH_VALIDATION_RULES = {
 // Tipos para estados de carga
 export type AuthLoadingState = 'idle' | 'loading' | 'success' | 'error';
 
-// Tipos para diferentes acciones de autenticación
+// Tipos para diferentes acciones de autenticación - Actualizados
 export type AuthAction = 
   | { type: 'AUTH_START' }
   | { type: 'AUTH_SUCCESS'; payload: LoginResponse }
   | { type: 'AUTH_ERROR'; payload: string }
   | { type: 'LOGOUT' }
-  | { type: 'CLEAR_ERROR' };
+  | { type: 'CLEAR_ERROR' }
+  | { type: 'SET_LOADING'; payload: boolean }
+  | { type: 'UPDATE_TOKENS'; payload: { accessToken: string; refreshToken: string; user: LoginResponse['user'] } };
 
-// Interface para el contexto de autenticación
+// Interface para el contexto de autenticación - Actualizada
 export interface AuthContextType {
   state: AuthState;
   login: (credentials: LoginRequest) => Promise<void>;
   register: (userData: RegisterRequest) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   clearError: () => void;
+  refreshTokens: () => Promise<boolean>;
+}
+
+// Tipos para rutas protegidas
+export interface ProtectedRouteProps {
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
+  redirectTo?: string;
+}
+
+// Tipos para el usuario actual
+export interface CurrentUser {
+  id: string;
+  email: string;
+  name: string;
+  roles: string[];
+  isActive?: boolean;
+}
+
+// Tipos para respuestas del endpoint /me
+export interface UserProfileResponse {
+  id: string;
+  email: string;
+  name: string;
+  role: string[];
 }

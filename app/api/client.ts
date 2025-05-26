@@ -1,5 +1,6 @@
 import axios from 'axios';
 // import { getAuthToken } from '~/utils/auth';
+import { setupAuthInterceptors } from './interceptors/authInterceptor';
 
 // Configura la URL base según el entorno
 const BASE_URL = process.env.NODE_ENV === 'production' 
@@ -13,6 +14,20 @@ const apiClient = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+// Interceptor para agregar automáticamente el header del tenant
+apiClient.interceptors.request.use((config) => {
+  // Obtener dominio actual
+  const domain = window.location.hostname;
+  
+  // Agregar header del tenant
+  config.headers['X-Tenant-Domain'] = domain;
+  
+  return config;
+});
+
+// Configurar interceptores de autenticación
+setupAuthInterceptors(apiClient);
 
 // Interceptor para añadir el token de autenticación a las solicitudes
 // apiClient.interceptors.request.use(
@@ -30,10 +45,18 @@ const apiClient = axios.create({
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Aquí puedes manejar errores comunes como 401 (no autorizado)
-    if (error.response && error.response.status === 401) {
-      // Redireccionar a login o refrescar token
+    // Manejar errores de red
+    if (!error.response) {
+      console.error('Network error:', error);
+      // Podrías mostrar una notificación de error de red aquí
     }
+    
+    // Manejar errores del servidor
+    if (error.response?.status >= 500) {
+      console.error('Server error:', error.response.data);
+      // Podrías mostrar una notificación de error del servidor aquí
+    }
+    
     return Promise.reject(error);
   }
 );

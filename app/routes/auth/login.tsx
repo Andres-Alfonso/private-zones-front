@@ -1,10 +1,12 @@
 // app/routes/auth/login.tsx
 import { json, redirect, ActionFunction } from '@remix-run/node';
-import { useActionData, Form, useNavigation } from '@remix-run/react';
+import { useActionData, Form, useNavigation, useSearchParams } from '@remix-run/react';
 import type { MetaFunction } from "@remix-run/node";
+import { useEffect } from 'react';
 import Input from '~/components/ui/Input';
 import { validateLoginForm, getErrorByField } from '~/utils/validation';
-import { AuthAPI } from '~/api/endpoints/auth';
+import { useAuth } from '~/context/AuthContext';
+import { useAuthRedirect } from '~/components/AuthGuard';
 
 export const meta: MetaFunction = () => {
   return [
@@ -31,64 +33,75 @@ export const action: ActionFunction = async ({ request }) => {
     }, { status: 400 });
   }
 
-  // Preparar datos para el API
-  const email = formData.get('email') as string;
-  const password = formData.get('password') as string;
-
-  try {
-    // Llamar al API de autenticación
-    const response = await AuthAPI.login({ email, password });
-    
-    // Aquí podrías guardar el token en cookies/session
-    // Por ejemplo:
-    const session = await getSession(request.headers.get("Cookie"));
-    session.set("token", response.token);
-    session.set("user", response.user);
-    
-    console.log('Login exitoso:', response);
-    
-    // Redirigir al dashboard o página principal
-    return redirect('/products');
-    
-  } catch (error: any) {
-    console.error('Error en login:', error);
-    
-    // Manejar diferentes tipos de errores
-    let generalError = 'Error interno del servidor';
-    
-    if (error.response) {
-      const status = error.response.status;
-      if (status === 401) {
-        generalError = 'Credenciales incorrectas';
-      } else if (status === 429) {
-        generalError = 'Demasiados intentos. Intenta más tarde';
-      }else if (status === 404) {
-        generalError = 'Ups! Parece que no se puede iniciar sesión.';
-      }else if (status === 500) {
-        generalError = 'Ups! Parece que no se puede iniciar sesión. Intenta más tarde.';
-      }else if (error.response.data?.message) {
-        generalError = error.response.data.message;
-      }
-    } else if (error.message) {
-      generalError = error.message;
-    }
-    
-    return json<ActionData>({ 
-      generalError 
-    }, { status: 400 });
-  }
+  // Si llegamos aquí, significa que la validación del lado del servidor pasó
+  // El login real se maneja en el cliente con el AuthContext
+  return json<ActionData>({ success: true });
 };
 
 export default function LoginPage() {
   const actionData = useActionData<ActionData>();
   const navigation = useNavigation();
+  const [searchParams] = useSearchParams();
+  const { state, login, clearError } = useAuth();
+  const { redirectAfterLogin } = useAuthRedirect();
   
-  const isSubmitting = navigation.state === 'submitting';
+  const isSubmitting = navigation.state === 'submitting' || state.isLoading;
   const errors = actionData?.errors || [];
+
+  // Limpiar errores cuando el componente se monta
+  useEffect(() => {
+    clearError();
+  }, [clearError]);
+
+  // Redirigir si ya está autenticado
+  useEffect(() => {
+    if (state.isAuthenticated) {
+      redirectAfterLogin('/products'); // Ruta por defecto después del login
+    }
+  }, [state.isAuthenticated, redirectAfterLogin]);
+
+  // Manejar el envío del formulario
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    
+    const formData = new FormData(event.currentTarget);
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
+    // Validar en el cliente antes de proceder
+    const validation = validateLoginForm(formData);
+    if (!validation.isValid) {
+      return; // Los errores se mostrarán automáticamente
+    }
+
+    try {
+      await login({ email, password });
+      // El useEffect de arriba manejará la redirección
+    } catch (error) {
+      // Los errores se manejan en el AuthContext
+      console.error('Login error:', error);
+    }
+  };
 
   return (
     <div className="space-y-6">
-      {/* Mensaje de error general */}
+      {/* Mensaje de error general del AuthContext */}
+      {state.error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+          <div className="flex items-center">
+            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path 
+                fillRule="evenodd" 
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" 
+                clipRule="evenodd" 
+              />
+            </svg>
+            {state.error}
+          </div>
+        </div>
+      )}
+
+      {/* Mensaje de error general del action */}
       {actionData?.generalError && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
           <div className="flex items-center">
@@ -104,7 +117,23 @@ export default function LoginPage() {
         </div>
       )}
 
-      <Form method="post" className="space-y-4" noValidate>
+      {/* Mostrar mensaje de retorno si viene de una página protegida */}
+      {searchParams.get('returnUrl') && (
+        <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-md">
+          <div className="flex items-center">
+            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path 
+                fillRule="evenodd" 
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" 
+                clipRule="evenodd" 
+              />
+            </svg>
+            Necesitas iniciar sesión para acceder a esa página.
+          </div>
+        </div>
+      )}
+
+      <Form method="post" onSubmit={handleSubmit} className="space-y-4" noValidate>
         <Input
           type="email"
           id="email"

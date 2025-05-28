@@ -27,12 +27,12 @@ export default function CheckoutSuccess() {
         )}
         
         <div className="space-y-3">
-          <Link
-            to="/productos"
+          <a
+            href="/products"
             className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded transition-colors"
           >
             Ver más productos
-          </Link>
+          </a>
           
           <Link
             to="/"

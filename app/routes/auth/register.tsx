@@ -7,6 +7,9 @@ import Checkbox from '~/components/ui/Checkbox';
 import { validateRegisterForm, getErrorByField } from '~/utils/validation';
 import { AuthAPI } from '~/api/endpoints/auth';
 import SuccessModal from '~/components/ui/SuccessModal';
+import { useEffect } from 'react';
+import { useAuthRedirect } from '~/components/AuthGuard';
+import { useAuth } from '~/context/AuthContext';
 
 export const meta: MetaFunction = () => {
   return [
@@ -100,6 +103,15 @@ export default function RegisterPage() {
   const actionData = useActionData<ActionData>();
   const navigation = useNavigation();
   const navigate = useNavigate();
+    const { state, login, clearError } = useAuth();
+  const { redirectAfterLogin } = useAuthRedirect();
+
+  // Redirigir si ya está autenticado
+  useEffect(() => {
+    if (state.isAuthenticated) {
+      redirectAfterLogin('/products'); // Ruta por defecto después del login
+    }
+  }, [state.isAuthenticated, redirectAfterLogin]);
   
   const isSubmitting = navigation.state === 'submitting';
   const errors = actionData?.errors || [];

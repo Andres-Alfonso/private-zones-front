@@ -1,0 +1,49 @@
+services:
+  app-remix-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development 
+    command: yarn dev --host 0.0.0.0
+    profiles: ["dev"]
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - API_BASE_URL=${API_BASE_URL_DEV:-http://app-nestjs-dev:3000}
+    volumes:
+      - ./:/usr/src/app
+      - /usr/src/app/node_modules
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+    networks:
+      - pz
+
+  # app-remix-prod:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #     target: production 
+  #   profiles: ["prod"]
+  #   restart: unless-stopped
+  #   environment:
+  #     - NODE_ENV=production
+  #     - PORT=3000
+  #     # Variables para conectar con tu backend
+  #     - API_BASE_URL=${API_BASE_URL:-http://app-nestjs-prod:3000}
+  #   ports:
+  #     - "${FRONTEND_PORT:-3001}:3000"
+  #   logging:
+  #     driver: "json-file"
+  #     options:
+  #       max-size: "5m"
+  #   networks:
+  #     - pz
+
+networks:
+  pz:
+    external: true

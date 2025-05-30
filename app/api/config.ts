@@ -3,7 +3,7 @@
 export const API_CONFIG = {
     BASE_URL: process.env.NODE_ENV === 'production' 
       ? 'https://api.dominio.com'
-      : 'http://localhost:3020',
+      : 'http://localhost:5173',
     
     // Timeouts
     TIMEOUT: 10000, // 10 segundos

@@ -6,8 +6,8 @@ const isBrowser = typeof window !== 'undefined';
 
 // Configura la URL base según el entorno
 const BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://api.tudominio.com' 
-  : 'http://localhost:3020';
+  ? 'https://api.klmsystem.online' 
+  : 'https://api.klmsystem.online';
 
 // Factory function to create API client with optional tenant domain
 export const createApiClient = (tenantDomain?: string): AxiosInstance => {

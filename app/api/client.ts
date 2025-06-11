@@ -7,7 +7,7 @@ const isBrowser = typeof window !== 'undefined';
 // Configura la URL base según el entorno
 const BASE_URL = process.env.NODE_ENV === 'production' 
   ? 'https://api.klmsystem.online' 
-  : 'https://api.klmsystem.online';
+  : 'http://192.168.2.21:3028';
 
 // Factory function to create API client with optional tenant domain
 export const createApiClient = (tenantDomain?: string): AxiosInstance => {

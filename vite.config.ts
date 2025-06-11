@@ -33,6 +33,6 @@ export default defineConfig({
   ],
   server: {
     host: true, // permite conexiones externas (equivale a --host)
-    allowedHosts: ['devel1.klmsystem.test', 'klmsystem.online' ], // permite este host personalizado
+    allowedHosts: ['devel.klmsystem.test', 'klmsystem.online' ], // permite este host personalizado
   }
 });

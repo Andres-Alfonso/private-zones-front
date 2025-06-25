@@ -28,6 +28,18 @@ export default defineConfig({
             // Ruta para el reproductor de curso (opcional)
             // route(":id/learn", "routes/courses/$id.learn.tsx");
           });
+
+          // Rutas de gestión de tenants (solo para administradores)
+          route("tenants", "routes/tenants/_layout.tsx", () => {
+            route("", "routes/tenants/_index.tsx", { index: true });
+            route("create", "routes/tenants/create.tsx");
+            route(":id", "routes/tenants/$id.tsx");
+            route(":id/edit", "routes/tenants/$id.edit.tsx");
+            // Rutas adicionales para tenants (opcionales)
+            // route(":id/settings", "routes/tenants/$id.settings.tsx");
+            // route(":id/users", "routes/tenants/$id.users.tsx");
+            // route(":id/billing", "routes/tenants/$id.billing.tsx");
+          });
         });
       },
       future: {

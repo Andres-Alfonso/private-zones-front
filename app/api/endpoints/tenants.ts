@@ -1,12 +1,73 @@
 // app/api/endpoints/tenants.ts
 
+// import {apiClient, createApiClient} from "../client";
 import apiClient from "../client";
 import { API_CONFIG } from "../config";
 
 // Primero necesitamos actualizar la configuración con los endpoints de tenant
-import { TenantValidationResponse, Tenant } from "../types/tenant.types";
+import { TenantValidationResponse, Tenant, TenantFilters, TenantListResponse } from "../types/tenant.types";
 
 export const TenantsAPI = {
+
+  // Obtener todos los tenants
+  getAllTenants: async  (
+    filters?: TenantFilters
+  ): Promise<TenantListResponse> => {
+    try {
+      const response = await apiClient.get(
+        `${API_CONFIG.ENDPOINTS.TENANTS.BASE}`
+      );
+      return response.data;
+    } catch (error: any) {
+      console.error("Error fetching tenants:", error);
+
+      // Manejar diferentes tipos de errores
+      if (error.response) {
+        const status = error.response.status;
+        const errorData = error.response.data;
+
+        if (status === 404) {
+          return {
+            data: [],
+            total: 0,
+            page: 0,
+            limit: 0,
+            error: "TENANTS_NOT_FOUND",
+            message: "No se encontraron tenants",
+          };
+        } else if (status === 403) {
+          return {
+            data: [],
+            total: 0,
+            page: 0,
+            limit: 0,
+            error: "FORBIDDEN",
+            message: "Acceso denegado a los tenants",
+          };
+        } else if (errorData?.message) {
+          return {
+            data: [],
+            total: 0,
+            page: 0,
+            limit: 0,
+            error: errorData.error || "FETCH_ERROR",
+            message: errorData.message,
+          };
+        }
+      }
+
+      // Error de red o desconocido
+      return {
+        data: [],
+        total: 0,
+        page: 0,
+        limit: 0,
+        error: "NETWORK_ERROR",
+        message: "Error de conexión al obtener los tenants",
+      };
+    }
+  },
+
   // Validar tenant por dominio
   validateByDomain: async (
     domain: string

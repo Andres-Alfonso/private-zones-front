@@ -1,10 +1,8 @@
-// app/components/Header.tsx
-// Header actualizado con integración de autenticación
-
 import { Link } from "@remix-run/react";
 import { useAuth, useCurrentUser } from '~/context/AuthContext';
 import { UserMenu } from './UserMenu';
 import { RoleGuard } from './AuthGuard';
+import { BookOpen, GraduationCap, Settings } from 'lucide-react';
 
 export default function Header() {
   const { state } = useAuth();
@@ -33,6 +31,65 @@ export default function Header() {
             
             {isAuthenticated && (
               <>
+                {/* Navegación de cursos */}
+                <div className="relative group">
+                  <Link 
+                    to="/courses" 
+                    className="flex items-center space-x-1 hover:text-blue-200 transition-colors font-medium"
+                  >
+                    <BookOpen className="h-4 w-4" />
+                    <span>Cursos</span>
+                  </Link>
+                  
+                  {/* Dropdown de cursos */}
+                  <div className="absolute top-full left-0 mt-2 w-48 bg-white text-gray-800 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                    <div className="py-2">
+                      <Link 
+                        to="/courses" 
+                        className="block px-4 py-2 hover:bg-gray-100 transition-colors"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <BookOpen className="h-4 w-4" />
+                          <span>Catálogo</span>
+                        </div>
+                      </Link>
+                      
+                      <Link 
+                        to="/courses/my-courses" 
+                        className="block px-4 py-2 hover:bg-gray-100 transition-colors"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <GraduationCap className="h-4 w-4" />
+                          <span>Mis Cursos</span>
+                        </div>
+                      </Link>
+                      
+                      <RoleGuard requiredRoles={['admin', 'instructor']} requireAll={false}>
+                        <div className="border-t border-gray-200 my-2"></div>
+                        <Link 
+                          to="/courses/create" 
+                          className="block px-4 py-2 hover:bg-gray-100 transition-colors"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <span className="text-lg">+</span>
+                            <span>Crear Curso</span>
+                          </div>
+                        </Link>
+                        
+                        <Link 
+                          to="/courses/manage" 
+                          className="block px-4 py-2 hover:bg-gray-100 transition-colors"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <Settings className="h-4 w-4" />
+                            <span>Gestionar</span>
+                          </div>
+                        </Link>
+                      </RoleGuard>
+                    </div>
+                  </div>
+                </div>
+                
                 <Link 
                   to="/products" 
                   className="hover:text-blue-200 transition-colors font-medium"
@@ -104,23 +161,57 @@ export default function Header() {
         {/* Navegación móvil */}
         {isAuthenticated && (
           <div className="md:hidden mt-3 pt-3 border-t border-blue-500">
-            <div className="flex space-x-4">
+            <div className="grid grid-cols-2 gap-2">
+              <Link 
+                to="/courses" 
+                className="flex items-center space-x-2 text-blue-200 hover:text-white transition-colors text-sm py-1"
+              >
+                <BookOpen className="h-4 w-4" />
+                <span>Cursos</span>
+              </Link>
+              
+              <Link 
+                to="/courses/my-courses" 
+                className="flex items-center space-x-2 text-blue-200 hover:text-white transition-colors text-sm py-1"
+              >
+                <GraduationCap className="h-4 w-4" />
+                <span>Mis Cursos</span>
+              </Link>
+              
               <Link 
                 to="/products" 
-                className="text-blue-200 hover:text-white transition-colors text-sm"
+                className="text-blue-200 hover:text-white transition-colors text-sm py-1"
               >
                 Productos
               </Link>
+              
               <Link 
                 to="/dashboard" 
-                className="text-blue-200 hover:text-white transition-colors text-sm"
+                className="text-blue-200 hover:text-white transition-colors text-sm py-1"
               >
                 Dashboard
               </Link>
+              
+              <RoleGuard requiredRoles={['admin', 'instructor']} requireAll={false}>
+                <Link 
+                  to="/courses/create" 
+                  className="text-blue-200 hover:text-white transition-colors text-sm py-1"
+                >
+                  Crear Curso
+                </Link>
+                
+                <Link 
+                  to="/courses/manage" 
+                  className="text-blue-200 hover:text-white transition-colors text-sm py-1"
+                >
+                  Gestionar
+                </Link>
+              </RoleGuard>
+              
               <RoleGuard requiredRole="admin">
                 <Link 
                   to="/admin" 
-                  className="text-blue-200 hover:text-white transition-colors text-sm"
+                  className="text-blue-200 hover:text-white transition-colors text-sm py-1"
                 >
                   Admin
                 </Link>
@@ -131,11 +222,11 @@ export default function Header() {
       </div>
       
       {/* Indicador de estado de la aplicación */}
-      {process.env.NODE_ENV === 'development' && (
+      {/* {process.env.NODE_ENV === 'development' && (
         <div className="bg-yellow-500 text-black text-xs text-center py-1">
           🚧 Modo Desarrollo - {isAuthenticated ? `Autenticado como: ${user?.email}` : 'No autenticado'}
         </div>
-      )}
+      )} */}
     </header>
   );
 }

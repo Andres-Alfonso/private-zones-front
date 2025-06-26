@@ -1,13 +1,95 @@
 // app/api/endpoints/tenants.ts
 
 // import {apiClient, createApiClient} from "../client";
+import { createApiClient } from "../client";
 import apiClient from "../client";
 import { API_CONFIG } from "../config";
 
 // Primero necesitamos actualizar la configuración con los endpoints de tenant
-import { TenantValidationResponse, Tenant, TenantFilters, TenantListResponse } from "../types/tenant.types";
+import { TenantValidationResponse, Tenant, TenantFilters, TenantListResponse, CreateTenantRequest, TenantError, TenantErrorResponse } from "../types/tenant.types";
+
+
+function getCurrentDomain(): string {
+    if (typeof window === 'undefined') {
+        return 'localhost'; // Para SSR
+    }
+
+    const hostname = window.location.hostname;
+
+    // En desarrollo, manejar casos como cardio.klmsystem.test
+    if (hostname.includes('.test') || hostname.includes('.local')) {
+        return hostname;
+    }
+
+    // En producción, usar el hostname completo
+    return hostname;
+}
 
 export const TenantsAPI = {
+
+  // Crear nuevo tenant
+  create: async (tenantData: CreateTenantRequest): Promise<Tenant | TenantErrorResponse> => {
+    try {
+      const apiClient = createApiClient(getCurrentDomain());
+
+      console.log("Creating tenant with data:", tenantData);
+      const response = await apiClient.post(
+        `${API_CONFIG.ENDPOINTS.TENANTS.CREATE_TENANT}`,
+        tenantData
+      );
+      console.log("Tenant created successfully:", response.data);
+      return response.data;
+    } catch (error: any) {
+      // Manejo más específico de errores
+      if (error.response) {
+        const status = error.response.status;
+        const errorData = error.response.data;
+        
+        // Log del error completo para debug
+        console.error("API Error Details:", {
+          status,
+          data: errorData,
+          headers: error.response.headers
+        });
+        
+        switch (status) {
+          case 400:
+            // Usar el error específico del backend
+            return {
+              error: errorData?.error || TenantError.DOMAIN_MISMATCH,
+              message: errorData?.message || "Datos inválidos para crear el tenant",
+              field: errorData?.field,
+              value: errorData?.value,
+              details: errorData?.details
+            };
+          case 409:
+            return {
+              error: errorData?.error || TenantError.DOMAIN_MISMATCH,
+              message: errorData?.message || "El tenant ya existe",
+              field: errorData?.field,
+              value: errorData?.value
+            };
+          case 500:
+            return {
+              error: TenantError.NETWORK_ERROR,
+              message: errorData?.message || "Error interno del servidor",
+            };
+          default:
+            return {
+              error: TenantError.NETWORK_ERROR,
+              message: errorData?.message || "Error del servidor",
+            };
+        }
+      }
+      
+      // Error de red o conexión
+      console.error("Network Error:", error.message);
+      return {
+        error: TenantError.NETWORK_ERROR,
+        message: "Error de conexión al crear el tenant",
+      };
+    }
+  },
 
   // Obtener todos los tenants
   getAllTenants: async  (
@@ -17,7 +99,33 @@ export const TenantsAPI = {
       const response = await apiClient.get(
         `${API_CONFIG.ENDPOINTS.TENANTS.BASE}`
       );
-      return response.data;
+      
+      // El backend devuelve directamente un array, pero necesitamos estructurarlo correctamente
+      const tenantArray = response.data;
+      
+      // Si es un array, estructurarlo como TenantListResponse
+      if (Array.isArray(tenantArray)) {
+        return {
+          data: tenantArray,
+          total: tenantArray.length,
+          page: filters?.page || 1,
+          limit: filters?.limit || tenantArray.length,
+        };
+      }
+      
+      // Si ya tiene la estructura correcta, devolverlo tal como está
+      if (tenantArray && typeof tenantArray === 'object' && tenantArray.data) {
+        return tenantArray;
+      }
+      
+      // Fallback en caso de estructura inesperada
+      return {
+        data: [],
+        total: 0,
+        page: 1,
+        limit: 20,
+      };
+      
     } catch (error: any) {
       console.error("Error fetching tenants:", error);
 

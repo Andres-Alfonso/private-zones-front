@@ -106,10 +106,10 @@ export default function Header() {
                 
                 <RoleGuard requiredRole="admin">
                   <Link 
-                    to="/admin" 
+                    to="/tenants" 
                     className="hover:text-blue-200 transition-colors font-medium bg-blue-700 px-3 py-1 rounded-md"
                   >
-                    Admin
+                    Clientes
                   </Link>
                 </RoleGuard>
               </>

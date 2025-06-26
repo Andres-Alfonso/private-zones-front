@@ -8,9 +8,10 @@ import {
   TenantPlan, 
   TenantFormData, 
   CreateTenantRequest,
-  TENANT_FEATURES
+  TENANT_FEATURES,
+  TenantErrorResponse
 } from '~/api/types/tenant.types';
-// import { TenantsAPI } from '~/api/endpoints/tenants';
+import { TenantsAPI } from '~/api/endpoints/tenants';
 import Input from '~/components/ui/Input';
 import Checkbox from '~/components/ui/Checkbox';
 import { validateTenantFormData, getTenantErrorByField, generateSlugFromName } from '~/utils/tenantValidation';
@@ -43,9 +44,9 @@ export const action: ActionFunction = async ({ request }) => {
       plan: formData.get('plan') as TenantPlan,
       maxUsers: Number(formData.get('maxUsers')),
       storageLimit: Number(formData.get('storageLimit')),
-      billingEmail: formData.get('billingEmail') as string || undefined,
-      expiresAt: formData.get('expiresAt') as string || undefined,
-      features: formData.getAll('features') as string[],
+      // billingEmail: formData.get('billingEmail') as string || undefined,
+      // expiresAt: formData.get('expiresAt') as string || undefined,
+      // features: formData.getAll('features') as string[],
       
       // Información de contacto
       contactPerson: formData.get('contactPerson') as string,
@@ -53,49 +54,83 @@ export const action: ActionFunction = async ({ request }) => {
       address: formData.get('address') as string,
       city: formData.get('city') as string,
       country: formData.get('country') as string,
-      postalCode: formData.get('postalCode') as string,
+      // postalCode: formData.get('postalCode') as string,
       
       // Configuración inicial
       primaryColor: formData.get('primaryColor') as string || '#0052cc',
       secondaryColor: formData.get('secondaryColor') as string || '#ffffff',
       timezone: formData.get('timezone') as string || 'America/Bogota',
       language: formData.get('language') as string || 'es',
-      currency: formData.get('currency') as string || 'USD',
+      // currency: formData.get('currency') as string || 'USD',
     };
 
-    // En producción: const tenant = await TenantsAPI.create(tenantData);
+    const tenantResult = await TenantsAPI.create(tenantData);
+
+    console.log('Tenant creation result:', tenantResult);
     
     // Simulamos una respuesta exitosa
-    const mockTenant = { id: 'new-tenant-id', ...tenantData };
+    // const mockTenant = { id: 'new-tenant-id', ...tenantData };
     
+    // Verificar si es un error
+    if ('error' in tenantResult) {
+      // Manejar errores específicos del backend
+      const errorMessage = getSpecificErrorMessage(tenantResult);
+      const fieldErrors = getFieldErrors(tenantResult);
+      
+      return json<ActionData>({ 
+        success: false,
+        generalError: errorMessage,
+        errors: fieldErrors
+      });
+    }
+
+    // Es un Tenant exitoso
     return json<ActionData>({ 
       success: true,
-      tenantId: mockTenant.id
+      tenantId: tenantResult.id
     });
     
   } catch (error: any) {
     console.error('Error creating tenant:', error);
     
-    let generalError = 'Error al crear el tenant';
-    
-    if (error.response) {
-      const status = error.response.status;
-      const errorData = error.response.data;
-      
-      if (status === 409) {
-        generalError = 'Ya existe un tenant con ese slug o dominio';
-      } else if (status === 400 && errorData?.message) {
-        generalError = errorData.message;
-      } else if (errorData?.message) {
-        generalError = errorData.message;
-      }
-    }
-    
     return json<ActionData>({ 
-      generalError 
+      generalError: 'Error inesperado al crear el tenant'
     }, { status: 500 });
   }
 };
+
+// Función helper para obtener mensajes específicos
+function getSpecificErrorMessage(error: TenantErrorResponse): string {
+  switch (error.error) {
+    case 'SLUG_ALREADY_EXISTS':
+      return `El identificador "${error.value}" ya está en uso. Elige otro identificador.`;
+    case 'DOMAIN_ALREADY_EXISTS':
+      return `El dominio "${error.value}" ya está en uso. Elige otro dominio.`;
+    case 'RESERVED_SLUG':
+      return `El identificador "${error.value}" contiene palabras reservadas. Elige otro identificador.`;
+    case 'INVALID_DOMAIN':
+      return `El dominio "${error.value}" no es válido para el entorno actual.`;
+    case 'DATABASE_ERROR':
+      return 'Error al guardar en la base de datos. Intenta nuevamente.';
+    default:
+      return error.message || 'Error al crear el tenant';
+  }
+}
+
+// Función helper para convertir errores a errores de campo
+function getFieldErrors(error: TenantErrorResponse): Array<{field: string, message: string}> {
+  if (!error.field) {
+    return [{
+      field: 'tenant',
+      message: getSpecificErrorMessage(error)
+    }];
+  }
+  
+  return [{
+    field: error.field,
+    message: getSpecificErrorMessage(error)
+  }];
+}
 
 export default function CreateTenant() {
   const actionData = useActionData<ActionData>();

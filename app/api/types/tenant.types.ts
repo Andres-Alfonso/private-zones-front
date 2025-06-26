@@ -27,6 +27,10 @@ export interface Tenant {
 
 export interface TenantConfig {
   id: string;
+  maxUsers: number;
+  storageLimit: number; // en GB
+  storageUsed: number; // en GB
+  currentUsers: number;
   tenantId: string;
   primaryColor: string;
   secondaryColor: string;
@@ -90,12 +94,21 @@ export enum TenantPlan {
 
 // Errores específicos del tenant
 export enum TenantError {
-  NOT_FOUND = "TENANT_NOT_FOUND",
-  INACTIVE = "TENANT_INACTIVE",
-  EXPIRED = "TENANT_EXPIRED",
-  SUSPENDED = "TENANT_SUSPENDED",
-  DOMAIN_MISMATCH = "DOMAIN_MISMATCH",
-  NETWORK_ERROR = "NETWORK_ERROR",
+  DOMAIN_MISMATCH = 'DOMAIN_MISMATCH',
+  SLUG_ALREADY_EXISTS = 'SLUG_ALREADY_EXISTS',
+  DOMAIN_ALREADY_EXISTS = 'DOMAIN_ALREADY_EXISTS',
+  RESERVED_SLUG = 'RESERVED_SLUG',
+  INVALID_DOMAIN = 'INVALID_DOMAIN',
+  DATABASE_ERROR = 'DATABASE_ERROR',
+  NETWORK_ERROR = 'NETWORK_ERROR'
+}
+
+export interface TenantErrorResponse {
+  error: TenantError;
+  message: string;
+  field?: string;  // Campo específico que causó el error
+  value?: string;  // Valor que causó el error
+  details?: string; // Detalles adicionales del error
 }
 
 // Estadísticas de tenants
@@ -126,11 +139,11 @@ export enum SubscriptionStatus {
 }
 
 // Errores específicos del tenant
-export enum TenantError {
-  INVALID_PLAN = "INVALID_PLAN",
-  STORAGE_LIMIT_EXCEEDED = "STORAGE_LIMIT_EXCEEDED",
-  USER_LIMIT_EXCEEDED = "USER_LIMIT_EXCEEDED",
-}
+// export enum TenantError {
+//   INVALID_PLAN = "INVALID_PLAN",
+//   STORAGE_LIMIT_EXCEEDED = "STORAGE_LIMIT_EXCEEDED",
+//   USER_LIMIT_EXCEEDED = "USER_LIMIT_EXCEEDED",
+// }
 
 
 export interface UpdateTenantRequest extends Partial<CreateTenantRequest> {
@@ -164,7 +177,7 @@ export interface CreateTenantRequest {
   address: string;
   city: string;
   country: string;
-  postalCode: string;
+  postalCode?: string;
   
   // Configuración inicial
   primaryColor?: string;

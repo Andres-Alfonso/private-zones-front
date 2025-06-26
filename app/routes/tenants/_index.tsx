@@ -579,16 +579,21 @@ function TenantRow({
 
       <td className="px-6 py-4 text-sm text-gray-900">
         <div>
-          <div className="font-medium">{tenant.currentUsers} / {tenant.maxUsers}</div>
+          <div className="font-medium">
+            {tenant.config?.currentUsers ?? 0} / {tenant.config?.maxUsers ?? 0}
+          </div>
           <div className="text-gray-500 text-xs">
-            {Math.round((tenant.currentUsers / tenant.maxUsers) * 100)}% ocupado
+            {tenant.config?.maxUsers
+              ? Math.round((tenant.config.currentUsers / tenant.config.maxUsers) * 100)
+              : 0
+            }% ocupado
           </div>
         </div>
       </td>
 
       <td className="px-6 py-4 text-sm text-gray-900">
         <div>
-          <div className="font-medium">{tenant.storageUsed} / {tenant.storageLimit} GB</div>
+          <div className="font-medium">{tenant.config?.storageUsed} / {tenant.config?.storageLimit} GB</div>
           <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
             <div 
               className={`h-1.5 rounded-full ${storagePercentage > 80 ? 'bg-red-500' : storagePercentage > 60 ? 'bg-yellow-500' : 'bg-green-500'}`}

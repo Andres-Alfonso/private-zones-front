@@ -27,6 +27,58 @@ function getCurrentDomain(): string {
 
 export const TenantsAPI = {
 
+  getById: async (tenantId: string): Promise<Tenant | TenantErrorResponse> => {
+    try {
+      const apiClient = createApiClient(getCurrentDomain());
+      const response = await apiClient.get(
+        `${API_CONFIG.ENDPOINTS.TENANTS.BASE}/${tenantId}`
+      );
+
+      console.log("Tenant fetched successfully:", response.data);
+
+      return response.data;
+    } catch (error: any) {
+      // Manejo de errores más específico
+      if (error.response) {
+        const status = error.response.status;
+        const errorData = error.response.data;
+        console.error("API Error Details:", {
+          status,
+          data: errorData,
+          headers: error.response.headers
+        });
+        switch (status) {
+          case 404:
+            return {
+              error: TenantError.TENANT_NOT_FOUND,
+              message: "Tenant no encontrado",
+            };
+          case 403:
+            return {
+              error: TenantError.FORBIDDEN,
+              message: "Acceso denegado al tenant",
+            };
+          case 500:
+            return {
+              error: TenantError.NETWORK_ERROR,
+              message: "Error interno del servidor",
+            };
+          default:
+            return {
+              error: TenantError.NETWORK_ERROR,
+              message: errorData?.message || "Error del servidor",
+            };
+        }
+      }
+      // Error de red o conexión
+      console.error("Network Error:", error.message);
+      return {
+        error: TenantError.NETWORK_ERROR,
+        message: "Error de conexión al obtener el tenant",
+      };
+    }
+  },
+
   // Crear nuevo tenant
   create: async (tenantData: CreateTenantRequest): Promise<Tenant | TenantErrorResponse> => {
     try {

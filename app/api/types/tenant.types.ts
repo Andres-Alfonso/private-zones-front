@@ -32,6 +32,7 @@ export interface TenantConfig {
   storageUsed: number; // en GB
   currentUsers: number;
   tenantId: string;
+  status: boolean;
   primaryColor: string;
   secondaryColor: string;
   logo?: string;
@@ -100,7 +101,9 @@ export enum TenantError {
   RESERVED_SLUG = 'RESERVED_SLUG',
   INVALID_DOMAIN = 'INVALID_DOMAIN',
   DATABASE_ERROR = 'DATABASE_ERROR',
-  NETWORK_ERROR = 'NETWORK_ERROR'
+  NETWORK_ERROR = 'NETWORK_ERROR',
+  TENANT_NOT_FOUND = 'TENANT_NOT_FOUND',
+  FORBIDDEN = 'FORBIDDEN',
 }
 
 export interface TenantErrorResponse {
@@ -169,7 +172,7 @@ export interface CreateTenantRequest {
   storageLimit: number;
   billingEmail?: string;
   expiresAt?: string;
-  features: string[];
+  features?: string[];
   
   // Información de contacto
   contactPerson: string;
@@ -206,6 +209,7 @@ export interface TenantFormData {
   storageLimit: string;
   billingEmail: string;
   expiresAt: string;
+  status: boolean;
   features: string[];
   
   // Información de contacto

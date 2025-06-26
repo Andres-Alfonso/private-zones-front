@@ -10,12 +10,14 @@ import {
   TenantFormData, 
   UpdateTenantRequest,
   TENANT_FEATURES,
-  SubscriptionStatus
+  SubscriptionStatus,
+  TenantErrorResponse
 } from '~/api/types/tenant.types';
 // import { TenantsAPI } from '~/api/endpoints/tenants';
 import Input from '~/components/ui/Input';
 import Checkbox from '~/components/ui/Checkbox';
 import { validateTenantFormData, getTenantErrorByField } from '~/utils/tenantValidation';
+import { TenantsAPI } from '~/api/endpoints/tenants';
 
 interface LoaderData {
   tenant: Tenant | null;
@@ -28,6 +30,10 @@ interface ActionData {
   success?: boolean;
 }
 
+function isTenantErrorResponse(result: Tenant | TenantErrorResponse): result is TenantErrorResponse {
+  return 'error' in result && 'message' in result;
+}
+
 export const loader: LoaderFunction = async ({ params }) => {
   try {
     const tenantId = params.id as string;
@@ -35,9 +41,8 @@ export const loader: LoaderFunction = async ({ params }) => {
     if (!tenantId) {
       throw new Error('ID de tenant no proporcionado');
     }
+    const result = await TenantsAPI.getById(tenantId);
 
-    // En producción: const tenant = await TenantsAPI.getById(tenantId);
-    
     // Datos simulados para edición
     const mockTenant: Tenant = {
       id: tenantId,
@@ -83,8 +88,18 @@ export const loader: LoaderFunction = async ({ params }) => {
       }
     };
 
+    
+    // Check if the result is an error response
+    if (isTenantErrorResponse(result)) {
+      return json<LoaderData>({ 
+        tenant: null, 
+        error: result.message 
+      });
+    }
+
+    // If we get here, result is a Tenant
     return json<LoaderData>({ 
-      tenant: mockTenant, 
+      tenant: result, 
       error: null 
     });
   } catch (error: any) {
@@ -194,11 +209,12 @@ export default function EditTenant() {
         slug: tenant.slug,
         domain: tenant.domain,
         contactEmail: tenant.contactEmail || '',
-        maxUsers: tenant.maxUsers.toString(),
-        storageLimit: tenant.storageLimit.toString(),
+        maxUsers: tenant.config?.maxUsers.toString(),
+        storageLimit: tenant.config?.storageLimit.toString(),
         billingEmail: tenant.billingEmail || '',
         expiresAt: formatDate(tenant.expiresAt),
-        features: tenant.features || [],
+        status: tenant.config?.status,
+        // features: tenant.features || [],
         
         contactPerson: tenant.contactInfo?.contactPerson || '',
         phone: tenant.contactInfo?.phone || '',
@@ -209,9 +225,9 @@ export default function EditTenant() {
         
         primaryColor: tenant.config?.primaryColor || '#0052cc',
         secondaryColor: tenant.config?.secondaryColor || '#ffffff',
-        timezone: tenant.config?.timezone || 'America/Bogota',
-        language: tenant.config?.language || 'es',
-        currency: tenant.config?.currency || 'USD',
+        // timezone: tenant.config?.timezone || 'America/Bogota',
+        // language: tenant.config?.language || 'es',
+        // currency: tenant.config?.currency || 'USD',
       });
     }
   }, [tenant]);
@@ -329,13 +345,13 @@ export default function EditTenant() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="flex items-center">
                 <input
-                  id="isActive"
-                  name="isActive"
+                  id="status"
+                  name="status"
                   type="checkbox"
-                  defaultChecked={tenant.isActive}
+                  defaultChecked={tenant.config?.status}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
-                <label htmlFor="isActive" className="ml-2 block text-sm text-gray-700">
+                <label htmlFor="status" className="ml-2 block text-sm text-gray-700">
                   Tenant activo y operativo
                 </label>
               </div>
@@ -366,11 +382,11 @@ export default function EditTenant() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-gray-600">Usuarios actuales:</span>
-                  <span className="ml-2 font-medium">{tenant.currentUsers} / {tenant.maxUsers}</span>
+                  <span className="ml-2 font-medium">{tenant.config?.currentUsers} / {tenant.config?.maxUsers}</span>
                 </div>
                 <div>
                   <span className="text-gray-600">Almacenamiento usado:</span>
-                  <span className="ml-2 font-medium">{tenant.storageUsed} / {tenant.storageLimit} GB</span>
+                  <span className="ml-2 font-medium">{tenant.config?.storageUsed} / {tenant.config?.storageLimit} GB</span>
                 </div>
                 <div>
                   <span className="text-gray-600">Creado:</span>
@@ -417,7 +433,7 @@ export default function EditTenant() {
                 label="Slug (identificador único)"
                 required
                 error={getErrorByField('slug')}
-                disabled={isSubmitting}
+                disabled
                 placeholder="empresa-abc"
                 value={formData.slug || ''}
                 onChange={(e) => handleChange('slug', e.target.value)}
@@ -488,7 +504,7 @@ export default function EditTenant() {
                 disabled={isSubmitting}
                 value={formData.maxUsers || ''}
                 onChange={(e) => handleChange('maxUsers', e.target.value)}
-                helperText={`Actuales: ${tenant.currentUsers}`}
+                helperText={`Actuales: ${tenant.config?.currentUsers}`}
               />
 
               <Input
@@ -674,7 +690,7 @@ export default function EditTenant() {
             </div>
 
             {/* Configuración regional */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label htmlFor="language" className="block text-sm font-medium text-gray-700 mb-2">
                   Idioma
@@ -693,24 +709,6 @@ export default function EditTenant() {
                 </select>
               </div>
 
-              <div>
-                <label htmlFor="currency" className="block text-sm font-medium text-gray-700 mb-2">
-                  Moneda
-                </label>
-                <select
-                  id="currency"
-                  name="currency"
-                  disabled={isSubmitting}
-                  value={formData.currency || 'USD'}
-                  onChange={(e) => handleChange('currency', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  {currencies.map(curr => (
-                    <option key={curr.code} value={curr.code}>{curr.name}</option>
-                  ))}
-                </select>
-              </div>
-
               <Input
                 type="text"
                 id="timezone"
@@ -721,12 +719,12 @@ export default function EditTenant() {
                 value={formData.timezone || ''}
                 onChange={(e) => handleChange('timezone', e.target.value)}
               />
-            </div>
+            </div> */}
           </div>
         </div>
 
         {/* Features */}
-        <div className="bg-white shadow rounded-lg">
+        {/* <div className="bg-white shadow rounded-lg">
           <div className="px-6 py-4 border-b border-gray-200">
             <div className="flex items-center space-x-3">
               <Globe className="h-5 w-5 text-blue-600" />
@@ -758,7 +756,7 @@ export default function EditTenant() {
               ))}
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Botones de acción */}
         <div className="flex items-center justify-end space-x-4 pt-6">

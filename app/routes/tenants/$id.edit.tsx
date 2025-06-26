@@ -13,10 +13,9 @@ import {
   SubscriptionStatus,
   TenantErrorResponse
 } from '~/api/types/tenant.types';
-// import { TenantsAPI } from '~/api/endpoints/tenants';
 import Input from '~/components/ui/Input';
 import Checkbox from '~/components/ui/Checkbox';
-import { validateTenantFormData, getTenantErrorByField } from '~/utils/tenantValidation';
+import { validateTenantFormData } from '~/utils/tenantValidation';
 import { TenantsAPI } from '~/api/endpoints/tenants';
 
 interface LoaderData {
@@ -25,7 +24,7 @@ interface LoaderData {
 }
 
 interface ActionData {
-  errors?: Array<{ field: string; message: string }>;
+  errors?: Record<string, string>; // Cambiar a objeto para consistencia
   generalError?: string;
   success?: boolean;
 }
@@ -41,54 +40,9 @@ export const loader: LoaderFunction = async ({ params }) => {
     if (!tenantId) {
       throw new Error('ID de tenant no proporcionado');
     }
+    
     const result = await TenantsAPI.getById(tenantId);
 
-    // Datos simulados para edición
-    const mockTenant: Tenant = {
-      id: tenantId,
-      name: 'Empresa ABC',
-      slug: 'empresa-abc',
-      domain: 'abc.klmsystem.test',
-      contactEmail: 'admin@abc.com',
-      plan: TenantPlan.PRO,
-      createdAt: '2024-01-15T00:00:00Z',
-      updatedAt: '2024-01-20T00:00:00Z',
-      isActive: true,
-      maxUsers: 50,
-      currentUsers: 35,
-      storageLimit: 25,
-      storageUsed: 18.5,
-      customDomain: 'learning.abc.com',
-      billingEmail: 'billing@abc.com',
-      expiresAt: '2024-12-31T00:00:00Z',
-      features: ['courses', 'analytics', 'chat_support', 'custom_branding'],
-      config: {
-        id: '1',
-        tenantId: tenantId,
-        primaryColor: '#0052cc',
-        secondaryColor: '#ffffff',
-        timezone: 'America/Bogota',
-        language: 'es',
-        currency: 'USD',
-        showLearningModule: true,
-        enableChatSupport: true,
-        allowGamification: false,
-        dateFormat: 'DD/MM/YYYY'
-      },
-      contactInfo: {
-        id: '1',
-        tenantId: tenantId,
-        contactPerson: 'Juan Pérez',
-        contactEmail: 'admin@abc.com',
-        phone: '+57 300 123 4567',
-        address: 'Calle 123 #45-67',
-        city: 'Bogotá',
-        country: 'Colombia',
-        postalCode: '11001'
-      }
-    };
-
-    
     // Check if the result is an error response
     if (isTenantErrorResponse(result)) {
       return json<LoaderData>({ 
@@ -119,8 +73,14 @@ export const action: ActionFunction = async ({ request, params }) => {
   const validation = validateTenantFormData(formData);
   
   if (!validation.isValid) {
+    // Convertir array de errores a objeto para facilitar el uso en el cliente
+    const errorObject: Record<string, string> = {};
+    validation.errors.forEach(error => {
+      errorObject[error.field] = error.message;
+    });
+    
     return json<ActionData>({ 
-      errors: validation.errors 
+      errors: errorObject 
     }, { status: 400 });
   }
 
@@ -136,7 +96,7 @@ export const action: ActionFunction = async ({ request, params }) => {
       billingEmail: formData.get('billingEmail') as string || undefined,
       expiresAt: formData.get('expiresAt') as string || undefined,
       features: formData.getAll('features') as string[],
-      isActive: formData.get('isActive') === 'true',
+      isActive: formData.get('isActive') === 'on', // Corregir el checkbox
       
       // Información de contacto
       contactPerson: formData.get('contactPerson') as string,
@@ -154,7 +114,19 @@ export const action: ActionFunction = async ({ request, params }) => {
       currency: formData.get('currency') as string || 'USD',
     };
 
-    // En producción: const tenant = await TenantsAPI.update(tenantId, updateData);
+    const result = await TenantsAPI.update(tenantId, updateData);
+    
+    // Verificar si es un error
+    if (isTenantErrorResponse(result)) {
+      const errorMessage = getSpecificErrorMessage(result);
+      const fieldErrors = getFieldErrors(result);
+      
+      return json<ActionData>({ 
+        success: false,
+        generalError: errorMessage,
+        errors: fieldErrors
+      });
+    }
     
     return json<ActionData>({ 
       success: true
@@ -163,26 +135,42 @@ export const action: ActionFunction = async ({ request, params }) => {
   } catch (error: any) {
     console.error('Error updating tenant:', error);
     
-    let generalError = 'Error al actualizar el tenant';
-    
-    if (error.response) {
-      const status = error.response.status;
-      const errorData = error.response.data;
-      
-      if (status === 409) {
-        generalError = 'Ya existe un tenant con ese slug o dominio';
-      } else if (status === 400 && errorData?.message) {
-        generalError = errorData.message;
-      } else if (errorData?.message) {
-        generalError = errorData.message;
-      }
-    }
-    
     return json<ActionData>({ 
-      generalError 
+      generalError: 'Error inesperado al actualizar el tenant'
     }, { status: 500 });
   }
 };
+
+// Función helper para obtener mensajes específicos
+function getSpecificErrorMessage(error: TenantErrorResponse): string {
+  switch (error.error) {
+    case 'SLUG_ALREADY_EXISTS':
+      return `El identificador "${error.value}" ya está en uso. Elige otro identificador.`;
+    case 'DOMAIN_ALREADY_EXISTS':
+      return `El dominio "${error.value}" ya está en uso. Elige otro dominio.`;
+    case 'RESERVED_SLUG':
+      return `El identificador "${error.value}" contiene palabras reservadas. Elige otro identificador.`;
+    case 'INVALID_DOMAIN':
+      return `El dominio "${error.value}" no es válido para el entorno actual.`;
+    case 'DATABASE_ERROR':
+      return 'Error al guardar en la base de datos. Intenta nuevamente.';
+    default:
+      return error.message || 'Error al actualizar el tenant';
+  }
+}
+
+// Función helper para convertir errores a errores de campo
+function getFieldErrors(error: TenantErrorResponse): Record<string, string> {
+  if (!error.field) {
+    return {
+      general: getSpecificErrorMessage(error)
+    };
+  }
+  
+  return {
+    [error.field]: getSpecificErrorMessage(error)
+  };
+}
 
 export default function EditTenant() {
   const { tenant, error } = useLoaderData<LoaderData>();
@@ -192,9 +180,9 @@ export default function EditTenant() {
 
   const [formData, setFormData] = useState<Partial<TenantFormData>>({});
   const [hasChanges, setHasChanges] = useState(false);
+  const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
 
   const isSubmitting = navigation.state === 'submitting';
-  const errors = actionData?.errors || [];
 
   // Cargar datos del tenant en el formulario
   useEffect(() => {
@@ -205,16 +193,17 @@ export default function EditTenant() {
       };
 
       setFormData({
-        name: tenant.name,
-        slug: tenant.slug,
-        domain: tenant.domain,
+        name: tenant.name || '',
+        slug: tenant.slug || '',
+        domain: tenant.domain || '',
         contactEmail: tenant.contactEmail || '',
-        maxUsers: tenant.config?.maxUsers.toString(),
-        storageLimit: tenant.config?.storageLimit.toString(),
+        // plan: tenant.plan || TenantPlan.FREE,
+        maxUsers: tenant.config?.maxUsers?.toString() || '',
+        storageLimit: tenant.config?.storageLimit?.toString() || '',
         billingEmail: tenant.billingEmail || '',
         expiresAt: formatDate(tenant.expiresAt),
         status: tenant.config?.status,
-        // features: tenant.features || [],
+        features: tenant.features || [],
         
         contactPerson: tenant.contactInfo?.contactPerson || '',
         phone: tenant.contactInfo?.phone || '',
@@ -225,9 +214,9 @@ export default function EditTenant() {
         
         primaryColor: tenant.config?.primaryColor || '#0052cc',
         secondaryColor: tenant.config?.secondaryColor || '#ffffff',
-        // timezone: tenant.config?.timezone || 'America/Bogota',
-        // language: tenant.config?.language || 'es',
-        // currency: tenant.config?.currency || 'USD',
+        timezone: tenant.config?.timezone || 'America/Bogota',
+        language: tenant.config?.language || 'es',
+        currency: tenant.config?.currency || 'USD',
       });
     }
   }, [tenant]);
@@ -255,22 +244,28 @@ export default function EditTenant() {
     );
   }
 
+  // Combinar errores del servidor y del cliente
+  const allErrors = {
+    ...clientErrors,
+    ...(actionData?.errors || {})
+  };
+
   // Obtener error por campo
   const getErrorByField = (field: string): string | null => {
-    return getTenantErrorByField(errors, field as any);
+    const error = allErrors[field];
+    return error && error.trim() !== '' ? error : null;
   };
 
   // Manejar cambios en el formulario
-  const handleChange = (field: keyof TenantFormData, value: string | string[]) => {
+  const handleChange = (field: keyof TenantFormData, value: string | string[] | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     setHasChanges(true);
+    
+    // Limpiar errores cuando el usuario empiece a escribir
+    if (allErrors[field]) {
+      setClientErrors(prev => ({ ...prev, [field]: '' }));
+    }
   };
-
-  // Verificar si una feature está disponible para el plan actual
-  // const isFeatureAvailable = (feature: string): boolean => {
-  //   if (!formData.plan) return false;
-  //   return PLAN_LIMITS[formData.plan].features.includes(feature as any);
-  // };
 
   // Lista de países
   const countries = [
@@ -308,7 +303,7 @@ export default function EditTenant() {
           </div>
           <div className="flex space-x-3">
             <button
-              onClick={() => navigate(`/tenants/${tenant.id}`)}
+              onClick={() => navigate(`/tenants`)}
               className="flex items-center space-x-2 text-gray-600 hover:text-gray-900"
             >
               <X className="h-5 w-5" />
@@ -342,38 +337,18 @@ export default function EditTenant() {
           </div>
           
           <div className="px-6 py-6 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="flex items-center">
-                <input
-                  id="status"
-                  name="status"
-                  type="checkbox"
-                  defaultChecked={tenant.config?.status}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label htmlFor="status" className="ml-2 block text-sm text-gray-700">
-                  Tenant activo y operativo
-                </label>
-              </div>
-
-              {/* <div>
-                <label htmlFor="subscriptionStatus" className="block text-sm font-medium text-gray-700 mb-2">
-                  Estado de Suscripción
-                </label>
-                <select
-                  id="subscriptionStatus"
-                  name="subscriptionStatus"
-                  defaultValue={tenant.subscriptionStatus}
-                  disabled={isSubmitting}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value={SubscriptionStatus.ACTIVE}>Activo</option>
-                  <option value={SubscriptionStatus.TRIAL}>Trial</option>
-                  <option value={SubscriptionStatus.EXPIRED}>Expirado</option>
-                  <option value={SubscriptionStatus.SUSPENDED}>Suspendido</option>
-                  <option value={SubscriptionStatus.CANCELLED}>Cancelado</option>
-                </select>
-              </div> */}
+            <div className="flex items-center">
+              <input
+                id="status"
+                name="status"
+                type="checkbox"
+                defaultChecked={tenant.config?.status}
+                onChange={(e) => handleChange('status', e.target.checked)}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label htmlFor="status" className="ml-2 block text-sm text-gray-700">
+                Tenant activo y operativo
+              </label>
             </div>
 
             {/* Información de uso */}
@@ -382,11 +357,11 @@ export default function EditTenant() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-gray-600">Usuarios actuales:</span>
-                  <span className="ml-2 font-medium">{tenant.config?.currentUsers} / {tenant.config?.maxUsers}</span>
+                  <span className="ml-2 font-medium">{tenant.config?.currentUsers || 0} / {tenant.config?.maxUsers || 0}</span>
                 </div>
                 <div>
                   <span className="text-gray-600">Almacenamiento usado:</span>
-                  <span className="ml-2 font-medium">{tenant.config?.storageUsed} / {tenant.config?.storageLimit} GB</span>
+                  <span className="ml-2 font-medium">{tenant.config?.storageUsed || 0} / {tenant.config?.storageLimit || 0} GB</span>
                 </div>
                 <div>
                   <span className="text-gray-600">Creado:</span>
@@ -433,11 +408,11 @@ export default function EditTenant() {
                 label="Slug (identificador único)"
                 required
                 error={getErrorByField('slug')}
-                disabled
+                disabled={true} // Slug no debería ser editable
                 placeholder="empresa-abc"
                 value={formData.slug || ''}
                 onChange={(e) => handleChange('slug', e.target.value)}
-                helperText="Solo letras, números y guiones"
+                helperText="El slug no puede ser modificado después de la creación"
               />
             </div>
 
@@ -482,7 +457,7 @@ export default function EditTenant() {
                   name="plan"
                   required
                   disabled={isSubmitting}
-                  value={formData.plan}
+                  value={formData.plan || TenantPlan.FREE}
                   onChange={(e) => handleChange('plan', e.target.value as TenantPlan)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
@@ -491,6 +466,9 @@ export default function EditTenant() {
                   <option value={TenantPlan.PRO}>Pro</option>
                   <option value={TenantPlan.ENTERPRISE}>Enterprise</option>
                 </select>
+                {getErrorByField('plan') && (
+                  <p className="mt-1 text-sm text-red-600">{getErrorByField('plan')}</p>
+                )}
               </div>
 
               <Input
@@ -504,7 +482,7 @@ export default function EditTenant() {
                 disabled={isSubmitting}
                 value={formData.maxUsers || ''}
                 onChange={(e) => handleChange('maxUsers', e.target.value)}
-                helperText={`Actuales: ${tenant.config?.currentUsers}`}
+                helperText={`Actuales: ${tenant.config?.currentUsers || 0}`}
               />
 
               <Input
@@ -518,7 +496,7 @@ export default function EditTenant() {
                 disabled={isSubmitting}
                 value={formData.storageLimit || ''}
                 onChange={(e) => handleChange('storageLimit', e.target.value)}
-                helperText={`Usado: ${tenant.storageUsed} GB`}
+                helperText={`Usado: ${tenant.config?.storageUsed || 0} GB`}
               />
             </div>
 
@@ -643,7 +621,6 @@ export default function EditTenant() {
                 id="postalCode"
                 name="postalCode"
                 label="Código Postal"
-                required
                 error={getErrorByField('postalCode')}
                 disabled={isSubmitting}
                 placeholder="11001"
@@ -690,7 +667,7 @@ export default function EditTenant() {
             </div>
 
             {/* Configuración regional */}
-            {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label htmlFor="language" className="block text-sm font-medium text-gray-700 mb-2">
                   Idioma
@@ -709,6 +686,24 @@ export default function EditTenant() {
                 </select>
               </div>
 
+              <div>
+                <label htmlFor="currency" className="block text-sm font-medium text-gray-700 mb-2">
+                  Moneda
+                </label>
+                <select
+                  id="currency"
+                  name="currency"
+                  disabled={isSubmitting}
+                  value={formData.currency || 'USD'}
+                  onChange={(e) => handleChange('currency', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  {currencies.map(curr => (
+                    <option key={curr.code} value={curr.code}>{curr.name}</option>
+                  ))}
+                </select>
+              </div>
+
               <Input
                 type="text"
                 id="timezone"
@@ -719,44 +714,9 @@ export default function EditTenant() {
                 value={formData.timezone || ''}
                 onChange={(e) => handleChange('timezone', e.target.value)}
               />
-            </div> */}
+            </div>
           </div>
         </div>
-
-        {/* Features */}
-        {/* <div className="bg-white shadow rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex items-center space-x-3">
-              <Globe className="h-5 w-5 text-blue-600" />
-              <h2 className="text-lg font-medium text-gray-900">Características</h2>
-            </div>
-            <p className="text-sm text-gray-600 mt-1">
-              Selecciona las características disponibles según el plan elegido
-            </p>
-          </div>
-          
-          <div className="px-6 py-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {TENANT_FEATURES.map((feature) => (
-                <Checkbox
-                  key={feature}
-                  id={`feature-${feature}`}
-                  name="features"
-                  value={feature}
-                  label={feature.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                  checked={formData.features?.includes(feature) || false}
-                  // disabled={!isFeatureAvailable(feature) || isSubmitting}
-                  onChange={(e) => {
-                    const newFeatures = e.target.checked 
-                      ? [...(formData.features || []), feature]
-                      : (formData.features || []).filter(f => f !== feature);
-                    handleChange('features', newFeatures);
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-        </div> */}
 
         {/* Botones de acción */}
         <div className="flex items-center justify-end space-x-4 pt-6">

@@ -27,6 +27,89 @@ function getCurrentDomain(): string {
 
 export const TenantsAPI = {
 
+  // Función adicional para obtener el estado actual si lo necesitas
+  getStatus: async (tenantId: string): Promise<{ status: boolean } | TenantErrorResponse> => {
+    try {
+      const apiClient = createApiClient(getCurrentDomain());
+      
+      const response = await apiClient.get(
+        `${API_CONFIG.ENDPOINTS.TENANTS.GET_STATUS}/${tenantId}`
+      );
+      
+      return {
+        status: response.data.status
+      };
+      
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        return {
+          error: TenantError.TENANT_NOT_FOUND,
+          message: 'El tenant no fue encontrado',
+        };
+      }
+      
+      return {
+        error: TenantError.NETWORK_ERROR,
+        message: 'Error al obtener el estado del tenant',
+      };
+    }
+  },
+  // Toggle del estado activo/inactivo del tenant
+  toggleActive: async (tenantId: string): Promise<{ success: boolean; status: boolean } | TenantErrorResponse> => {
+    try {
+      const apiClient = createApiClient(getCurrentDomain());
+
+      console.log(`Toggling active status for tenant: ${tenantId}`);
+      
+      const response = await apiClient.patch(
+        `${API_CONFIG.ENDPOINTS.TENANTS.TOGGLE_ACTIVE}/${tenantId}`,
+        {}
+      );
+      
+      console.log("Toggle active result:", response.data);
+      return {
+        success: true,
+        status: response.data.status // El nuevo estado después del toggle
+      };
+      
+    } catch (error: any) {
+      console.error("Error toggling tenant status:", error);
+      
+      if (error.response) {
+        const status = error.response.status;
+        const errorData = error.response.data;
+        
+        switch (status) {
+          case 404:
+            return {
+              error: TenantError.TENANT_NOT_FOUND,
+              message: 'El tenant no fue encontrado',
+            };
+          case 403:
+            return {
+              error: TenantError.UNAUTHORIZED,
+              message: 'No tienes permisos para modificar este tenant',
+            };
+          case 400:
+            return {
+              error: TenantError.INVALID_REQUEST,
+              message: errorData?.message || 'Solicitud inválida',
+            };
+          default:
+            return {
+              error: TenantError.NETWORK_ERROR,
+              message: errorData?.message || 'Error del servidor',
+            };
+        }
+      }
+      
+      return {
+        error: TenantError.NETWORK_ERROR,
+        message: 'Error de conexión al actualizar el estado del tenant',
+      };
+    }
+  },
+
   getById: async (tenantId: string): Promise<Tenant | TenantErrorResponse> => {
     try {
       const apiClient = createApiClient(getCurrentDomain());

@@ -2,7 +2,7 @@
 
 import { json, redirect, ActionFunction } from '@remix-run/node';
 import { useActionData, Form, useNavigation, useNavigate } from '@remix-run/react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Save, X, AlertCircle, Building2, Globe, User, MapPin, Palette } from 'lucide-react';
 import { 
   TenantPlan, 
@@ -14,10 +14,10 @@ import {
 import { TenantsAPI } from '~/api/endpoints/tenants';
 import Input from '~/components/ui/Input';
 import Checkbox from '~/components/ui/Checkbox';
-import { validateTenantFormData, getTenantErrorByField, generateSlugFromName } from '~/utils/tenantValidation';
+import { validateTenantFormData, generateSlugFromName, validateSlug } from '~/utils/tenantValidation';
 
 interface ActionData {
-  errors?: Array<{ field: string; message: string }>;
+  errors?: Record<string, string>; // Cambiar a objeto de errores
   generalError?: string;
   success?: boolean;
   tenantId?: string;
@@ -30,8 +30,14 @@ export const action: ActionFunction = async ({ request }) => {
   const validation = validateTenantFormData(formData);
   
   if (!validation.isValid) {
+    // Convertir array de errores a objeto para facilitar el uso en el cliente
+    const errorObject: Record<string, string> = {};
+    validation.errors.forEach(error => {
+      errorObject[error.field] = error.message;
+    });
+    
     return json<ActionData>({ 
-      errors: validation.errors 
+      errors: errorObject 
     }, { status: 400 });
   }
 
@@ -44,9 +50,6 @@ export const action: ActionFunction = async ({ request }) => {
       plan: formData.get('plan') as TenantPlan,
       maxUsers: Number(formData.get('maxUsers')),
       storageLimit: Number(formData.get('storageLimit')),
-      // billingEmail: formData.get('billingEmail') as string || undefined,
-      // expiresAt: formData.get('expiresAt') as string || undefined,
-      // features: formData.getAll('features') as string[],
       
       // Información de contacto
       contactPerson: formData.get('contactPerson') as string,
@@ -54,22 +57,17 @@ export const action: ActionFunction = async ({ request }) => {
       address: formData.get('address') as string,
       city: formData.get('city') as string,
       country: formData.get('country') as string,
-      // postalCode: formData.get('postalCode') as string,
       
       // Configuración inicial
       primaryColor: formData.get('primaryColor') as string || '#0052cc',
       secondaryColor: formData.get('secondaryColor') as string || '#ffffff',
       timezone: formData.get('timezone') as string || 'America/Bogota',
       language: formData.get('language') as string || 'es',
-      // currency: formData.get('currency') as string || 'USD',
     };
 
     const tenantResult = await TenantsAPI.create(tenantData);
 
     console.log('Tenant creation result:', tenantResult);
-    
-    // Simulamos una respuesta exitosa
-    // const mockTenant = { id: 'new-tenant-id', ...tenantData };
     
     // Verificar si es un error
     if ('error' in tenantResult) {
@@ -118,19 +116,34 @@ function getSpecificErrorMessage(error: TenantErrorResponse): string {
 }
 
 // Función helper para convertir errores a errores de campo
-function getFieldErrors(error: TenantErrorResponse): Array<{field: string, message: string}> {
+function getFieldErrors(error: TenantErrorResponse): Record<string, string> {
   if (!error.field) {
-    return [{
-      field: 'tenant',
-      message: getSpecificErrorMessage(error)
-    }];
+    return {
+      general: getSpecificErrorMessage(error)
+    };
   }
   
-  return [{
-    field: error.field,
-    message: getSpecificErrorMessage(error)
-  }];
+  return {
+    [error.field]: getSpecificErrorMessage(error)
+  };
 }
+
+// Hook personalizado para manejar el debounce
+const useDebounce = (value: string, delay: number) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+};
 
 export default function CreateTenant() {
   const actionData = useActionData<ActionData>();
@@ -163,29 +176,49 @@ export default function CreateTenant() {
     currency: 'USD',
   });
 
+  const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false);
+  const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
+  
   const isSubmitting = navigation.state === 'submitting';
-  const errors = actionData?.errors || [];
+
+  // Refs para evitar ciclos infinitos
+  const previousNameRef = useRef('');
+  const isInternalUpdateRef = useRef(false);
+
+  // Debounce del nombre para evitar múltiples ejecuciones
+  const debouncedName = useDebounce(formData.name || '', 300);
 
   // Auto-generar slug cuando cambia el nombre
   useEffect(() => {
-    if (formData.name && !formData.slug) {
-      const generatedSlug = generateSlugFromName(formData.name);
-      setFormData(prev => ({ ...prev, slug: generatedSlug }));
+    if (debouncedName === previousNameRef.current) return;
+    
+    if (debouncedName && !isSlugManuallyEdited) {
+      const generatedSlug = generateSlugFromName(debouncedName);
+      
+      if (generatedSlug !== formData.slug) {
+        isInternalUpdateRef.current = true;
+        setFormData(prev => ({ ...prev, slug: generatedSlug }));
+        
+        setTimeout(() => {
+          isInternalUpdateRef.current = false;
+        }, 0);
+      }
     }
-  }, [formData.name, formData.slug]);
+    
+    previousNameRef.current = debouncedName;
+  }, [debouncedName, isSlugManuallyEdited, formData.slug]);
 
-  // Auto-configurar límites según el plan
-  // useEffect(() => {
-  //   if (formData.plan) {
-  //     const limits = PLAN_LIMITS[formData.plan];
-  //     setFormData(prev => ({
-  //       ...prev,
-  //       maxUsers: limits.maxUsers === -1 ? '1000' : limits.maxUsers.toString(),
-  //       storageLimit: limits.storageLimit.toString(),
-  //       features: limits.features,
-  //     }));
-  //   }
-  // }, [formData.plan]);
+  // Validar slug en tiempo real
+  useEffect(() => {
+    if (formData.slug) {
+      const slugError = validateSlug(formData.slug);
+      if (slugError) {
+        setClientErrors(prev => ({ ...prev, slug: slugError }));
+      } else {
+        setClientErrors(prev => ({ ...prev, slug: '' }));
+      }
+    }
+  }, [formData.slug]);
 
   // Redirigir si se creó exitosamente
   useEffect(() => {
@@ -194,21 +227,45 @@ export default function CreateTenant() {
     }
   }, [actionData, navigate]);
 
+  // Combinar errores del servidor y del cliente
+  const allErrors = {
+    ...clientErrors,
+    ...(actionData?.errors || {})
+  };
+
   // Obtener error por campo
   const getErrorByField = (field: string): string | null => {
-    return getTenantErrorByField(errors, field as any);
+    const error = allErrors[field];
+    return error && error.trim() !== '' ? error : null;
   };
 
   // Manejar cambios en el formulario
-  const handleChange = (field: keyof TenantFormData, value: string | string[]) => {
+  const handleChange = useCallback((field: string, value: string) => {
+    // Si están editando el slug manualmente, marcarlo como editado
+    if (field === 'slug' && !isInternalUpdateRef.current) {
+      setIsSlugManuallyEdited(true);
+    }
+    
     setFormData(prev => ({ ...prev, [field]: value }));
-  };
+    
+    // Limpiar errores cuando el usuario empiece a escribir
+    if (allErrors[field]) {
+      setClientErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  }, [allErrors]);
 
-  // Verificar si una feature está disponible para el plan actual
-  // const isFeatureAvailable = (feature: string): boolean => {
-  //   if (!formData.plan) return false;
-  //   return PLAN_LIMITS[formData.plan].features.includes(feature as any);
-  // };
+  const handleRegenerateSlug = useCallback(() => {
+    if (formData.name) {
+      const newSlug = generateSlugFromName(formData.name);
+      isInternalUpdateRef.current = true;
+      setFormData(prev => ({ ...prev, slug: newSlug }));
+      setIsSlugManuallyEdited(false);
+      
+      setTimeout(() => {
+        isInternalUpdateRef.current = false;
+      }, 0);
+    }
+  }, [formData.name]);
 
   // Lista de países
   const countries = [
@@ -289,19 +346,37 @@ export default function CreateTenant() {
                 onChange={(e) => handleChange('name', e.target.value)}
               />
 
-              <Input
-                type="text"
-                id="slug"
-                name="slug"
-                label="Slug (identificador único)"
-                required
-                error={getErrorByField('slug')}
-                disabled={isSubmitting}
-                placeholder="empresa-abc"
-                value={formData.slug}
-                onChange={(e) => handleChange('slug', e.target.value)}
-                helperText="Solo letras, números y guiones. Se genera automáticamente desde el nombre."
-              />
+              <div className="relative">
+                <Input
+                  type="text"
+                  id="slug"
+                  name="slug"
+                  label="Slug (identificador único)"
+                  required
+                  error={getErrorByField('slug')}
+                  disabled={isSubmitting}
+                  placeholder="empresa-abc"
+                  value={formData.slug}
+                  onChange={(e) => handleChange('slug', e.target.value)}
+                  helperText={
+                    isSlugManuallyEdited 
+                      ? "Slug personalizado. Usa solo letras, números y guiones." 
+                      : "Se genera automáticamente desde el nombre. Puedes editarlo manualmente."
+                  }
+                />
+                
+                {/* Botón para regenerar slug */}
+                {isSlugManuallyEdited && formData.name && (
+                  <button
+                    type="button"
+                    onClick={handleRegenerateSlug}
+                    className="absolute right-2 top-8 text-xs text-blue-600 hover:text-blue-800 underline"
+                    disabled={isSubmitting}
+                  >
+                    Regenerar
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Dominio y Email */}
@@ -354,6 +429,9 @@ export default function CreateTenant() {
                   <option value={TenantPlan.PRO}>Pro</option>
                   <option value={TenantPlan.ENTERPRISE}>Enterprise</option>
                 </select>
+                {getErrorByField('plan') && (
+                  <p className="mt-1 text-sm text-red-600">{getErrorByField('plan')}</p>
+                )}
               </div>
 
               <Input
@@ -504,7 +582,6 @@ export default function CreateTenant() {
                 id="postalCode"
                 name="postalCode"
                 label="Código Postal"
-                required
                 error={getErrorByField('postalCode')}
                 disabled={isSubmitting}
                 placeholder="11001"
@@ -598,41 +675,6 @@ export default function CreateTenant() {
                 value={formData.timezone}
                 onChange={(e) => handleChange('timezone', e.target.value)}
               />
-            </div>
-          </div>
-        </div>
-
-        {/* Features */}
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex items-center space-x-3">
-              <Globe className="h-5 w-5 text-blue-600" />
-              <h2 className="text-lg font-medium text-gray-900">Características</h2>
-            </div>
-            <p className="text-sm text-gray-600 mt-1">
-              Selecciona las características disponibles según el plan elegido
-            </p>
-          </div>
-          
-          <div className="px-6 py-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {TENANT_FEATURES.map((feature) => (
-                <Checkbox
-                  key={feature}
-                  id={`feature-${feature}`}
-                  name="features"
-                  value={feature}
-                  label={feature.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                  checked={formData.features?.includes(feature) || false}
-                  // disabled={!isFeatureAvailable(feature) || isSubmitting}
-                  onChange={(e) => {
-                    const newFeatures = e.target.checked 
-                      ? [...(formData.features || []), feature]
-                      : (formData.features || []).filter(f => f !== feature);
-                    handleChange('features', newFeatures);
-                  }}
-                />
-              ))}
             </div>
           </div>
         </div>

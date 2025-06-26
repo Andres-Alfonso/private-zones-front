@@ -104,6 +104,22 @@ export enum TenantError {
   NETWORK_ERROR = 'NETWORK_ERROR',
   TENANT_NOT_FOUND = 'TENANT_NOT_FOUND',
   FORBIDDEN = 'FORBIDDEN',
+  UNAUTHORIZED = 'UNAUTHORIZED',
+  INVALID_REQUEST = 'INVALID_REQUEST',
+  TOGGLE_ERROR = 'TOGGLE_ERROR',
+  GET_STATUS_ERROR = 'GET_STATUS_ERROR'
+}
+
+// Respuesta del toggle active
+export interface ToggleActiveResponse {
+  success: boolean;
+  status: boolean;
+  message?: string;
+}
+
+// Respuesta del get status
+export interface TenantStatusResponse {
+  status: boolean;
 }
 
 export interface TenantErrorResponse {

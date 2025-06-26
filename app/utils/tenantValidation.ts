@@ -429,6 +429,7 @@ export const validateTenantFormData = (formData: FormData): TenantValidationResu
     billingEmail: formData.get('billingEmail') as string || '',
     expiresAt: formData.get('expiresAt') as string || '',
     features: formData.getAll('features') as string[],
+    status: formData.get('status') === 'on',
     
     contactPerson: formData.get('contactPerson') as string || '',
     phone: formData.get('phone') as string || '',
@@ -448,21 +449,46 @@ export const validateTenantFormData = (formData: FormData): TenantValidationResu
 };
 
 // Utilidad para obtener errores por campo
+// Reemplaza tu función por esta:
 export const getTenantErrorByField = (
-  errors: TenantValidationError[],
+  errors: Record<string, string>,
   field: keyof TenantFormData
 ): string | null => {
-  const error = errors.find((err) => err.field === field);
-  return error ? error.message : null;
+  return errors[field] || null;
 };
 
 // Función para generar slug automáticamente desde el nombre
-export const generateSlugFromName = (name: string): string => {
+export const generateSlugFromName = (name: string | undefined): string => {
+  if (!name || typeof name !== 'string') return '';
+  
   return name
     .toLowerCase()
     .trim()
-    .replace(/[^a-z0-9\s-]/g, '') // Remover caracteres especiales
-    .replace(/\s+/g, '-') // Reemplazar espacios con guiones
-    .replace(/-+/g, '-') // Reemplazar múltiples guiones con uno solo
-    .replace(/^-|-$/g, ''); // Remover guiones al inicio y final
+    // Normalizar caracteres con acentos
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    // Reemplazar caracteres especiales comunes
+    .replace(/[&]/g, 'y')
+    .replace(/[ñ]/g, 'n')
+    // Remover caracteres no válidos (solo letras, números, espacios y guiones)
+    .replace(/[^a-z0-9\s-]/g, '')
+    // Reemplazar múltiples espacios con uno solo
+    .replace(/\s+/g, ' ')
+    // Reemplazar espacios con guiones
+    .replace(/\s/g, '-')
+    // Reemplazar múltiples guiones con uno solo
+    .replace(/-+/g, '-')
+    // Remover guiones al inicio y final
+    .replace(/^-+|-+$/g, '');
+};
+
+// Validar que el slug sea válido
+export const validateSlug = (slug: string): string | null => {
+  if (!slug) return 'El slug es requerido';
+  if (slug.length < 2) return 'El slug debe tener al menos 2 caracteres';
+  if (slug.length > 50) return 'El slug no puede tener más de 50 caracteres';
+  if (!/^[a-z0-9-]+$/.test(slug)) return 'El slug solo puede contener letras minúsculas, números y guiones';
+  if (slug.startsWith('-') || slug.endsWith('-')) return 'El slug no puede empezar o terminar con guión';
+  if (slug.includes('--')) return 'El slug no puede contener guiones consecutivos';
+  return null;
 };

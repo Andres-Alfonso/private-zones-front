@@ -14,7 +14,8 @@ import {
   SubscriptionStatus, 
   TenantFilters,
   TenantListResponse,
-  TenantStats
+  TenantStats,
+  TenantErrorResponse
 } from "~/api/types/tenant.types";
 import { TenantsAPI } from "~/api/endpoints/tenants";
 
@@ -24,10 +25,19 @@ interface LoaderData {
   error: string | null;
 }
 
-interface ActionData {
+// Actualizar ActionData para incluir toggle active
+export interface ActionData {
   success?: boolean;
-  error?: string;
-  action?: string;
+  tenantId?: string;
+  generalError?: string;
+  errors?: Array<{
+    field: string;
+    message: string;
+  }>;
+  
+  // Para toggle active
+  action?: 'toggle-active' | 'create' | 'update' | 'delete' | 'bulk-delete';
+  newStatus?: boolean; // El nuevo estado después del toggle
 }
 
 export const loader: LoaderFunction = async ({ request }) => {
@@ -137,6 +147,19 @@ export const loader: LoaderFunction = async ({ request }) => {
   }
 };
 
+function getToggleErrorMessage(error: TenantErrorResponse): string {
+  switch (error.error) {
+    case 'TENANT_NOT_FOUND':
+      return 'El tenant no fue encontrado. Es posible que haya sido eliminado.';
+    case 'UNAUTHORIZED':
+      return 'No tienes permisos para modificar el estado de este tenant.';
+    case 'TOGGLE_ERROR':
+      return 'Error al cambiar el estado del tenant. Intenta nuevamente.';
+    default:
+      return error.message || 'Error al cambiar el estado del tenant';
+  }
+}
+
 export const action: ActionFunction = async ({ request }) => {
   const formData = await request.formData();
   const action = formData.get('_action') as string;
@@ -145,10 +168,21 @@ export const action: ActionFunction = async ({ request }) => {
   try {
     switch (action) {
       case 'toggle-active':
-        // await TenantsAPI.toggleActive(tenantId);
-        return json<ActionData>({ 
-          success: true, 
-          action: 'toggle-active' 
+        const toggleResult = await TenantsAPI.toggleActive(tenantId);
+        
+        // Verificar si es un error
+        if ('error' in toggleResult) {
+          return json<ActionData>({
+            success: false,
+            generalError: getToggleErrorMessage(toggleResult),
+            action: 'toggle-active'
+          });
+        }
+        
+        return json<ActionData>({
+          success: true,
+          action: 'toggle-active',
+          newStatus: toggleResult.status, // Incluir el nuevo estado
         });
 
       case 'delete':
@@ -171,7 +205,7 @@ export const action: ActionFunction = async ({ request }) => {
     }
   } catch (error: any) {
     return json<ActionData>({ 
-      error: error.message || 'Error al procesar la acción'
+      errors: error.message || 'Error al procesar la acción'
     });
   }
 };
@@ -242,10 +276,10 @@ export default function TenantsIndex() {
   return (
     <div className="space-y-6">
       {/* Mensajes de estado */}
-      {actionData?.error && (
+      {actionData?.errors && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-center">
           <AlertCircle className="h-5 w-5 mr-2" />
-          {actionData.error}
+          {actionData.generalError || 'Ocurrió un error al procesar la acción'}
         </div>
       )}
 
@@ -626,7 +660,7 @@ function TenantRow({
             <Edit className="h-4 w-4" />
           </Link>
 
-          <Form method="post" className="inline">
+          {/* <Form method="post" className="inline">
             <input type="hidden" name="_action" value="toggle-active" />
             <input type="hidden" name="tenantId" value={tenant.id} />
             <button
@@ -636,7 +670,7 @@ function TenantRow({
             >
               {tenant.isActive ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
-          </Form>
+          </Form> */}
 
           <Form 
             method="post" 

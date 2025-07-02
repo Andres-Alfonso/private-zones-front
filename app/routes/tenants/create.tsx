@@ -15,6 +15,7 @@ import { TenantsAPI } from '~/api/endpoints/tenants';
 import Input from '~/components/ui/Input';
 import Checkbox from '~/components/ui/Checkbox';
 import { validateTenantFormData, generateSlugFromName, validateSlug } from '~/utils/tenantValidation';
+import NavbarCustomizer from '~/components/NavbarCustomizer';
 
 interface ActionData {
   errors?: Record<string, string>; // Cambiar a objeto de errores
@@ -57,6 +58,15 @@ export const action: ActionFunction = async ({ request }) => {
       address: formData.get('address') as string,
       city: formData.get('city') as string,
       country: formData.get('country') as string,
+      url_portal: formData.get('url_portal') as string,
+      nit: formData.get('nit') as string,
+
+      backgroundColorNavbar: formData.get('primaryColor') as string || '#0052cc',
+      textColorNavbar: formData.get('secondaryColor') as string || '#ffffff',
+      logoNavbar: formData.get('logo') as string || 'Mi App',
+      showSearch: formData.get('showSearch') === 'on',
+      showNotifications: formData.get('showNotifications') === 'on',
+      showProfile: formData.get('showProfile') === 'on',
       
       // Configuración inicial
       primaryColor: formData.get('primaryColor') as string || '#0052cc',
@@ -165,9 +175,18 @@ export default function CreateTenant() {
     contactPerson: '',
     phone: '',
     address: '',
+    url_portal: '',
+    nit: '',
     city: '',
     country: '',
     postalCode: '',
+
+    backgroundColorNavbar: '#0052cc',
+    textColorNavbar: '#ffffff',
+    logoNavbar: 'Mi App',
+    showSearch: true,
+    showNotifications: true,
+    showProfile: true,
     
     primaryColor: '#0052cc',
     secondaryColor: '#ffffff',
@@ -240,7 +259,7 @@ export default function CreateTenant() {
   };
 
   // Manejar cambios en el formulario
-  const handleChange = useCallback((field: string, value: string) => {
+  const handleChange = useCallback((field: string, value: string | boolean) => {
     // Si están editando el slug manualmente, marcarlo como editado
     if (field === 'slug' && !isInternalUpdateRef.current) {
       setIsSlugManuallyEdited(true);
@@ -248,7 +267,7 @@ export default function CreateTenant() {
     
     setFormData(prev => ({ ...prev, [field]: value }));
     
-    // Limpiar errores cuando el usuario empiece a escribir
+    // Limpiar errores cuando el usuario empiece a escribir/cambiar
     if (allErrors[field]) {
       setClientErrors(prev => ({ ...prev, [field]: '' }));
     }
@@ -540,7 +559,36 @@ export default function CreateTenant() {
               onChange={(e) => handleChange('address', e.target.value)}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+              <Input
+                type="text"
+                id="url_portal"
+                name="url_portal"
+                label="Dirección del Portal"
+                required
+                error={getErrorByField('url_portal')}
+                disabled={isSubmitting}
+                placeholder="https://portal.empresa-abc.com"
+                value={formData.url_portal}
+                onChange={(e) => handleChange('url_portal', e.target.value)}
+              />
+
+              <Input
+                type="text"
+                id="nit"
+                name="nit"
+                label="Nit"
+                required
+                error={getErrorByField('nit')}
+                disabled={isSubmitting}
+                placeholder="123456789"
+                value={formData.nit}
+                onChange={(e) => handleChange('nit', e.target.value)}
+              />
+            </div>
+
+            {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Input
                 type="text"
                 id="city"
@@ -588,7 +636,7 @@ export default function CreateTenant() {
                 value={formData.postalCode}
                 onChange={(e) => handleChange('postalCode', e.target.value)}
               />
-            </div>
+            </div> */}
           </div>
         </div>
 
@@ -678,6 +726,43 @@ export default function CreateTenant() {
             </div>
           </div>
         </div>
+
+
+        <div className="bg-white shadow rounded-lg">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center space-x-3">
+              <Palette className="h-5 w-5 text-blue-600" />
+              <h2 className="text-lg font-medium text-gray-900">Personalizador de Navbar</h2>
+            </div>
+          </div>
+
+          <NavbarCustomizer
+            // Pasar los valores actuales del formulario
+            backgroundColor={formData.backgroundColorNavbar || '#0052cc'}
+            textColor={formData.textColorNavbar || '#ffffff'}
+            logo={formData.logoNavbar || 'Mi App'}
+            showSearch={formData.showSearch || true}
+            showNotifications={formData.showNotifications || true}
+            showProfile={formData.showProfile || true}
+            
+            // Callback para manejar cambios
+            onChange={handleChange}
+            
+            // Estado de carga
+            isSubmitting={isSubmitting}
+            
+            // Errores de validación
+            errors={allErrors}
+          />
+        </div>
+
+        {/* Campos hidden para el navbar */}
+        <input type="hidden" name="backgroundColorNavbar" value={formData.backgroundColorNavbar} />
+        <input type="hidden" name="textColorNavbar" value={formData.textColorNavbar} />
+        <input type="hidden" name="logoNavbar" value={formData.logoNavbar} />
+        <input type="hidden" name="showSearch" value={formData.showSearch ? 'on' : ''} />
+        <input type="hidden" name="showNotifications" value={formData.showNotifications ? 'on' : ''} />
+        <input type="hidden" name="showProfile" value={formData.showProfile ? 'on' : ''} />
 
         {/* Botones de acción */}
         <div className="flex items-center justify-end space-x-4 pt-6">

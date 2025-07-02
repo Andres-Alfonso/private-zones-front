@@ -13,7 +13,7 @@ import {
   TenantPlan, 
   SubscriptionStatus
 } from "~/api/types/tenant.types";
-// import { TenantsAPI } from "~/api/endpoints/tenants";
+import { TenantsAPI } from "~/api/endpoints/tenants";
 
 interface LoaderData {
   tenant: Tenant | null;
@@ -34,7 +34,7 @@ export const loader: LoaderFunction = async ({ params }) => {
       throw new Error('ID de tenant no proporcionado');
     }
 
-    // En producción: const tenant = await TenantsAPI.getById(tenantId);
+    const tenant = await TenantsAPI.getById(tenantId);
     
     // Datos simulados
     const mockTenant: Tenant = {
@@ -84,7 +84,7 @@ export const loader: LoaderFunction = async ({ params }) => {
     };
 
     return json<LoaderData>({ 
-      tenant: mockTenant, 
+      tenant: tenant, 
       error: null 
     });
   } catch (error: any) {
@@ -192,8 +192,8 @@ export default function TenantDetail() {
     });
   };
 
-  const storagePercentage = (tenant.storageUsed / tenant.storageLimit) * 100;
-  const usersPercentage = (tenant.currentUsers / tenant.maxUsers) * 100;
+  const storagePercentage = (tenant.config?.storageUsed / tenant.config?.storageLimit) * 100;
+  const usersPercentage = (tenant.config?.currentUsers / tenant.config?.maxUsers) * 100;
 
   return (
     <div className="space-y-6">
@@ -257,7 +257,7 @@ export default function TenantDetail() {
                       {tenant.subscriptionStatus.charAt(0).toUpperCase() + tenant.subscriptionStatus.slice(1)}
                     </span> */}
                     
-                    {tenant.isActive ? (
+                    {tenant.config?.status ? (
                       <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
                         <CheckCircle className="h-3 w-3 mr-1" />
                         Activo
@@ -288,12 +288,12 @@ export default function TenantDetail() {
                     type="submit"
                     disabled={isSubmitting}
                     className={`inline-flex items-center px-3 py-2 border rounded-md text-sm font-medium ${
-                      tenant.isActive
+                      tenant.config?.status
                         ? 'border-red-300 text-red-700 bg-red-50 hover:bg-red-100'
                         : 'border-green-300 text-green-700 bg-green-50 hover:bg-green-100'
                     } disabled:opacity-50`}
                   >
-                    {tenant.isActive ? (
+                    {tenant.config?.status ? (
                       <>
                         <EyeOff className="h-4 w-4 mr-2" />
                         Desactivar
@@ -345,7 +345,7 @@ export default function TenantDetail() {
                   <h3 className="text-lg font-medium text-gray-900">Usuarios</h3>
                 </div>
                 <span className="text-2xl font-bold text-gray-900">
-                  {tenant.currentUsers} / {tenant.maxUsers}
+                  {tenant.config?.currentUsers} / {tenant.config?.maxUsers}
                 </span>
               </div>
               
@@ -370,7 +370,7 @@ export default function TenantDetail() {
                   <h3 className="text-lg font-medium text-gray-900">Almacenamiento</h3>
                 </div>
                 <span className="text-2xl font-bold text-gray-900">
-                  {tenant.storageUsed} / {tenant.storageLimit} GB
+                  {tenant.config?.storageUsed} / {tenant.config?.storageLimit} GB
                 </span>
               </div>
               
@@ -567,7 +567,7 @@ export default function TenantDetail() {
               <h3 className="text-lg font-medium text-gray-900">Características</h3>
             </div>
             
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               {tenant.features.map((feature) => (
                 <div key={feature} className="flex items-center space-x-2">
                   <CheckCircle className="h-4 w-4 text-green-500" />
@@ -576,7 +576,7 @@ export default function TenantDetail() {
                   </span>
                 </div>
               ))}
-            </div>
+            </div> */}
           </div>
 
           {/* Información de suscripción */}

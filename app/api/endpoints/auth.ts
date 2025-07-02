@@ -1,7 +1,25 @@
 // app/api/endpoints/auth.ts
+import { createApiClient } from "../client";
 import apiClient from '../client';
 import { API_CONFIG } from '../config';
 import { LoginRequest, LoginResponse, RegisterRequest, UserProfileResponse } from '../types/auth.types';
+
+
+function getCurrentDomain(): string {
+    if (typeof window === 'undefined') {
+        return 'localhost'; // Para SSR
+    }
+
+    const hostname = window.location.hostname;
+
+    // En desarrollo, manejar casos como cardio.klmsystem.test
+    if (hostname.includes('.test') || hostname.includes('.local')) {
+        return hostname;
+    }
+
+    // En producción, usar el hostname completo
+    return hostname;
+}
 
 export const AuthAPI = {
   // Iniciar sesión
@@ -50,5 +68,24 @@ export const AuthAPI = {
   getProfile: async (): Promise<UserProfileResponse> => {
     const response = await apiClient.get(API_CONFIG.ENDPOINTS.AUTH.ME);
     return response.data;
+  },
+
+  // Nuevo método para obtener datos actualizados del usuario
+  async getCurrentUser(accessToken: string) {
+
+    const apiClient = createApiClient(getCurrentDomain());
+
+    const response = await apiClient.get(API_CONFIG.ENDPOINTS.AUTH.ME, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Error getting current user');
+    }
+
+    return response.json();
   },
 };

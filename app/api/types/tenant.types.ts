@@ -197,6 +197,8 @@ export interface CreateTenantRequest {
   city: string;
   country: string;
   postalCode?: string;
+  url_portal?: string; // URL del portal del tenant
+  nit?: string; // NIT o número de identificación fiscal del tenant
   
   // Configuración inicial
   primaryColor?: string;

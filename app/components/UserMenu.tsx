@@ -2,11 +2,13 @@
 
 import React, { useState } from 'react';
 import { useAuth, useCurrentUser } from '~/context/AuthContext';
+import { useNavigate, useNavigation } from '@remix-run/react';
 import { RoleGuard } from './AuthGuard';
 import { ChevronDown } from 'lucide-react';
 
 export function UserMenu() {
   const { logout } = useAuth();
+  const navigate = useNavigate();
   const { user, isAuthenticated } = useCurrentUser();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -17,6 +19,7 @@ export function UserMenu() {
   const handleLogout = async () => {
     try {
       await logout();
+      navigate(`/auth/login`);
     } catch (error) {
       console.error('Error during logout:', error);
     }

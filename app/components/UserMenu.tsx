@@ -1,9 +1,9 @@
 // app/components/UserMenu.tsx
-// Ejemplo de componente que usa los hooks de auth
 
 import React, { useState } from 'react';
 import { useAuth, useCurrentUser } from '~/context/AuthContext';
 import { RoleGuard } from './AuthGuard';
+import { ChevronDown } from 'lucide-react';
 
 export function UserMenu() {
   const { logout } = useAuth();
@@ -22,49 +22,79 @@ export function UserMenu() {
     }
   };
 
+  // Obtener iniciales del usuario
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(part => part.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  // Obtener color del avatar según el rol
+  const getAvatarColor = (roles: string[]) => {
+    if (roles.includes('admin')) return 'from-red-500 to-red-600';
+    if (roles.includes('instructor')) return 'from-purple-500 to-purple-600';
+    if (roles.includes('student')) return 'from-blue-500 to-blue-600';
+    return 'from-gray-500 to-gray-600';
+  };
+
   return (
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center space-x-2 text-gray-700 hover:text-gray-900 focus:outline-none"
+        className="flex items-center space-x-2 p-2 rounded-xl text-white/90 hover:text-white hover:bg-white/10 focus:outline-none transition-all duration-200 group"
       >
-        <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-semibold">
-          {user.name.charAt(0).toUpperCase()}
+        {/* Avatar mejorado */}
+        <div className={`w-10 h-10 bg-gradient-to-br ${getAvatarColor(user.roles)} rounded-xl flex items-center justify-center text-white text-sm font-bold shadow-lg group-hover:shadow-xl transition-all duration-200 group-hover:scale-105`}>
+          {getInitials(user.name)}
         </div>
-        <span className="hidden md:block">{user.name}</span>
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
+        
+        <span className="hidden md:block font-medium">{user.name}</span>
+        
+        <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
-          <div className="px-4 py-2 text-xs text-gray-500 border-b">
-            {user.email}
-          </div>
-          
-          <a
-            href="/profile"
-            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-          >
-            Mi Perfil
-          </a>
-          
-          <RoleGuard requiredRole="admin">
+        <div className="absolute right-0 mt-2 w-48 z-50">
+          {/* Menú con tema moderno */}
+          <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 py-1 overflow-hidden">
+            {/* Header del usuario */}
+            <div className="px-4 py-3 text-xs text-gray-600 border-b border-gray-200/50 bg-gray-50/50">
+              <div className="flex items-center space-x-2">
+                <div className={`w-6 h-6 bg-gradient-to-br ${getAvatarColor(user.roles)} rounded-lg flex items-center justify-center text-white text-xs font-bold`}>
+                  {getInitials(user.name)}
+                </div>
+                <span className="truncate">{user.email}</span>
+              </div>
+            </div>
+            
             <a
-              href="/admin"
-              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              href="/profile"
+              className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100/50 transition-colors duration-200"
             >
-              Panel Admin
+              Mi Perfil
             </a>
-          </RoleGuard>
-          
-          <button
-            onClick={handleLogout}
-            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-          >
-            Cerrar Sesión
-          </button>
+            
+            <RoleGuard requiredRole="admin">
+              <a
+                href="/admin"
+                className="block px-4 py-3 text-sm text-gray-700 hover:bg-purple-50/50 transition-colors duration-200"
+              >
+                Panel Admin
+              </a>
+            </RoleGuard>
+            
+            <div className="border-t border-gray-200/50 my-1"></div>
+            
+            <button
+              onClick={handleLogout}
+              className="block w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50/50 transition-colors duration-200"
+            >
+              Cerrar Sesión
+            </button>
+          </div>
         </div>
       )}
     </div>

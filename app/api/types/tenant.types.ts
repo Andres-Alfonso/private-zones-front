@@ -189,16 +189,27 @@ export interface CreateTenantRequest {
   billingEmail?: string;
   expiresAt?: string;
   features?: string[];
+
+  adminFirstName: string,
+  adminLastName: string,
+  adminEmail: string,
+  adminPassword: string,
   
   // Información de contacto
   contactPerson: string;
   phone: string;
   address: string;
-  city: string;
-  country: string;
+  city?: string;
+  country?: string;
   postalCode?: string;
   url_portal?: string; // URL del portal del tenant
   nit?: string; // NIT o número de identificación fiscal del tenant
+
+  backgroundColorNavbar: string;
+  textColorNavbar: string;
+  logoNavbar: string;
+  showNotifications: boolean;
+  showProfile: boolean;
   
   // Configuración inicial
   primaryColor?: string;
@@ -206,6 +217,13 @@ export interface CreateTenantRequest {
   timezone?: string;
   language?: string;
   currency?: string;
+
+  homeSettings?: ViewConfiguration;
+  videoCallSettings?: ViewConfiguration;
+  metricsSettings?: ViewConfiguration;
+  groupsSettings?: ViewConfiguration;
+  sectionsSettings?: ViewConfiguration;
+  faqSettings?: ViewConfiguration;
 }
 
 export interface TenantListResponse {
@@ -229,6 +247,21 @@ export interface TenantFormData {
   expiresAt: string;
   status: boolean;
   features: string[];
+  url_portal: string;
+  nit: string;
+
+  adminFirstName: string,
+  adminLastName: string,
+  adminEmail: string,
+  adminPassword: string,
+
+  backgroundColorNavbar: string;
+  textColorNavbar: string;
+  logoNavbar: string;
+
+  showSearch: boolean;
+  showNotifications: boolean;
+  showProfile: boolean;
   
   // Información de contacto
   contactPerson: string;
@@ -244,6 +277,14 @@ export interface TenantFormData {
   timezone: string;
   language: string;
   currency: string;
+}
+
+export interface ViewConfiguration {
+  type: string;
+  customBackground: boolean;
+  backgroundType: 'imagen' | 'color';
+  backgroundImage: string;
+  backgroundColor: string;
 }
 
 export interface TenantValidationError {

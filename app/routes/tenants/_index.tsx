@@ -18,6 +18,7 @@ import {
   TenantErrorResponse
 } from "~/api/types/tenant.types";
 import { TenantsAPI } from "~/api/endpoints/tenants";
+import GeneralButton from "~/components/ui/GeneralButton";
 
 interface LoaderData {
   tenants: TenantListResponse;
@@ -265,258 +266,306 @@ export default function TenantsIndex() {
 
   if (error) {
     return (
-      <div className="text-center py-12">
-        <AlertCircle className="mx-auto h-12 w-12 text-red-400 mb-4" />
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Error</h1>
-        <p className="text-gray-600">{error}</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center p-4">
+        <div className="text-center bg-white p-8 rounded-2xl shadow-xl max-w-md mx-auto">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="h-8 w-8 text-red-500" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Error</h1>
+          <p className="text-gray-600">{error}</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Mensajes de estado */}
-      {actionData?.errors && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-center">
-          <AlertCircle className="h-5 w-5 mr-2" />
-          {actionData.generalError || 'Ocurrió un error al procesar la acción'}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+              Gestión de Tenants
+            </h1>
+            {/* <p className="text-gray-600 mt-1">Administra todos tus tenants desde un solo lugar</p> */}
+          </div>
+          <Link
+            to="/tenants/create"
+            className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
+          >
+            <Plus className="h-5 w-5" />
+            <span className="font-medium">Nuevo Tenant</span>
+          </Link>
         </div>
-      )}
 
-      {actionData?.success && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md">
-          {actionData.action === 'toggle-active' && 'Estado del tenant actualizado exitosamente'}
-          {actionData.action === 'delete' && 'Tenant eliminado exitosamente'}
-          {actionData.action === 'bulk-delete' && 'Tenants eliminados exitosamente'}
-        </div>
-      )}
-
-      {/* Panel de estadísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <Building2 className="h-8 w-8 text-blue-600" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-gray-600">Total Tenants</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.totalTenants}</p>
+        {/* Mensajes de estado */}
+        {actionData?.errors && (
+          <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-r-xl shadow-sm">
+            <div className="flex items-center">
+              <AlertCircle className="h-5 w-5 text-red-400 mr-3" />
+              <span className="text-red-700 font-medium">
+                {actionData.generalError || 'Ocurrió un error al procesar la acción'}
+              </span>
             </div>
           </div>
-        </div>
+        )}
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <TrendingUp className="h-8 w-8 text-green-600" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-gray-600">Tenants Activos</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.activeTenants}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <Users className="h-8 w-8 text-purple-600" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-gray-600">Total Usuarios</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.totalUsers}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <TrendingUp className="h-8 w-8 text-yellow-600" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-gray-600">Ingresos Totales</p>
-              <p className="text-2xl font-semibold text-gray-900">${stats.totalRevenue.toLocaleString()}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Controles y filtros */}
-      <div className="bg-white rounded-lg shadow-sm border p-6">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-          {/* Búsqueda y filtros */}
-          <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
-            <Form onSubmit={handleSearch} className="flex">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Buscar tenants..."
-                  value={localSearch}
-                  onChange={(e) => setLocalSearch(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
+        {actionData?.success && (
+          <div className="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-xl shadow-sm">
+            <div className="flex items-center">
+              <div className="w-5 h-5 bg-green-400 rounded-full flex items-center justify-center mr-3">
+                <div className="w-2 h-2 bg-white rounded-full"></div>
               </div>
-            </Form>
+              <span className="text-green-700 font-medium">
+                {actionData.action === 'toggle-active' && 'Estado del tenant actualizado exitosamente'}
+                {actionData.action === 'delete' && 'Tenant eliminado exitosamente'}
+                {actionData.action === 'bulk-delete' && 'Tenants eliminados exitosamente'}
+              </span>
+            </div>
+          </div>
+        )}
 
-            <select
-              value={searchParams.get('status') || ''}
-              onChange={(e) => handleFilterChange('status', e.target.value)}
-              className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">Todos los estados</option>
-              <option value={SubscriptionStatus.ACTIVE}>Activo</option>
-              <option value={SubscriptionStatus.TRIAL}>Trial</option>
-              <option value={SubscriptionStatus.EXPIRED}>Expirado</option>
-              <option value={SubscriptionStatus.SUSPENDED}>Suspendido</option>
-            </select>
-
-            <select
-              value={searchParams.get('active') || ''}
-              onChange={(e) => handleFilterChange('active', e.target.value)}
-              className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">Todos</option>
-              <option value="true">Activos</option>
-              <option value="false">Inactivos</option>
-            </select>
+        {/* Panel de estadísticas */}
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 backdrop-blur-sm bg-white/80 group">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 mb-1">Total Tenants</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalTenants}</p>
+                <div className="flex items-center mt-2">
+                  <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
+                  <span className="text-sm text-green-600 font-medium">+12%</span>
+                  <span className="text-xs text-gray-500 ml-1">vs mes anterior</span>
+                </div>
+              </div>
+              <div className="p-3 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 group-hover:scale-110 transition-transform duration-200">
+                <Building2 className="h-8 w-8 text-blue-600" />
+              </div>
+            </div>
           </div>
 
-          {/* Acciones */}
-          <div className="flex items-center space-x-3">
-            {selectedTenants.length > 0 && (
-              <Form method="post" className="inline">
-                <input type="hidden" name="_action" value="bulk-delete" />
-                {selectedTenants.map(id => (
-                  <input key={id} type="hidden" name="selectedTenants" value={id} />
-                ))}
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  <span>Eliminar ({selectedTenants.length})</span>
-                </button>
-              </Form>
-            )}
+          <div className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 backdrop-blur-sm bg-white/80 group">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 mb-1">Tenants Activos</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.activeTenants}</p>
+                <div className="flex items-center mt-2">
+                  <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
+                  <span className="text-sm text-green-600 font-medium">+8%</span>
+                  <span className="text-xs text-gray-500 ml-1">vs mes anterior</span>
+                </div>
+              </div>
+              <div className="p-3 rounded-xl bg-gradient-to-br from-green-50 to-green-100 group-hover:scale-110 transition-transform duration-200">
+                <TrendingUp className="h-8 w-8 text-green-600" />
+              </div>
+            </div>
+          </div>
 
-            <button className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50">
-              <Download className="h-4 w-4" />
-              <span>Exportar</span>
-            </button>
+          <div className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 backdrop-blur-sm bg-white/80 group">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 mb-1">Total Usuarios</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalUsers}</p>
+                <div className="flex items-center mt-2">
+                  <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
+                  <span className="text-sm text-green-600 font-medium">+15%</span>
+                  <span className="text-xs text-gray-500 ml-1">vs mes anterior</span>
+                </div>
+              </div>
+              <div className="p-3 rounded-xl bg-gradient-to-br from-purple-50 to-purple-100 group-hover:scale-110 transition-transform duration-200">
+                <Users className="h-8 w-8 text-purple-600" />
+              </div>
+            </div>
+          </div>
 
-            <Link
-              to="/tenants/create"
-              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
-              <Plus className="h-4 w-4" />
-              <span>Nuevo Tenant</span>
-            </Link>
+          <div className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 backdrop-blur-sm bg-white/80 group">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 mb-1">Ingresos Totales</p>
+                <p className="text-2xl font-bold text-gray-900">${stats.totalRevenue.toLocaleString()}</p>
+                <div className="flex items-center mt-2">
+                  <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
+                  <span className="text-sm text-green-600 font-medium">+23%</span>
+                  <span className="text-xs text-gray-500 ml-1">vs mes anterior</span>
+                </div>
+              </div>
+              <div className="p-3 rounded-xl bg-gradient-to-br from-yellow-50 to-yellow-100 group-hover:scale-110 transition-transform duration-200">
+                <TrendingUp className="h-8 w-8 text-yellow-600" />
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Tabla de tenants */}
-      <div className="bg-white shadow-sm border rounded-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left">
+        {/* Controles y filtros */}
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 backdrop-blur-sm bg-white/80">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+            {/* Búsqueda y filtros */}
+            <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
+              <Form onSubmit={handleSearch} className="flex">
+                <div className="relative">
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <input
-                    type="checkbox"
-                    checked={selectedTenants.length === tenants.data.length && tenants.data.length > 0}
-                    onChange={handleSelectAll}
-                    className="h-4 w-4 text-blue-600 rounded border-gray-300"
+                    type="text"
+                    placeholder="Buscar tenants..."
+                    value={localSearch}
+                    onChange={(e) => setLocalSearch(e.target.value)}
+                    className="pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-all duration-200 w-80"
                   />
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tenant
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Usuarios
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Almacenamiento
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Creado
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {tenants.data.map((tenant) => (
-                <TenantRow
-                  key={tenant.id}
-                  tenant={tenant}
-                  isSelected={selectedTenants.includes(tenant.id)}
-                  onSelect={() => handleSelectTenant(tenant.id)}
-                  isSubmitting={isSubmitting}
-                />
-              ))}
-            </tbody>
-          </table>
+                </div>
+              </Form>
+
+              <select
+                value={searchParams.get('status') || ''}
+                onChange={(e) => handleFilterChange('status', e.target.value)}
+                className="border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
+              >
+                <option value="">Todos los estados</option>
+                <option value={SubscriptionStatus.ACTIVE}>Activo</option>
+                <option value={SubscriptionStatus.TRIAL}>Trial</option>
+                <option value={SubscriptionStatus.EXPIRED}>Expirado</option>
+                <option value={SubscriptionStatus.SUSPENDED}>Suspendido</option>
+              </select>
+
+              <select
+                value={searchParams.get('active') || ''}
+                onChange={(e) => handleFilterChange('active', e.target.value)}
+                className="border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
+              >
+                <option value="">Todos</option>
+                <option value="true">Activos</option>
+                <option value="false">Inactivos</option>
+              </select>
+            </div>
+
+            {/* Acciones */}
+            <div className="flex items-center space-x-3">
+              {selectedTenants.length > 0 && (
+                <Form method="post" className="inline">
+                  <input type="hidden" name="_action" value="bulk-delete" />
+                  {selectedTenants.map(id => (
+                    <input key={id} type="hidden" name="selectedTenants" value={id} />
+                  ))}
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 disabled:opacity-50 transition-colors"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span>Eliminar ({selectedTenants.length})</span>
+                  </button>
+                </Form>
+              )}
+
+              <GeneralButton icon={Download}>
+                Exportar
+              </GeneralButton>
+            </div>
+          </div>
         </div>
 
-        {tenants.data.length === 0 && (
-          <div className="text-center py-12">
-            <Building2 className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No se encontraron tenants</h3>
-            <p className="text-gray-600 mb-6">
-              {searchParams.toString() 
-                ? 'Intenta ajustar los filtros de búsqueda'
-                : 'Aún no hay tenants creados'
-              }
-            </p>
-            <Link
-              to="/tenants/create"
-              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Crear primer tenant
-            </Link>
+        {/* Tabla de tenants */}
+        <div className="bg-white shadow-lg border border-gray-100 rounded-2xl overflow-hidden backdrop-blur-sm bg-white/80">
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+                <tr>
+                  <th className="px-6 py-4 text-left">
+                    <input
+                      type="checkbox"
+                      checked={selectedTenants.length === tenants.data.length && tenants.data.length > 0}
+                      onChange={handleSelectAll}
+                      className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                    />
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Tenant
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Usuarios
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Almacenamiento
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Creado
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Acciones
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {tenants.data.map((tenant) => (
+                  <TenantRow
+                    key={tenant.id}
+                    tenant={tenant}
+                    isSelected={selectedTenants.includes(tenant.id)}
+                    onSelect={() => handleSelectTenant(tenant.id)}
+                    isSubmitting={isSubmitting}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {tenants.data.length === 0 && (
+            <div className="text-center py-16">
+              <div className="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Building2 className="h-12 w-12 text-gray-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No se encontraron tenants</h3>
+              <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                {searchParams.toString() 
+                  ? 'Intenta ajustar los filtros de búsqueda'
+                  : 'Aún no hay tenants creados'
+                }
+              </p>
+              <Link
+                to="/tenants/create"
+                className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transform hover:scale-105 transition-all duration-200 shadow-lg"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Crear primer tenant
+              </Link>
+            </div>
+          )}
+        </div>
+
+        {/* Paginación */}
+        {tenants.total > tenants.limit && (
+          <div className="flex justify-center">
+            <nav className="flex items-center space-x-2">
+              <button
+                disabled={tenants.page <= 1}
+                className="px-4 py-2 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+              >
+                Anterior
+              </button>
+              
+              {Array.from({ length: Math.ceil(tenants.total / tenants.limit) }, (_, i) => i + 1).map(page => (
+                <button
+                  key={page}
+                  className={`px-4 py-2 text-sm rounded-lg transition-colors ${
+                    page === tenants.page
+                      ? 'bg-blue-600 text-white shadow-lg'
+                      : 'border border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+              
+              <button
+                disabled={tenants.page >= Math.ceil(tenants.total / tenants.limit)}
+                className="px-4 py-2 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+              >
+                Siguiente
+              </button>
+            </nav>
           </div>
         )}
       </div>
-
-      {/* Paginación */}
-      {tenants.total > tenants.limit && (
-        <div className="flex justify-center">
-          <nav className="flex items-center space-x-2">
-            <button
-              disabled={tenants.page <= 1}
-              className="px-3 py-2 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-            >
-              Anterior
-            </button>
-            
-            {Array.from({ length: Math.ceil(tenants.total / tenants.limit) }, (_, i) => i + 1).map(page => (
-              <button
-                key={page}
-                className={`px-3 py-2 text-sm rounded-md ${
-                  page === tenants.page
-                    ? 'bg-blue-600 text-white'
-                    : 'border border-gray-300 hover:bg-gray-50'
-                }`}
-              >
-                {page}
-              </button>
-            ))}
-            
-            <button
-              disabled={tenants.page >= Math.ceil(tenants.total / tenants.limit)}
-              className="px-3 py-2 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-            >
-              Siguiente
-            </button>
-          </nav>
-        </div>
-      )}
     </div>
   );
 }
@@ -536,15 +585,15 @@ function TenantRow({
   const getPlanColor = (plan: TenantPlan) => {
     switch (plan) {
       case TenantPlan.FREE:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 text-gray-700 border-gray-200';
       case TenantPlan.STARTER:
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-100 text-blue-700 border-blue-200';
       case TenantPlan.PRO:
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-purple-100 text-purple-700 border-purple-200';
       case TenantPlan.ENTERPRISE:
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-100 text-green-700 border-green-200';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 text-gray-700 border-gray-200';
     }
   };
 
@@ -574,29 +623,29 @@ function TenantRow({
   const storagePercentage = (tenant.storageUsed / tenant.storageLimit) * 100;
 
   return (
-    <tr className={isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'}>
+    <tr className={`hover:bg-gray-50 transition-colors duration-150 ${isSelected ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''}`}>
       <td className="px-6 py-4">
         <input
           type="checkbox"
           checked={isSelected}
           onChange={onSelect}
-          className="h-4 w-4 text-blue-600 rounded border-gray-300"
+          className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
         />
       </td>
 
       <td className="px-6 py-4">
         <div>
           <div className="flex items-center">
-            <div className="flex-shrink-0 h-10 w-10">
-              <div className="h-10 w-10 rounded-lg bg-blue-500 flex items-center justify-center">
-                <Building2 className="h-5 w-5 text-white" />
+            <div className="flex-shrink-0 h-12 w-12">
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg">
+                <Building2 className="h-6 w-6 text-white" />
               </div>
             </div>
             <div className="ml-4">
-              <div className="text-sm font-medium text-gray-900">
+              <div className="text-sm font-semibold text-gray-900">
                 <Link 
                   to={`/tenants/${tenant.id}`}
-                  className="hover:text-blue-600"
+                  className="hover:text-blue-600 transition-colors"
                 >
                   {tenant.name}
                 </Link>
@@ -605,6 +654,11 @@ function TenantRow({
               <div className="flex items-center text-xs text-gray-400 mt-1">
                 <Globe className="h-3 w-3 mr-1" />
                 {tenant.domain}
+              </div>
+              <div className="mt-2">
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getPlanColor(tenant.plan)}`}>
+                  {tenant.plan}
+                </span>
               </div>
             </div>
           </div>
@@ -616,7 +670,25 @@ function TenantRow({
           <div className="font-medium">
             {tenant.config?.currentUsers ?? 0} / {tenant.config?.maxUsers ?? 0}
           </div>
-          <div className="text-gray-500 text-xs">
+          <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+            <div 
+              className={`h-2 rounded-full transition-all duration-300 ${
+                tenant.config?.maxUsers
+                  ? Math.round((tenant.config.currentUsers / tenant.config.maxUsers) * 100) > 80 
+                    ? 'bg-red-500' 
+                    : Math.round((tenant.config.currentUsers / tenant.config.maxUsers) * 100) > 60 
+                    ? 'bg-yellow-500' 
+                    : 'bg-green-500'
+                  : 'bg-green-500'
+              }`}
+              style={{ 
+                width: `${tenant.config?.maxUsers 
+                  ? Math.min((tenant.config.currentUsers / tenant.config.maxUsers) * 100, 100) 
+                  : 0}%` 
+              }}
+            />
+          </div>
+          <div className="text-xs text-gray-500 mt-1">
             {tenant.config?.maxUsers
               ? Math.round((tenant.config.currentUsers / tenant.config.maxUsers) * 100)
               : 0
@@ -627,35 +699,41 @@ function TenantRow({
 
       <td className="px-6 py-4 text-sm text-gray-900">
         <div>
-          <div className="font-medium">{tenant.config?.storageUsed} / {tenant.config?.storageLimit} GB</div>
-          <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+          <div className="font-medium">{tenant.config?.storageUsed}GB / {tenant.config?.storageLimit}GB</div>
+          <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
             <div 
-              className={`h-1.5 rounded-full ${storagePercentage > 80 ? 'bg-red-500' : storagePercentage > 60 ? 'bg-yellow-500' : 'bg-green-500'}`}
+              className={`h-2 rounded-full transition-all duration-300 ${
+                storagePercentage > 80 ? 'bg-red-500' : 
+                storagePercentage > 60 ? 'bg-yellow-500' : 'bg-green-500'
+              }`}
               style={{ width: `${Math.min(storagePercentage, 100)}%` }}
-            ></div>
+            />
+          </div>
+          <div className="text-xs text-gray-500 mt-1">
+            {Math.round(storagePercentage)}% usado
           </div>
         </div>
       </td>
 
       <td className="px-6 py-4 text-sm text-gray-500">
         <div className="flex items-center">
-          <Calendar className="h-4 w-4 mr-1" />
+          <Calendar className="h-4 w-4 mr-2 text-gray-400" />
           {formatDate(tenant.createdAt)}
         </div>
       </td>
 
       <td className="px-6 py-4 text-sm font-medium">
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-3">
           <Link
             to={`/tenants/${tenant.id}`}
-            className="text-blue-600 hover:text-blue-900"
+            className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
           >
             <Eye className="h-4 w-4" />
           </Link>
           
           <Link
             to={`/tenants/${tenant.id}/edit`}
-            className="text-gray-600 hover:text-gray-900"
+            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <Edit className="h-4 w-4" />
           </Link>
@@ -686,7 +764,7 @@ function TenantRow({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="text-red-600 hover:text-red-900 disabled:opacity-50"
+              className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors disabled:opacity-50"
             >
               <Trash2 className="h-4 w-4" />
             </button>

@@ -378,22 +378,22 @@ export const validateTenantForm = (formData: TenantFormData): TenantValidationRe
     errors.push({ field: 'address', message: TenantValidationRules.address.minLength });
   }
 
-  if (!formData.city?.trim()) {
-    errors.push({ field: 'city', message: TenantValidationRules.city.required });
-  } else if (formData.city.trim().length < 2) {
-    errors.push({ field: 'city', message: TenantValidationRules.city.minLength });
-  }
+  // if (!formData.city?.trim()) {
+  //   errors.push({ field: 'city', message: TenantValidationRules.city.required });
+  // } else if (formData.city.trim().length < 2) {
+  //   errors.push({ field: 'city', message: TenantValidationRules.city.minLength });
+  // }
 
-  if (!formData.country?.trim()) {
-    errors.push({ field: 'country', message: TenantValidationRules.country.required });
-  } else if (formData.country.trim().length < 2) {
-    errors.push({ field: 'country', message: TenantValidationRules.country.minLength });
-  }
+  // if (!formData.country?.trim()) {
+  //   errors.push({ field: 'country', message: TenantValidationRules.country.required });
+  // } else if (formData.country.trim().length < 2) {
+  //   errors.push({ field: 'country', message: TenantValidationRules.country.minLength });
+  // }
 
-  const postalCodeError = validatePostalCode(formData.postalCode, formData.country);
-  if (postalCodeError) {
-    errors.push({ field: 'postalCode', message: postalCodeError });
-  }
+  // const postalCodeError = validatePostalCode(formData.postalCode, formData.country);
+  // if (postalCodeError) {
+  //   errors.push({ field: 'postalCode', message: postalCodeError });
+  // }
 
   // Validar colores (opcionales)
   if (formData.primaryColor) {
@@ -430,6 +430,13 @@ export const validateTenantFormData = (formData: FormData): TenantValidationResu
     expiresAt: formData.get('expiresAt') as string || '',
     features: formData.getAll('features') as string[],
     status: formData.get('status') === 'on',
+
+    adminFirstName: formData.get('adminFirstName') as string || '',
+    adminLastName: formData.get('adminLastName') as string || '',
+    adminPassword: formData.get('adminPassword') as string || '',
+    adminEmail: formData.get('adminEmail') as string || '',
+    url_portal: formData.get('url_portal') as string || '',
+    nit: formData.get('nit') as string || '',
     
     contactPerson: formData.get('contactPerson') as string || '',
     phone: formData.get('phone') as string || '',

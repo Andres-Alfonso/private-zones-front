@@ -15,13 +15,32 @@ import { TenantsAPI } from '~/api/endpoints/tenants';
 import Input from '~/components/ui/Input';
 import Checkbox from '~/components/ui/Checkbox';
 import { validateTenantFormData, generateSlugFromName, validateSlug } from '~/utils/tenantValidation';
-import NavbarCustomizer from '~/components/NavbarCustomizer';
+import NavbarCustomizer from '~/components/tenant/NavbarCustomizer';
+
+import { 
+    HomeViewCustomizer,
+    VideoCallViewCustomizer,
+    MetricsViewCustomizer,
+    GroupsViewCustomizer,
+    SectionsViewCustomizer,
+    FAQViewCustomizer 
+} from '~/components/tenant/viewCustomizers';
 
 interface ActionData {
-  errors?: Record<string, string>; // Cambiar a objeto de errores
+  errors?: Record<string, string>;
   generalError?: string;
   success?: boolean;
   tenantId?: string;
+}
+
+// Interfaz para configuraciones de vista
+interface ViewSettings {
+  type?: string,
+  customBackground?: boolean;
+  backgroundType?: 'imagen' | 'color';
+  backgroundImage?: string;
+  backgroundColor?: string;
+  backgroundImageFile?: File;
 }
 
 export const action: ActionFunction = async ({ request }) => {
@@ -31,7 +50,6 @@ export const action: ActionFunction = async ({ request }) => {
   const validation = validateTenantFormData(formData);
   
   if (!validation.isValid) {
-    // Convertir array de errores a objeto para facilitar el uso en el cliente
     const errorObject: Record<string, string> = {};
     validation.errors.forEach(error => {
       errorObject[error.field] = error.message;
@@ -51,6 +69,11 @@ export const action: ActionFunction = async ({ request }) => {
       plan: formData.get('plan') as TenantPlan,
       maxUsers: Number(formData.get('maxUsers')),
       storageLimit: Number(formData.get('storageLimit')),
+
+      adminFirstName: formData.get('adminFirstName') as string,
+      adminLastName: formData.get('adminFirstName') as string,
+      adminEmail: formData.get('adminFirstName') as string,
+      adminPassword: formData.get('adminFirstName') as string,
       
       // Información de contacto
       contactPerson: formData.get('contactPerson') as string,
@@ -64,7 +87,7 @@ export const action: ActionFunction = async ({ request }) => {
       backgroundColorNavbar: formData.get('primaryColor') as string || '#0052cc',
       textColorNavbar: formData.get('secondaryColor') as string || '#ffffff',
       logoNavbar: formData.get('logo') as string || 'Mi App',
-      showSearch: formData.get('showSearch') === 'on',
+      // showSearch: formData.get('showSearch') === 'on',
       showNotifications: formData.get('showNotifications') === 'on',
       showProfile: formData.get('showProfile') === 'on',
       
@@ -73,15 +96,57 @@ export const action: ActionFunction = async ({ request }) => {
       secondaryColor: formData.get('secondaryColor') as string || '#ffffff',
       timezone: formData.get('timezone') as string || 'America/Bogota',
       language: formData.get('language') as string || 'es',
+
+      // Configuraciones de vistas
+      homeSettings: {
+        type: 'home',
+        customBackground: formData.get('homeCustomBackground') === 'true',
+        backgroundType: formData.get('homeBackgroundType') as 'imagen' | 'color' || 'color',
+        backgroundImage: formData.get('homeBackgroundImage') as string || '',
+        backgroundColor: formData.get('homeBackgroundColor') as string || '#eff4ff',
+      },
+      videoCallSettings: {
+        type: 'videocalls',
+        customBackground: formData.get('videoCallCustomBackground') === 'true',
+        backgroundType: formData.get('videoCallBackgroundType') as 'imagen' | 'color' || 'color',
+        backgroundImage: formData.get('videoCallBackgroundImage') as string || '',
+        backgroundColor: formData.get('videoCallBackgroundColor') as string || '#eff4ff',
+      },
+      metricsSettings: {
+        type: 'metrics',
+        customBackground: formData.get('metricsCustomBackground') === 'true',
+        backgroundType: formData.get('metricsBackgroundType') as 'imagen' | 'color' || 'color',
+        backgroundImage: formData.get('metricsBackgroundImage') as string || '',
+        backgroundColor: formData.get('metricsBackgroundColor') as string || '#eff4ff',
+      },
+      groupsSettings:{
+        type: 'courses',
+        customBackground: formData.get('metricsCustomBackground') === 'true',
+        backgroundType: formData.get('metricsBackgroundType') as 'imagen' | 'color' || 'color',
+        backgroundImage: formData.get('metricsBackgroundImage') as string || '',
+        backgroundColor: formData.get('metricsBackgroundColor') as string || '#eff4ff',
+      },
+      sectionsSettings: {
+        type: 'sections',
+        customBackground: formData.get('metricsCustomBackground') === 'true',
+        backgroundType: formData.get('metricsBackgroundType') as 'imagen' | 'color' || 'color',
+        backgroundImage: formData.get('metricsBackgroundImage') as string || '',
+        backgroundColor: formData.get('metricsBackgroundColor') as string || '#eff4ff',
+      },
+      faqSettings: {
+        type: 'frequentlyask',
+        customBackground: formData.get('metricsCustomBackground') === 'true',
+        backgroundType: formData.get('metricsBackgroundType') as 'imagen' | 'color' || 'color',
+        backgroundImage: formData.get('metricsBackgroundImage') as string || '',
+        backgroundColor: formData.get('metricsBackgroundColor') as string || '#eff4ff',
+      }
     };
 
     const tenantResult = await TenantsAPI.create(tenantData);
 
     console.log('Tenant creation result:', tenantResult);
     
-    // Verificar si es un error
     if ('error' in tenantResult) {
-      // Manejar errores específicos del backend
       const errorMessage = getSpecificErrorMessage(tenantResult);
       const fieldErrors = getFieldErrors(tenantResult);
       
@@ -92,7 +157,6 @@ export const action: ActionFunction = async ({ request }) => {
       });
     }
 
-    // Es un Tenant exitoso
     return json<ActionData>({ 
       success: true,
       tenantId: tenantResult.id
@@ -159,6 +223,129 @@ export default function CreateTenant() {
   const actionData = useActionData<ActionData>();
   const navigation = useNavigation();
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('home');
+    
+  // Estado separado para cada vista con tipado correcto
+  const [homeSettings, setHomeSettings] = useState<ViewSettings>({
+    type: 'home',
+    customBackground: false,
+    backgroundType: 'color',
+    backgroundImage: '',
+    backgroundColor: '#eff4ff',
+  });
+  
+  const [videoCallSettings, setVideoCallSettings] = useState<ViewSettings>({
+    type: 'videocalls',
+    customBackground: false,
+    backgroundType: 'color',
+    backgroundImage: '',
+    backgroundColor: '#eff4ff',
+  });
+  
+  const [metricsSettings, setMetricsSettings] = useState<ViewSettings>({
+    type: 'metrics',
+    customBackground: false,
+    backgroundType: 'color',
+    backgroundImage: '',
+    backgroundColor: '#eff4ff',
+  });
+
+  const [groupsSettings, setGroupsSettings] = useState<ViewSettings>({
+    type: 'courses',
+    customBackground: false,
+    backgroundType: 'color',
+    backgroundImage: '',
+    backgroundColor: '#eff4ff',
+  });
+
+  const [sectionsSettings, setSectionsSettings] = useState<ViewSettings>({
+    type: 'sections',
+    customBackground: false,
+    backgroundType: 'color',
+    backgroundImage: '',
+    backgroundColor: '#eff4ff',
+  });
+
+  const [faqSettings, setFaqSettings] = useState<ViewSettings>({
+    type: 'frequentlyask',
+    customBackground: false,
+    backgroundType: 'color',
+    backgroundImage: '',
+    backgroundColor: '#eff4ff',
+  });
+
+  // Handlers individuales mejorados
+  const handleHomeChange = (field: string, value: string | boolean | File) => {
+    setHomeSettings(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleVideoCallChange = (field: string, value: string | boolean | File) => {
+    setVideoCallSettings(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleMetricsChange = (field: string, value: string | boolean | File) => {
+    setMetricsSettings(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleGroupsChange = (field: string, value: string | boolean | File) => {
+    setGroupsSettings(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSectionsChange = (field: string, value: string | boolean | File) => {
+    setSectionsSettings(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleFaqChange = (field: string, value: string | boolean | File) => {
+    setFaqSettings(prev => ({ ...prev, [field]: value }));
+  };
+
+  const tabs = [
+    { 
+      id: 'home', 
+      label: 'Home', 
+      component: HomeViewCustomizer, 
+      handler: handleHomeChange,
+      settings: homeSettings 
+    },
+    { 
+      id: 'videoCall', 
+      label: 'Video Llamadas', 
+      component: VideoCallViewCustomizer, 
+      handler: handleVideoCallChange,
+      settings: videoCallSettings 
+    },
+    { 
+      id: 'metrics', 
+      label: 'Métricas', 
+      component: MetricsViewCustomizer, 
+      handler: handleMetricsChange,
+      settings: metricsSettings 
+    },
+    { 
+      id: 'groups', 
+      label: 'Grupos', 
+      component: GroupsViewCustomizer, 
+      handler: handleGroupsChange,
+      settings: groupsSettings 
+    },
+    { 
+      id: 'Secciones', 
+      label: 'Secciones', 
+      component: SectionsViewCustomizer, 
+      handler: handleSectionsChange,
+      settings: sectionsSettings 
+    },
+    { 
+      id: 'faq', 
+      label: 'Preguntas Frecuentes', 
+      component: FAQViewCustomizer, 
+      handler: handleFaqChange,
+      settings: faqSettings 
+    },
+  ];
+
+  const currentTab = tabs.find(tab => tab.id === activeTab);
+  const CurrentComponent = currentTab?.component;
 
   const [formData, setFormData] = useState<Partial<TenantFormData>>({
     name: '',
@@ -166,11 +353,16 @@ export default function CreateTenant() {
     domain: '',
     contactEmail: '',
     plan: TenantPlan.FREE,
-    maxUsers: '',
-    storageLimit: '',
+    maxUsers: '5000',
+    storageLimit: '150',
     billingEmail: '',
     expiresAt: '',
     features: [],
+
+    adminFirstName: '',
+    adminLastName: '',
+    adminEmail: '',
+    adminPassword: '',
     
     contactPerson: '',
     phone: '',
@@ -183,7 +375,7 @@ export default function CreateTenant() {
 
     backgroundColorNavbar: '#0052cc',
     textColorNavbar: '#ffffff',
-    logoNavbar: 'Mi App',
+    logoNavbar: 'K&LM',
     showSearch: true,
     showNotifications: true,
     showProfile: true,
@@ -508,6 +700,72 @@ export default function CreateTenant() {
           </div>
         </div>
 
+        {/* Creacion usuario administrador */}
+        <div className='bg-white shadow rounded-lg'>
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center space-x-3">
+              <User className="h-5 w-5 text-blue-600" />
+              <h2 className="text-lg font-medium text-gray-900">Creación de Usuario Administrador</h2>
+            </div>
+          </div>
+          
+          <div className="px-6 py-6 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Input
+                type="text"
+                id="adminFirstName"
+                name="adminFirstName"
+                label="Nombre"
+                required
+                error={getErrorByField('adminFirstName')}
+                disabled={isSubmitting}
+                placeholder="Administrador"
+                value={formData.adminFirstName || 'Administrador'}
+                onChange={(e) => handleChange('adminFirstName', e.target.value)}
+              />
+
+              <Input
+                type="text"
+                id="adminLastName"
+                name="adminLastName"
+                label="Apellido"
+                required
+                error={getErrorByField('adminLastName')}
+                disabled={isSubmitting}
+                placeholder="Zona"
+                value={formData.adminLastName || 'Zona'}
+                onChange={(e) => handleChange('adminLastName', e.target.value)}
+              />
+            </div>
+
+            <Input
+              type="email"
+              id="adminEmail"
+              name="adminEmail"
+              label="Email"
+              required
+              error={getErrorByField('adminEmail')}
+              disabled={isSubmitting}
+              placeholder="adminzone@klmsystem.com"
+              value={formData.adminEmail || 'adminzone@klmsystem.com'}
+              onChange={(e) => handleChange('adminEmail', e.target.value)}
+            />
+
+            <Input
+              type="password"
+              id="adminPassword"
+              name="adminPassword"
+              label="Contraseña"
+              required
+              error={getErrorByField('adminPassword')}
+              disabled={isSubmitting}
+              placeholder="••••••••••••"
+              value={formData.adminPassword || 'adminZone123@'}
+              onChange={(e) => handleChange('adminPassword', e.target.value)}
+            />
+          </div>
+        </div>
+
         {/* Información de contacto */}
         <div className="bg-white shadow rounded-lg">
           <div className="px-6 py-4 border-b border-gray-200">
@@ -560,7 +818,6 @@ export default function CreateTenant() {
             />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
               <Input
                 type="text"
                 id="url_portal"
@@ -587,56 +844,6 @@ export default function CreateTenant() {
                 onChange={(e) => handleChange('nit', e.target.value)}
               />
             </div>
-
-            {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Input
-                type="text"
-                id="city"
-                name="city"
-                label="Ciudad"
-                required
-                error={getErrorByField('city')}
-                disabled={isSubmitting}
-                placeholder="Bogotá"
-                value={formData.city}
-                onChange={(e) => handleChange('city', e.target.value)}
-              />
-
-              <div>
-                <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-2">
-                  País *
-                </label>
-                <select
-                  id="country"
-                  name="country"
-                  required
-                  disabled={isSubmitting}
-                  value={formData.country}
-                  onChange={(e) => handleChange('country', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="">Seleccionar país</option>
-                  {countries.map(country => (
-                    <option key={country} value={country}>{country}</option>
-                  ))}
-                </select>
-                {getErrorByField('country') && (
-                  <p className="mt-1 text-sm text-red-600">{getErrorByField('country')}</p>
-                )}
-              </div>
-
-              <Input
-                type="text"
-                id="postalCode"
-                name="postalCode"
-                label="Código Postal"
-                error={getErrorByField('postalCode')}
-                disabled={isSubmitting}
-                placeholder="11001"
-                value={formData.postalCode}
-                onChange={(e) => handleChange('postalCode', e.target.value)}
-              />
-            </div> */}
           </div>
         </div>
 
@@ -727,7 +934,6 @@ export default function CreateTenant() {
           </div>
         </div>
 
-
         <div className="bg-white shadow rounded-lg">
           <div className="px-6 py-4 border-b border-gray-200">
             <div className="flex items-center space-x-3">
@@ -737,23 +943,62 @@ export default function CreateTenant() {
           </div>
 
           <NavbarCustomizer
-            // Pasar los valores actuales del formulario
             backgroundColor={formData.backgroundColorNavbar || '#0052cc'}
             textColor={formData.textColorNavbar || '#ffffff'}
             logo={formData.logoNavbar || 'Mi App'}
             showSearch={formData.showSearch || true}
             showNotifications={formData.showNotifications || true}
             showProfile={formData.showProfile || true}
-            
-            // Callback para manejar cambios
             onChange={handleChange}
-            
-            // Estado de carga
             isSubmitting={isSubmitting}
-            
-            // Errores de validación
             errors={allErrors}
           />
+        </div>
+
+        <div className="bg-white shadow rounded-lg">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-gray-200">
+                <div className="flex items-center space-x-3">
+                    <Palette className="h-5 w-5 text-blue-600" />
+                    <h2 className="text-lg font-medium text-gray-900">Personalizador de vistas</h2>
+                </div>
+            </div>
+
+            {/* Tabs */}
+            <div className="border-b border-gray-200">
+                <div className="flex overflow-x-auto px-6">
+                    {tabs.map((tab) => (
+                        <button
+                            key={tab.id}
+                            type="button"
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`whitespace-nowrap py-3 px-4 text-sm font-medium border-b-2 transition-colors ${
+                                activeTab === tab.id
+                                    ? 'border-blue-500 text-blue-600'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                            }`}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* Contenido del tab activo */}
+            <div className="p-0">
+                {CurrentComponent && currentTab && (
+                    <CurrentComponent
+                        onChange={currentTab.handler}
+                        isSubmitting={isSubmitting}
+                        errors={allErrors}
+                        settings={currentTab.settings}
+                        initialCustomBackground={currentTab.settings.customBackground}
+                        initialBackgroundType={currentTab.settings.backgroundType}
+                        initialBackgroundImage={currentTab.settings.backgroundImage}
+                        initialBackgroundColor={currentTab.settings.backgroundColor}
+                    />
+                )}
+            </div>
         </div>
 
         {/* Campos hidden para el navbar */}
@@ -763,6 +1008,43 @@ export default function CreateTenant() {
         <input type="hidden" name="showSearch" value={formData.showSearch ? 'on' : ''} />
         <input type="hidden" name="showNotifications" value={formData.showNotifications ? 'on' : ''} />
         <input type="hidden" name="showProfile" value={formData.showProfile ? 'on' : ''} />
+
+        {/* Campos hidden para configuraciones de vistas */}
+        {/* Home Settings */}
+        <input type="hidden" name="homeCustomBackground" value={homeSettings.customBackground ? 'true' : 'false'} />
+        <input type="hidden" name="homeBackgroundType" value={homeSettings.backgroundType || 'color'} />
+        <input type="hidden" name="homeBackgroundImage" value={homeSettings.backgroundImage || ''} />
+        <input type="hidden" name="homeBackgroundColor" value={homeSettings.backgroundColor || '#eff4ff'} />
+
+        {/* VideoCall Settings */}
+        <input type="hidden" name="videoCallCustomBackground" value={videoCallSettings.customBackground ? 'true' : 'false'} />
+        <input type="hidden" name="videoCallBackgroundType" value={videoCallSettings.backgroundType || 'color'} />
+        <input type="hidden" name="videoCallBackgroundImage" value={videoCallSettings.backgroundImage || ''} />
+        <input type="hidden" name="videoCallBackgroundColor" value={videoCallSettings.backgroundColor || '#eff4ff'} />
+
+        {/* Metrics Settings */}
+        <input type="hidden" name="metricsCustomBackground" value={metricsSettings.customBackground ? 'true' : 'false'} />
+        <input type="hidden" name="metricsBackgroundType" value={metricsSettings.backgroundType || 'color'} />
+        <input type="hidden" name="metricsBackgroundImage" value={metricsSettings.backgroundImage || ''} />
+        <input type="hidden" name="metricsBackgroundColor" value={metricsSettings.backgroundColor || '#eff4ff'} />
+
+        {/* Groups Settings */}
+        <input type="hidden" name="metricsCustomBackground" value={metricsSettings.customBackground ? 'true' : 'false'} />
+        <input type="hidden" name="metricsBackgroundType" value={metricsSettings.backgroundType || 'color'} />
+        <input type="hidden" name="metricsBackgroundImage" value={metricsSettings.backgroundImage || ''} />
+        <input type="hidden" name="metricsBackgroundColor" value={metricsSettings.backgroundColor || '#eff4ff'} />
+
+        {/* Sections Settings */}
+        <input type="hidden" name="metricsCustomBackground" value={metricsSettings.customBackground ? 'true' : 'false'} />
+        <input type="hidden" name="metricsBackgroundType" value={metricsSettings.backgroundType || 'color'} />
+        <input type="hidden" name="metricsBackgroundImage" value={metricsSettings.backgroundImage || ''} />
+        <input type="hidden" name="metricsBackgroundColor" value={metricsSettings.backgroundColor || '#eff4ff'} />
+
+        {/* FAQ Settings */}
+        <input type="hidden" name="metricsCustomBackground" value={metricsSettings.customBackground ? 'true' : 'false'} />
+        <input type="hidden" name="metricsBackgroundType" value={metricsSettings.backgroundType || 'color'} />
+        <input type="hidden" name="metricsBackgroundImage" value={metricsSettings.backgroundImage || ''} />
+        <input type="hidden" name="metricsBackgroundColor" value={metricsSettings.backgroundColor || '#eff4ff'} />
 
         {/* Botones de acción */}
         <div className="flex items-center justify-end space-x-4 pt-6">

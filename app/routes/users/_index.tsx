@@ -63,8 +63,8 @@ interface UserFilters {
   tenantId?: string;
   page: number;
   limit: number;
-  sortBy: string;
-  sortOrder: 'asc' | 'desc';
+  // sortBy: string;
+  // sortOrder: 'asc' | 'desc';
 }
 
 interface UserListResponse {
@@ -107,8 +107,8 @@ export const loader: LoaderFunction = async ({ request }) => {
       tenantId: url.searchParams.get('tenant') || undefined,
       page: parseInt(url.searchParams.get('page') || '1'),
       limit: parseInt(url.searchParams.get('limit') || '20'),
-      sortBy: url.searchParams.get('sortBy') || 'createdAt',
-      sortOrder: url.searchParams.get('sortOrder') as 'asc' | 'desc' || 'desc',
+      // sortBy: url.searchParams.get('sortBy') || 'createdAt',
+      // sortOrder: url.searchParams.get('sortOrder') as 'asc' | 'desc' || 'desc',
     };
 
     // En producción, aquí harías las llamadas reales al API
@@ -117,137 +117,53 @@ export const loader: LoaderFunction = async ({ request }) => {
     // const departments = await UsersAPI.getDepartments();
     // const roles = await UsersAPI.getRoles();
 
-    // Datos simulados basados en las entidades reales
-    const mockUsers: User[] = [
-      {
-        id: '1',
-        email: 'admin@empresa.com',
-        name: 'Juan',
-        lastName: 'Pérez',
-        tenantId: 'tenant-1',
-        isActive: true,
-        roles: ['admin'],
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-20T10:30:00Z',
-        tenant: { id: 'tenant-1', name: 'Tenant Principal' },
-        profileConfig: {
-          id: '1',
-          avatarPath: 'https://via.placeholder.com/40',
-          phoneNumber: '+57 300 123 4567',
-          Organization: 'TechCorp',
-          Charge: 'Administrador de Sistemas',
-          City: 'Bogotá',
-          Country: 'Colombia',
-          type_document: 'DNI',
-          documentNumber: '12345678',
-          Genger: 'Masculino',
-          bio: 'Administrador con más de 10 años de experiencia'
-        },
-        notificationConfig: {
-          enableNotifications: true,
-          smsNotifications: false,
-          browserNotifications: true
-        }
-      },
-      {
-        id: '2',
-        email: 'maria.garcia@empresa.com',
-        name: 'María',
-        lastName: 'García',
-        tenantId: 'tenant-1',
-        isActive: true,
-        roles: ['moderator', 'user'],
-        createdAt: '2024-01-05T00:00:00Z',
-        updatedAt: '2024-01-19T15:45:00Z',
-        tenant: { id: 'tenant-1', name: 'Tenant Principal' },
-        profileConfig: {
-          id: '2',
-          phoneNumber: '+57 301 987 6543',
-          Organization: 'EduCorp',
-          Charge: 'Coordinadora Académica',
-          City: 'Medellín',
-          Country: 'Colombia',
-          type_document: 'DNI',
-          documentNumber: '87654321',
-          Genger: 'Femenino'
-        },
-        notificationConfig: {
-          enableNotifications: true,
-          smsNotifications: true,
-          browserNotifications: false
-        }
-      },
-      {
-        id: '3',
-        email: 'carlos.rodriguez@empresa.com',
-        name: 'Carlos',
-        lastName: 'Rodríguez',
-        tenantId: 'tenant-2',
-        isActive: false,
-        roles: ['user'],
-        createdAt: '2024-01-15T00:00:00Z',
-        updatedAt: '2024-01-15T00:00:00Z',
-        tenant: { id: 'tenant-2', name: 'Tenant Secundario' },
-        profileConfig: {
-          id: '3',
-          Organization: 'StartupXYZ',
-          Charge: 'Desarrollador',
-          City: 'Cali',
-          Country: 'Colombia',
-          type_document: 'Passport',
-          documentNumber: 'A1234567'
-        },
-        notificationConfig: {
-          enableNotifications: false,
-          smsNotifications: false,
-          browserNotifications: false
-        }
-      }
-    ];
+    // Realizar llamadas paralelas a la API
+    const [users, stats, tenants, roles] = await Promise.all([
+      UsersAPI.getAll(filters),
+      UsersAPI.getStats(),
+      UsersAPI.getTenants(),
+      UsersAPI.getRoles()
+    ]);
 
-    const mockStats: UserStats = {
-      totalUsers: 3,
-      activeUsers: 2,
-      inactiveUsers: 1,
-      newUsersThisMonth: 2,
-      usersByRole: [
-        { role: 'admin', count: 1 },
-        { role: 'moderator', count: 1 },
-        { role: 'user', count: 2 }
-      ],
-      usersByTenant: [
-        { tenant: 'Tenant Principal', count: 2 },
-        { tenant: 'Tenant Secundario', count: 1 }
-      ]
-    };
-
-    const mockTenants = [
-      { id: 'tenant-1', name: 'Tenant Principal' },
-      { id: 'tenant-2', name: 'Tenant Secundario' }
-    ];
-
-    const mockRoles = [
-      { id: 'admin', name: 'Administrador', description: 'Acceso completo al sistema' },
-      { id: 'moderator', name: 'Moderador', description: 'Gestión de contenido y usuarios' },
-      { id: 'user', name: 'Usuario', description: 'Usuario estándar del sistema' }
-    ];
-
-    const response: UserListResponse = {
-      data: mockUsers,
-      total: 3,
-      page: 1,
-      limit: 20,
-    };
+    
 
     return json<LoaderData>({ 
-      users: response,
-      stats: mockStats,
-      tenants: mockTenants,
-      roles: mockRoles,
+      users,
+      stats,
+      tenants,
+      roles,
       error: null 
     });
   } catch (error: any) {
     console.error('Error loading users:', error);
+    
+    // Determinar el tipo de error y devolver mensaje apropiado
+    let errorMessage = 'Error al cargar los usuarios';
+    
+    if (error.response) {
+      const status = error.response.status;
+      switch (status) {
+        case 401:
+          errorMessage = 'No autorizado. Por favor, inicia sesión nuevamente.';
+          break;
+        case 403:
+          errorMessage = 'No tienes permisos para ver esta información.';
+          break;
+        case 404:
+          errorMessage = 'Endpoint no encontrado.';
+          break;
+        case 500:
+          errorMessage = 'Error interno del servidor.';
+          break;
+        default:
+          errorMessage = error.response.data?.message || 'Error del servidor';
+      }
+    } else if (error.code === 'ECONNREFUSED') {
+      errorMessage = 'No se puede conectar con el servidor.';
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+
     return json<LoaderData>({ 
       users: { data: [], total: 0, page: 1, limit: 20 },
       stats: { 
@@ -256,7 +172,7 @@ export const loader: LoaderFunction = async ({ request }) => {
       },
       tenants: [],
       roles: [],
-      error: error.message || 'Error al cargar los usuarios' 
+      error: errorMessage 
     });
   }
 };
@@ -269,12 +185,14 @@ export const action: ActionFunction = async ({ request }) => {
   try {
     switch (action) {
       case 'toggle-active':
+        await UsersAPI.toggleActive(userId);
         return json<ActionData>({ 
           success: true, 
           action: 'toggle-active' 
         });
 
       case 'delete':
+        await UsersAPI.delete(userId);
         return json<ActionData>({ 
           success: true, 
           action: 'delete' 
@@ -282,12 +200,14 @@ export const action: ActionFunction = async ({ request }) => {
 
       case 'bulk-delete':
         const userIds = formData.getAll('selectedUsers') as string[];
+        await UsersAPI.bulkActions('delete', userIds);
         return json<ActionData>({ 
           success: true, 
           action: 'bulk-delete' 
         });
 
       case 'reset-password':
+        await UsersAPI.resetPassword(userId);
         return json<ActionData>({ 
           success: true, 
           action: 'reset-password' 
@@ -297,8 +217,39 @@ export const action: ActionFunction = async ({ request }) => {
         throw new Error('Acción no válida');
     }
   } catch (error: any) {
+    console.error('Error processing action:', error);
+    
+    let errorMessage = 'Error al procesar la acción';
+    
+    if (error.response) {
+      const status = error.response.status;
+      const errorData = error.response.data;
+      
+      switch (status) {
+        case 401:
+          errorMessage = 'No autorizado para realizar esta acción.';
+          break;
+        case 403:
+          errorMessage = 'No tienes permisos para realizar esta acción.';
+          break;
+        case 404:
+          errorMessage = 'Usuario no encontrado.';
+          break;
+        case 400:
+          errorMessage = errorData?.message || 'Datos inválidos.';
+          break;
+        case 500:
+          errorMessage = 'Error interno del servidor.';
+          break;
+        default:
+          errorMessage = errorData?.message || 'Error del servidor';
+      }
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
     return json<ActionData>({ 
-      error: error.message || 'Error al procesar la acción'
+      error: errorMessage
     });
   }
 };

@@ -121,6 +121,15 @@ export default function Header() {
                     <NavLink to="/dashboard" icon={<LayoutDashboard className="h-4 w-4" />}>
                       Dashboard
                     </NavLink>
+
+                    <RoleGuard requiredRole="admin">
+                      <NavLink 
+                        to="/users" 
+                        icon={<User className="h-4 w-4" />}
+                      >
+                        Usuarios
+                      </NavLink>
+                    </RoleGuard>
                     
                     <RoleGuard requiredRole="admin">
                       <NavLink 

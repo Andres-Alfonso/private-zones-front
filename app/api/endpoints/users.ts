@@ -26,8 +26,8 @@ const USERS_ENDPOINTS = {
   BULK_ACTIONS: '/v1/users/bulk',
   EXPORT: '/v1/users/export',
   STATS: '/v1/users/stats',
-  DEPARTMENTS: '/v1/users/departments',
   ROLES: '/v1/users/roles',
+  TENANTS: '/v1/users/tenants',
   VERIFY_EMAIL: (id: string) => `/v1/users/${id}/verify-email`,
   RESEND_VERIFICATION: (id: string) => `/v1/users/${id}/resend-verification`,
 };
@@ -49,6 +49,24 @@ export const UsersAPI = {
     const url = `${USERS_ENDPOINTS.BASE}${queryString ? `?${queryString}` : ''}`;
     
     const response = await apiClient.get(url);
+    return response.data;
+  },
+
+  // Obtener estadísticas
+  getStats: async (): Promise<UserStats> => {
+    const response = await apiClient.get(USERS_ENDPOINTS.STATS);
+    return response.data;
+  },
+
+  // Obtener roles disponibles
+  getRoles: async (): Promise<Array<{ id: string; name: string; description: string }>> => {
+    const response = await apiClient.get(USERS_ENDPOINTS.ROLES);
+    return response.data;
+  },
+
+  // Obtener tenants disponibles
+  getTenants: async (): Promise<Array<{ id: string; name: string }>> => {
+    const response = await apiClient.get(USERS_ENDPOINTS.TENANTS);
     return response.data;
   },
 
@@ -171,24 +189,6 @@ export const UsersAPI = {
     const response = await apiClient.get(`${USERS_ENDPOINTS.EXPORT}?${params.toString()}`, {
       responseType: 'blob'
     });
-    return response.data;
-  },
-
-  // Obtener estadísticas
-  getStats: async (): Promise<UserStats> => {
-    const response = await apiClient.get(USERS_ENDPOINTS.STATS);
-    return response.data;
-  },
-
-  // Obtener departamentos disponibles
-  getDepartments: async (): Promise<string[]> => {
-    const response = await apiClient.get(USERS_ENDPOINTS.DEPARTMENTS);
-    return response.data;
-  },
-
-  // Obtener roles disponibles
-  getRoles: async (): Promise<Array<{ id: string; name: string; description: string; permissions: string[] }>> => {
-    const response = await apiClient.get(USERS_ENDPOINTS.ROLES);
     return response.data;
   },
 

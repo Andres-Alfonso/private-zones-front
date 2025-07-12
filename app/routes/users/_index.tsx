@@ -7,24 +7,86 @@ import {
   Search, Filter, Plus, Edit, Trash2, Eye, EyeOff, Users, 
   Mail, Phone, Calendar, AlertCircle, MoreHorizontal,
   Download, Upload, TrendingUp, UserCheck, UserX, Shield,
-  Clock, MapPin, Briefcase
+  Clock, MapPin, Briefcase, Building2, FileText, Globe,
+  Star, ChevronLeft, ChevronRight
 } from "lucide-react";
-import { 
-  User, 
-  UserFilters,
-  UserListResponse,
-  UserStats,
-  UserRole,
-  USER_ROLES,
-  USER_DEPARTMENTS
-} from "~/api/types/user.types";
 import { UsersAPI } from "~/api/endpoints/users";
 import { formatUserName, getUserStatus, formatUserRoles } from "~/utils/userValidation";
+
+// Tipos basados en las entidades reales
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  lastName?: string;
+  tenantId: string;
+  isActive: boolean;
+  roles: string[];
+  createdAt: string;
+  updatedAt: string;
+  
+  // Relación con tenant
+  tenant?: {
+    id: string;
+    name: string;
+  };
+  
+  // Configuración de perfil
+  profileConfig?: {
+    id: string;
+    avatarPath?: string;
+    bio?: string;
+    phoneNumber?: string;
+    type_document?: string;
+    documentNumber?: string;
+    Organization?: string;
+    Charge?: string;
+    Genger?: string;
+    City?: string;
+    Country?: string;
+    address?: string;
+    dateOfBirth?: Date;
+  };
+  
+  // Configuración de notificaciones
+  notificationConfig?: {
+    enableNotifications: boolean;
+    smsNotifications: boolean;
+    browserNotifications: boolean;
+  };
+}
+
+interface UserFilters {
+  search?: string;
+  role?: string;
+  isActive?: boolean;
+  tenantId?: string;
+  page: number;
+  limit: number;
+  sortBy: string;
+  sortOrder: 'asc' | 'desc';
+}
+
+interface UserListResponse {
+  data: User[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+interface UserStats {
+  totalUsers: number;
+  activeUsers: number;
+  inactiveUsers: number;
+  newUsersThisMonth: number;
+  usersByRole: Array<{ role: string; count: number }>;
+  usersByTenant: Array<{ tenant: string; count: number }>;
+}
 
 interface LoaderData {
   users: UserListResponse;
   stats: UserStats;
-  departments: string[];
+  tenants: Array<{ id: string; name: string }>;
   roles: Array<{ id: string; name: string; description: string }>;
   error: string | null;
 }
@@ -32,7 +94,7 @@ interface LoaderData {
 interface ActionData {
   success?: boolean;
   error?: string;
-  action?: 'toggle-active' | 'delete' | 'bulk-delete' | 'assign-role' | 'reset-password';
+  action?: 'toggle-active' | 'delete' | 'bulk-delete' | 'reset-password';
 }
 
 export const loader: LoaderFunction = async ({ request }) => {
@@ -42,11 +104,10 @@ export const loader: LoaderFunction = async ({ request }) => {
       search: url.searchParams.get('search') || undefined,
       role: url.searchParams.get('role') || undefined,
       isActive: url.searchParams.get('active') ? url.searchParams.get('active') === 'true' : undefined,
-      isEmailVerified: url.searchParams.get('verified') ? url.searchParams.get('verified') === 'true' : undefined,
-      department: url.searchParams.get('department') || undefined,
+      tenantId: url.searchParams.get('tenant') || undefined,
       page: parseInt(url.searchParams.get('page') || '1'),
       limit: parseInt(url.searchParams.get('limit') || '20'),
-      sortBy: url.searchParams.get('sortBy') as any || 'createdAt',
+      sortBy: url.searchParams.get('sortBy') || 'createdAt',
       sortOrder: url.searchParams.get('sortOrder') as 'asc' | 'desc' || 'desc',
     };
 
@@ -56,39 +117,36 @@ export const loader: LoaderFunction = async ({ request }) => {
     // const departments = await UsersAPI.getDepartments();
     // const roles = await UsersAPI.getRoles();
 
-    // Datos simulados
+    // Datos simulados basados en las entidades reales
     const mockUsers: User[] = [
       {
         id: '1',
         email: 'admin@empresa.com',
         name: 'Juan',
         lastName: 'Pérez',
-        fullName: 'Juan Pérez',
-        avatar: 'https://via.placeholder.com/40',
-        phone: '+57 300 123 4567',
-        roles: ['admin'],
+        tenantId: 'tenant-1',
         isActive: true,
-        isEmailVerified: true,
-        lastLoginAt: '2024-01-20T10:30:00Z',
+        roles: ['admin'],
         createdAt: '2024-01-01T00:00:00Z',
         updatedAt: '2024-01-20T10:30:00Z',
-        loginCount: 45,
-        twoFactorEnabled: true,
-        tenantId: 'tenant-1',
-        profile: {
+        tenant: { id: 'tenant-1', name: 'Tenant Principal' },
+        profileConfig: {
           id: '1',
-          userId: '1',
-          jobTitle: 'Administrador de Sistemas',
-          department: 'Tecnología',
-          location: 'Bogotá, Colombia',
-          language: 'es',
-          dateFormat: 'DD/MM/YYYY',
-          preferredCurrency: 'COP',
-          notifications: {
-            email: true,
-            push: true,
-            sms: false
-          }
+          avatarPath: 'https://via.placeholder.com/40',
+          phoneNumber: '+57 300 123 4567',
+          Organization: 'TechCorp',
+          Charge: 'Administrador de Sistemas',
+          City: 'Bogotá',
+          Country: 'Colombia',
+          type_document: 'DNI',
+          documentNumber: '12345678',
+          Genger: 'Masculino',
+          bio: 'Administrador con más de 10 años de experiencia'
+        },
+        notificationConfig: {
+          enableNotifications: true,
+          smsNotifications: false,
+          browserNotifications: true
         }
       },
       {
@@ -96,31 +154,27 @@ export const loader: LoaderFunction = async ({ request }) => {
         email: 'maria.garcia@empresa.com',
         name: 'María',
         lastName: 'García',
-        fullName: 'María García',
-        phone: '+57 301 987 6543',
-        roles: ['instructor', 'moderator'],
+        tenantId: 'tenant-1',
         isActive: true,
-        isEmailVerified: true,
-        lastLoginAt: '2024-01-19T15:45:00Z',
+        roles: ['moderator', 'user'],
         createdAt: '2024-01-05T00:00:00Z',
         updatedAt: '2024-01-19T15:45:00Z',
-        loginCount: 32,
-        twoFactorEnabled: false,
-        tenantId: 'tenant-1',
-        profile: {
+        tenant: { id: 'tenant-1', name: 'Tenant Principal' },
+        profileConfig: {
           id: '2',
-          userId: '2',
-          jobTitle: 'Instructora Senior',
-          department: 'Educación',
-          location: 'Medellín, Colombia',
-          language: 'es',
-          dateFormat: 'DD/MM/YYYY',
-          preferredCurrency: 'COP',
-          notifications: {
-            email: true,
-            push: false,
-            sms: true
-          }
+          phoneNumber: '+57 301 987 6543',
+          Organization: 'EduCorp',
+          Charge: 'Coordinadora Académica',
+          City: 'Medellín',
+          Country: 'Colombia',
+          type_document: 'DNI',
+          documentNumber: '87654321',
+          Genger: 'Femenino'
+        },
+        notificationConfig: {
+          enableNotifications: true,
+          smsNotifications: true,
+          browserNotifications: false
         }
       },
       {
@@ -128,29 +182,25 @@ export const loader: LoaderFunction = async ({ request }) => {
         email: 'carlos.rodriguez@empresa.com',
         name: 'Carlos',
         lastName: 'Rodríguez',
-        fullName: 'Carlos Rodríguez',
-        roles: ['student'],
+        tenantId: 'tenant-2',
         isActive: false,
-        isEmailVerified: false,
+        roles: ['user'],
         createdAt: '2024-01-15T00:00:00Z',
         updatedAt: '2024-01-15T00:00:00Z',
-        loginCount: 0,
-        twoFactorEnabled: false,
-        tenantId: 'tenant-1',
-        profile: {
+        tenant: { id: 'tenant-2', name: 'Tenant Secundario' },
+        profileConfig: {
           id: '3',
-          userId: '3',
-          jobTitle: 'Estudiante',
-          department: 'Marketing',
-          location: 'Cali, Colombia',
-          language: 'es',
-          dateFormat: 'DD/MM/YYYY',
-          preferredCurrency: 'COP',
-          notifications: {
-            email: true,
-            push: true,
-            sms: false
-          }
+          Organization: 'StartupXYZ',
+          Charge: 'Desarrollador',
+          City: 'Cali',
+          Country: 'Colombia',
+          type_document: 'Passport',
+          documentNumber: 'A1234567'
+        },
+        notificationConfig: {
+          enableNotifications: false,
+          smsNotifications: false,
+          browserNotifications: false
         }
       }
     ];
@@ -159,22 +209,28 @@ export const loader: LoaderFunction = async ({ request }) => {
       totalUsers: 3,
       activeUsers: 2,
       inactiveUsers: 1,
-      verifiedUsers: 2,
-      unverifiedUsers: 1,
-      usersWithTwoFactor: 1,
       newUsersThisMonth: 2,
-      averageLoginCount: 25.7,
-      topRoles: [
-        { role: 'student', count: 1 },
-        { role: 'instructor', count: 1 },
-        { role: 'admin', count: 1 }
+      usersByRole: [
+        { role: 'admin', count: 1 },
+        { role: 'moderator', count: 1 },
+        { role: 'user', count: 2 }
       ],
-      topDepartments: [
-        { department: 'Tecnología', count: 1 },
-        { department: 'Educación', count: 1 },
-        { department: 'Marketing', count: 1 }
+      usersByTenant: [
+        { tenant: 'Tenant Principal', count: 2 },
+        { tenant: 'Tenant Secundario', count: 1 }
       ]
     };
+
+    const mockTenants = [
+      { id: 'tenant-1', name: 'Tenant Principal' },
+      { id: 'tenant-2', name: 'Tenant Secundario' }
+    ];
+
+    const mockRoles = [
+      { id: 'admin', name: 'Administrador', description: 'Acceso completo al sistema' },
+      { id: 'moderator', name: 'Moderador', description: 'Gestión de contenido y usuarios' },
+      { id: 'user', name: 'Usuario', description: 'Usuario estándar del sistema' }
+    ];
 
     const response: UserListResponse = {
       data: mockUsers,
@@ -186,12 +242,8 @@ export const loader: LoaderFunction = async ({ request }) => {
     return json<LoaderData>({ 
       users: response,
       stats: mockStats,
-      departments: USER_DEPARTMENTS.slice(),
-      roles: USER_ROLES.map(role => ({ 
-        id: role.value, 
-        name: role.label, 
-        description: role.description 
-      })),
+      tenants: mockTenants,
+      roles: mockRoles,
       error: null 
     });
   } catch (error: any) {
@@ -199,11 +251,10 @@ export const loader: LoaderFunction = async ({ request }) => {
     return json<LoaderData>({ 
       users: { data: [], total: 0, page: 1, limit: 20 },
       stats: { 
-        totalUsers: 0, activeUsers: 0, inactiveUsers: 0, verifiedUsers: 0, 
-        unverifiedUsers: 0, usersWithTwoFactor: 0, newUsersThisMonth: 0, 
-        averageLoginCount: 0, topRoles: [], topDepartments: [] 
+        totalUsers: 0, activeUsers: 0, inactiveUsers: 0, 
+        newUsersThisMonth: 0, usersByRole: [], usersByTenant: [] 
       },
-      departments: [],
+      tenants: [],
       roles: [],
       error: error.message || 'Error al cargar los usuarios' 
     });
@@ -218,14 +269,12 @@ export const action: ActionFunction = async ({ request }) => {
   try {
     switch (action) {
       case 'toggle-active':
-        // await UsersAPI.toggleActive(userId);
         return json<ActionData>({ 
           success: true, 
           action: 'toggle-active' 
         });
 
       case 'delete':
-        // await UsersAPI.delete(userId);
         return json<ActionData>({ 
           success: true, 
           action: 'delete' 
@@ -233,14 +282,12 @@ export const action: ActionFunction = async ({ request }) => {
 
       case 'bulk-delete':
         const userIds = formData.getAll('selectedUsers') as string[];
-        // await UsersAPI.bulkActions('delete', userIds);
         return json<ActionData>({ 
           success: true, 
           action: 'bulk-delete' 
         });
 
       case 'reset-password':
-        // await UsersAPI.resetPassword(userId);
         return json<ActionData>({ 
           success: true, 
           action: 'reset-password' 
@@ -257,14 +304,13 @@ export const action: ActionFunction = async ({ request }) => {
 };
 
 export default function UsersIndex() {
-  const { users, stats, departments, roles, error } = useLoaderData<LoaderData>();
+  const { users, stats, tenants, roles, error } = useLoaderData<LoaderData>();
   const actionData = useActionData<ActionData>();
   const navigation = useNavigation();
   const [searchParams, setSearchParams] = useSearchParams();
   
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [localSearch, setLocalSearch] = useState(searchParams.get('search') || '');
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
 
   const isSubmitting = navigation.state === 'submitting';
 
@@ -300,10 +346,8 @@ export default function UsersIndex() {
     const currentSortOrder = searchParams.get('sortOrder') || 'desc';
     
     if (currentSortBy === sortBy) {
-      // Cambiar orden si es la misma columna
       newParams.set('sortOrder', currentSortOrder === 'asc' ? 'desc' : 'asc');
     } else {
-      // Nueva columna, orden descendente por defecto
       newParams.set('sortBy', sortBy);
       newParams.set('sortOrder', 'desc');
     }
@@ -335,28 +379,34 @@ export default function UsersIndex() {
     setSearchParams(newParams);
   };
 
+  const formatUserName = (user: User) => {
+    return [user.name, user.lastName].filter(Boolean).join(' ');
+  };
+
   if (error) {
     return (
-      <div className="text-center py-12">
-        <AlertCircle className="mx-auto h-12 w-12 text-red-400 mb-4" />
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Error</h1>
-        <p className="text-gray-600">{error}</p>
+      <div className="text-center py-16">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-8 max-w-md mx-auto">
+          <AlertCircle className="mx-auto h-16 w-16 text-red-400 mb-4" />
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Error</h1>
+          <p className="text-gray-600">{error}</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Mensajes de estado */}
       {actionData?.error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-center">
+        <div className="bg-red-50/80 backdrop-blur-sm border border-red-200/50 text-red-700 px-6 py-4 rounded-xl flex items-center shadow-lg">
           <AlertCircle className="h-5 w-5 mr-2" />
           {actionData.error}
         </div>
       )}
 
       {actionData?.success && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md">
+        <div className="bg-green-50/80 backdrop-blur-sm border border-green-200/50 text-green-700 px-6 py-4 rounded-xl shadow-lg">
           {actionData.action === 'toggle-active' && 'Estado del usuario actualizado exitosamente'}
           {actionData.action === 'delete' && 'Usuario eliminado exitosamente'}
           {actionData.action === 'bulk-delete' && 'Usuarios eliminados exitosamente'}
@@ -366,57 +416,57 @@ export default function UsersIndex() {
 
       {/* Panel de estadísticas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
+        <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-gray-200/50 hover:shadow-xl transition-all duration-200">
           <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <Users className="h-8 w-8 text-blue-600" />
+            <div className="flex-shrink-0 p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl">
+              <Users className="h-6 w-6 text-white" />
             </div>
-            <div className="ml-3">
-              <p className="text-sm text-gray-600">Total Usuarios</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.totalUsers}</p>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Total Usuarios</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.totalUsers}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
+        <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-gray-200/50 hover:shadow-xl transition-all duration-200">
           <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <UserCheck className="h-8 w-8 text-green-600" />
+            <div className="flex-shrink-0 p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-xl">
+              <UserCheck className="h-6 w-6 text-white" />
             </div>
-            <div className="ml-3">
-              <p className="text-sm text-gray-600">Usuarios Activos</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.activeUsers}</p>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Usuarios Activos</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.activeUsers}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
+        <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-gray-200/50 hover:shadow-xl transition-all duration-200">
           <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <Mail className="h-8 w-8 text-purple-600" />
+            <div className="flex-shrink-0 p-3 bg-gradient-to-br from-red-500 to-red-600 rounded-xl">
+              <UserX className="h-6 w-6 text-white" />
             </div>
-            <div className="ml-3">
-              <p className="text-sm text-gray-600">Email Verificado</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.verifiedUsers}</p>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Usuarios Inactivos</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.inactiveUsers}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
+        <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-gray-200/50 hover:shadow-xl transition-all duration-200">
           <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <TrendingUp className="h-8 w-8 text-yellow-600" />
+            <div className="flex-shrink-0 p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl">
+              <TrendingUp className="h-6 w-6 text-white" />
             </div>
-            <div className="ml-3">
-              <p className="text-sm text-gray-600">Nuevos Este Mes</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.newUsersThisMonth}</p>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Nuevos Este Mes</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.newUsersThisMonth}</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Controles y filtros */}
-      <div className="bg-white rounded-lg shadow-sm border p-6">
+      <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
           {/* Búsqueda y filtros */}
           <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
@@ -428,7 +478,7 @@ export default function UsersIndex() {
                   placeholder="Buscar usuarios..."
                   value={localSearch}
                   onChange={(e) => setLocalSearch(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/60 backdrop-blur-sm"
                 />
               </div>
             </Form>
@@ -436,7 +486,7 @@ export default function UsersIndex() {
             <select
               value={searchParams.get('role') || ''}
               onChange={(e) => handleFilterChange('role', e.target.value)}
-              className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="border border-gray-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/60 backdrop-blur-sm"
             >
               <option value="">Todos los roles</option>
               {roles.map(role => (
@@ -445,34 +495,24 @@ export default function UsersIndex() {
             </select>
 
             <select
-              value={searchParams.get('department') || ''}
-              onChange={(e) => handleFilterChange('department', e.target.value)}
-              className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              value={searchParams.get('tenant') || ''}
+              onChange={(e) => handleFilterChange('tenant', e.target.value)}
+              className="border border-gray-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/60 backdrop-blur-sm"
             >
-              <option value="">Todos los departamentos</option>
-              {departments.map(dept => (
-                <option key={dept} value={dept}>{dept}</option>
+              <option value="">Todos los tenants</option>
+              {tenants.map(tenant => (
+                <option key={tenant.id} value={tenant.id}>{tenant.name}</option>
               ))}
             </select>
 
             <select
               value={searchParams.get('active') || ''}
               onChange={(e) => handleFilterChange('active', e.target.value)}
-              className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="border border-gray-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/60 backdrop-blur-sm"
             >
               <option value="">Todos los estados</option>
               <option value="true">Activos</option>
               <option value="false">Inactivos</option>
-            </select>
-
-            <select
-              value={searchParams.get('verified') || ''}
-              onChange={(e) => handleFilterChange('verified', e.target.value)}
-              className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">Verificación email</option>
-              <option value="true">Verificados</option>
-              <option value="false">No verificados</option>
             </select>
           </div>
 
@@ -487,7 +527,7 @@ export default function UsersIndex() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+                  className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 disabled:opacity-50 transition-all duration-200 shadow-lg hover:shadow-xl"
                 >
                   <Trash2 className="h-4 w-4" />
                   <span>Eliminar ({selectedUsers.length})</span>
@@ -495,14 +535,14 @@ export default function UsersIndex() {
               </Form>
             )}
 
-            <button className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50">
+            <button className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-xl hover:bg-white/80 hover:shadow-md transition-all duration-200 bg-white/60 backdrop-blur-sm">
               <Download className="h-4 w-4" />
               <span>Exportar</span>
             </button>
 
             <Link
               to="/users/create"
-              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
             >
               <Plus className="h-4 w-4" />
               <span>Nuevo Usuario</span>
@@ -512,49 +552,49 @@ export default function UsersIndex() {
       </div>
 
       {/* Lista de usuarios */}
-      <div className="bg-white shadow-sm border rounded-lg overflow-hidden">
+      <div className="bg-white/80 backdrop-blur-sm shadow-lg border border-gray-200/50 rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-gray-200/50">
+            <thead className="bg-gray-50/80 backdrop-blur-sm">
               <tr>
-                <th className="px-6 py-3 text-left">
+                <th className="px-6 py-4 text-left">
                   <input
                     type="checkbox"
                     checked={selectedUsers.length === users.data.length && users.data.length > 0}
                     onChange={handleSelectAll}
-                    className="h-4 w-4 text-blue-600 rounded border-gray-300"
+                    className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                   />
                 </th>
                 <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100/50 transition-colors"
                   onClick={() => handleSort('name')}
                 >
                   Usuario
                 </th>
                 <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100/50 transition-colors"
                   onClick={() => handleSort('email')}
                 >
                   Contacto
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Roles
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                  Roles & Tenant
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                   Estado
                 </th>
                 <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                  onClick={() => handleSort('lastLoginAt')}
+                  className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100/50 transition-colors"
+                  onClick={() => handleSort('createdAt')}
                 >
-                  Última Conexión
+                  Fecha Registro
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                   Acciones
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white/60 backdrop-blur-sm divide-y divide-gray-200/50">
               {users.data.map((user) => (
                 <UserRow
                   key={user.id}
@@ -569,22 +609,24 @@ export default function UsersIndex() {
         </div>
 
         {users.data.length === 0 && (
-          <div className="text-center py-12">
-            <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No se encontraron usuarios</h3>
-            <p className="text-gray-600 mb-6">
-              {searchParams.toString() 
-                ? 'Intenta ajustar los filtros de búsqueda'
-                : 'Aún no hay usuarios registrados'
-              }
-            </p>
-            <Link
-              to="/users/create"
-              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Crear primer usuario
-            </Link>
+          <div className="text-center py-16">
+            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-8 max-w-md mx-auto">
+              <Users className="mx-auto h-16 w-16 text-gray-400 mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No se encontraron usuarios</h3>
+              <p className="text-gray-600 mb-6">
+                {searchParams.toString() 
+                  ? 'Intenta ajustar los filtros de búsqueda'
+                  : 'Aún no hay usuarios registrados'
+                }
+              </p>
+              <Link
+                to="/users/create"
+                className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Crear primer usuario
+              </Link>
+            </div>
           </div>
         )}
       </div>
@@ -592,22 +634,22 @@ export default function UsersIndex() {
       {/* Paginación */}
       {users.total > users.limit && (
         <div className="flex justify-center">
-          <nav className="flex items-center space-x-2">
+          <nav className="flex items-center space-x-2 bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200/50 p-2">
             <button
               disabled={users.page <= 1}
               onClick={() => handlePageChange(users.page - 1)}
-              className="px-3 py-2 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              className="p-2 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
             >
-              Anterior
+              <ChevronLeft className="h-4 w-4" />
             </button>
             
             {Array.from({ length: Math.ceil(users.total / users.limit) }, (_, i) => i + 1).map(page => (
               <button
                 key={page}
                 onClick={() => handlePageChange(page)}
-                className={`px-3 py-2 text-sm rounded-md ${
+                className={`px-3 py-2 text-sm rounded-lg transition-all duration-200 ${
                   page === users.page
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
                     : 'border border-gray-300 hover:bg-gray-50'
                 }`}
               >
@@ -618,9 +660,9 @@ export default function UsersIndex() {
             <button
               disabled={users.page >= Math.ceil(users.total / users.limit)}
               onClick={() => handlePageChange(users.page + 1)}
-              className="px-3 py-2 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              className="p-2 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
             >
-              Siguiente
+              <ChevronRight className="h-4 w-4" />
             </button>
           </nav>
         </div>
@@ -641,62 +683,60 @@ function UserRow({
   onSelect: () => void,
   isSubmitting: boolean 
 }) {
-  const userStatus = getUserStatus(user);
-  const [showActions, setShowActions] = useState(false);
-
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return 'Nunca';
+  const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-ES', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      day: 'numeric'
     });
   };
 
+  const formatUserName = (user: User) => {
+    return [user.name, user.lastName].filter(Boolean).join(' ');
+  };
+
   return (
-    <tr className={isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'}>
+    <tr className={`transition-colors ${isSelected ? 'bg-blue-50/80' : 'hover:bg-gray-50/80'}`}>
       <td className="px-6 py-4">
         <input
           type="checkbox"
           checked={isSelected}
           onChange={onSelect}
-          className="h-4 w-4 text-blue-600 rounded border-gray-300"
+          className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
         />
       </td>
 
       <td className="px-6 py-4">
         <div className="flex items-center">
-          <div className="flex-shrink-0 h-10 w-10">
-            {user.avatar ? (
+          <div className="flex-shrink-0 h-12 w-12">
+            {user.profileConfig?.avatarPath ? (
               <img 
-                className="h-10 w-10 rounded-full object-cover" 
-                src={user.avatar} 
+                className="h-12 w-12 rounded-xl object-cover shadow-md" 
+                src={user.profileConfig.avatarPath} 
                 alt={formatUserName(user)}
               />
             ) : (
-              <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                <span className="text-sm font-medium text-gray-700">
-                  {user.name.charAt(0)}{user.lastName.charAt(0)}
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md">
+                <span className="text-lg font-bold text-white">
+                  {user.name.charAt(0)}{user.lastName?.charAt(0) || ''}
                 </span>
               </div>
             )}
           </div>
           <div className="ml-4">
-            <div className="text-sm font-medium text-gray-900">
+            <div className="text-sm font-semibold text-gray-900">
               <Link 
                 to={`/users/${user.id}`}
-                className="hover:text-blue-600"
+                className="hover:text-blue-600 transition-colors"
               >
                 {formatUserName(user)}
               </Link>
             </div>
             <div className="text-sm text-gray-500">ID: {user.id}</div>
-            {user.profile?.jobTitle && (
+            {user.profileConfig?.Charge && (
               <div className="flex items-center text-xs text-gray-400 mt-1">
                 <Briefcase className="h-3 w-3 mr-1" />
-                {user.profile.jobTitle}
+                {user.profileConfig.Charge}
               </div>
             )}
           </div>
@@ -707,74 +747,76 @@ function UserRow({
         <div className="space-y-1">
           <div className="flex items-center text-sm text-gray-900">
             <Mail className="h-4 w-4 mr-2 text-gray-400" />
-            <a href={`mailto:${user.email}`} className="hover:text-blue-600">
+            <a href={`mailto:${user.email}`} className="hover:text-blue-600 transition-colors">
               {user.email}
             </a>
-            {user.isEmailVerified && (
-              <span className="ml-2 text-green-500" title="Email verificado">✓</span>
-            )}
           </div>
-          {user.phone && (
+          {user.profileConfig?.phoneNumber && (
             <div className="flex items-center text-sm text-gray-600">
               <Phone className="h-4 w-4 mr-2 text-gray-400" />
-              <a href={`tel:${user.phone}`} className="hover:text-blue-600">
-                {user.phone}
+              <a href={`tel:${user.profileConfig.phoneNumber}`} className="hover:text-blue-600 transition-colors">
+                {user.profileConfig.phoneNumber}
               </a>
             </div>
           )}
-          {user.profile?.location && (
+          {user.profileConfig?.City && user.profileConfig?.Country && (
             <div className="flex items-center text-xs text-gray-500">
               <MapPin className="h-3 w-3 mr-1" />
-              {user.profile.location}
+              {user.profileConfig.City}, {user.profileConfig.Country}
             </div>
           )}
         </div>
       </td>
 
       <td className="px-6 py-4">
-        <div className="flex flex-wrap gap-1">
-          {user.roles.map(role => (
-            <span 
-              key={role}
-              className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                role === 'admin' ? 'bg-red-100 text-red-800' :
-                role === 'moderator' ? 'bg-yellow-100 text-yellow-800' :
-                role === 'instructor' ? 'bg-purple-100 text-purple-800' :
-                'bg-blue-100 text-blue-800'
-              }`}
-            >
-              {role}
-            </span>
-          ))}
+        <div className="space-y-2">
+          <div className="flex flex-wrap gap-1">
+            {user.roles.map(role => (
+              <span 
+                key={role}
+                className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                  role === 'admin' ? 'bg-red-100 text-red-800' :
+                  role === 'moderator' ? 'bg-yellow-100 text-yellow-800' :
+                  'bg-blue-100 text-blue-800'
+                }`}
+              >
+                {role}
+              </span>
+            ))}
+          </div>
+          {user.tenant && (
+            <div className="flex items-center text-xs text-gray-500">
+              <Building2 className="h-3 w-3 mr-1" />
+              {user.tenant.name}
+            </div>
+          )}
         </div>
-        {user.profile?.department && (
-          <div className="text-xs text-gray-500 mt-1">{user.profile.department}</div>
-        )}
       </td>
 
       <td className="px-6 py-4">
         <div className="space-y-1">
-          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${userStatus.color}`}>
-            {userStatus.label}
+          <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
+            user.isActive 
+              ? 'bg-green-100 text-green-800' 
+              : 'bg-red-100 text-red-800'
+          }`}>
+            {user.isActive ? 'Activo' : 'Inactivo'}
           </span>
           <div className="flex items-center space-x-2 text-xs text-gray-500">
-            {user.twoFactorEnabled && (
-              <span className="flex items-center" title="2FA habilitado">
-                <Shield className="h-3 w-3 mr-1 text-green-500" />
-                2FA
+            {user.notificationConfig?.enableNotifications && (
+              <span className="flex items-center" title="Notificaciones habilitadas">
+                <Mail className="h-3 w-3 mr-1 text-blue-500" />
+                Notif.
               </span>
             )}
-            <span title="Número de inicios de sesión">
-              {user.loginCount} login{user.loginCount !== 1 ? 's' : ''}
-            </span>
           </div>
         </div>
       </td>
 
       <td className="px-6 py-4 text-sm text-gray-500">
         <div className="flex items-center">
-          <Clock className="h-4 w-4 mr-1" />
-          {formatDate(user.lastLoginAt)}
+          <Calendar className="h-4 w-4 mr-1" />
+          {formatDate(user.createdAt)}
         </div>
       </td>
 
@@ -782,7 +824,7 @@ function UserRow({
         <div className="flex items-center space-x-2">
           <Link
             to={`/users/${user.id}`}
-            className="text-blue-600 hover:text-blue-900"
+            className="text-blue-600 hover:text-blue-900 transition-colors p-1"
             title="Ver detalles"
           >
             <Eye className="h-4 w-4" />
@@ -790,7 +832,7 @@ function UserRow({
           
           <Link
             to={`/users/${user.id}/edit`}
-            className="text-gray-600 hover:text-gray-900"
+            className="text-gray-600 hover:text-gray-900 transition-colors p-1"
             title="Editar usuario"
           >
             <Edit className="h-4 w-4" />
@@ -802,7 +844,11 @@ function UserRow({
             <button
               type="submit"
               disabled={isSubmitting}
-              className={`${user.isActive ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'} disabled:opacity-50`}
+              className={`p-1 transition-colors disabled:opacity-50 ${
+                user.isActive 
+                  ? 'text-red-600 hover:text-red-900' 
+                  : 'text-green-600 hover:text-green-900'
+              }`}
               title={user.isActive ? 'Desactivar usuario' : 'Activar usuario'}
             >
               {user.isActive ? <EyeOff className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
@@ -823,7 +869,7 @@ function UserRow({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="text-red-600 hover:text-red-900 disabled:opacity-50"
+              className="text-red-600 hover:text-red-900 disabled:opacity-50 transition-colors p-1"
               title="Eliminar usuario"
             >
               <Trash2 className="h-4 w-4" />

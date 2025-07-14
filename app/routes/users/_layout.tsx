@@ -4,7 +4,7 @@ import type { MetaFunction, LoaderFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { Outlet, NavLink, useLocation, useLoaderData } from "@remix-run/react";
 import { Users, Plus, BarChart3, Settings } from "lucide-react";
-import { RoleGuard } from '~/components/AuthGuard';
+import AuthGuard, { RoleGuard } from '~/components/AuthGuard';
 import NavTabs from "~/components/tenant/button-header";
 import { useCurrentUser } from '~/context/AuthContext';
 
@@ -24,9 +24,11 @@ export const loader: LoaderFunction = async ({ request }) => {
 
 export default function UsersLayout() {
   return (
-    <RoleGuard requiredRoles={['admin', 'moderator']} requireAll={false}>
-      <UsersLayoutContent />
-    </RoleGuard>
+    <AuthGuard>
+      <RoleGuard requiredRoles={['admin', 'moderator']} requireAll={false}>
+        <UsersLayoutContent />
+      </RoleGuard>
+    </AuthGuard>
   );
 }
 

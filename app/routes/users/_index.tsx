@@ -2,6 +2,7 @@
 
 import { json, LoaderFunction, ActionFunction } from "@remix-run/node";
 import { useLoaderData, useActionData, Form, Link, useNavigation, useSearchParams } from "@remix-run/react";
+import { getSession, commitSession } from "~/utils/session.server";
 import { useState } from "react";
 import { 
   Search, Filter, Plus, Edit, Trash2, Eye, EyeOff, Users, 
@@ -98,6 +99,20 @@ interface ActionData {
 }
 
 export const loader: LoaderFunction = async ({ request }) => {
+
+  const session = await getSession(request.headers.get("Cookie"));
+  
+  // Obtener mensajes flash de la sesión
+  const successMessage = session.get("success");
+  const errorMessage = session.get("error");
+  
+  let flashMessage;
+  if (successMessage) {
+    flashMessage = { type: 'success' as const, message: successMessage };
+  } else if (errorMessage) {
+    flashMessage = { type: 'error' as const, message: errorMessage };
+  }
+
   try {
     const url = new URL(request.url);
     const filters: UserFilters = {
@@ -132,7 +147,12 @@ export const loader: LoaderFunction = async ({ request }) => {
       stats,
       tenants,
       roles,
-      error: null 
+      error: null,
+      flashMessage
+    },{
+      headers: {
+        "Set-Cookie": await commitSession(session), // Esto limpia los mensajes flash
+      },
     });
   } catch (error: any) {
     console.error('Error loading users:', error);
@@ -255,7 +275,7 @@ export const action: ActionFunction = async ({ request }) => {
 };
 
 export default function UsersIndex() {
-  const { users, stats, tenants, roles, error } = useLoaderData<LoaderData>();
+  const { users, stats, tenants, roles, error, flashMessage } = useLoaderData<LoaderData>();
   const actionData = useActionData<ActionData>();
   const navigation = useNavigation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -348,6 +368,15 @@ export default function UsersIndex() {
 
   return (
     <div className="space-y-8">
+      {/* Mostrar alerta si hay mensaje flash */}
+      {flashMessage && (
+        <Alert 
+          type={flashMessage.type} 
+          message={flashMessage.message}
+          dismissible 
+        />
+      )}
+      
       {/* Mensajes de estado */}
       {actionData?.error && (
         <div className="bg-red-50/80 backdrop-blur-sm border border-red-200/50 text-red-700 px-6 py-4 rounded-xl flex items-center shadow-lg">

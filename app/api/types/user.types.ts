@@ -1,5 +1,68 @@
 // app/api/types/user.types.ts
 
+export interface BackendUser {
+  id: string;
+  email: string;
+  name: string;
+  lastName?: string;
+  password?: string; // Viene encriptada, no la usamos
+  tenantId: string;
+  isActive: boolean;
+  roles: string[]; // En el backend viene como 'roles', no 'roleIds'
+  createdAt: string;
+  updatedAt: string;
+  lastLoginAt?: string;
+  
+  // Configuración de perfil con los nombres exactos del backend
+  profileConfig?: {
+    id?: string;
+    user?: any;
+    avatarPath?: string | null;
+    bio?: string;
+    phoneNumber?: string;
+    type_document?: string;
+    documentNumber?: string;
+    organization?: string;
+    charge?: string;
+    genger?: string | null; // Typo en el backend
+    City?: string | null;   // Mayúscula en el backend
+    Country?: string | null; // Mayúscula en el backend
+    address?: string;
+    dateOfBirth?: Date | string;
+    createdAt?: string;
+    updatedAt?: string;
+  };
+  
+  // Configuración de notificaciones del backend
+  notificationConfig?: {
+    id?: string;
+    user?: any;
+    enableNotifications?: boolean;
+    smsNotifications?: boolean;
+    browserNotifications?: boolean;
+    securityAlerts?: boolean;
+    accountUpdates?: boolean;
+    systemUpdates?: boolean;
+    marketingEmails?: boolean;
+    newsletterEmails?: boolean;
+    reminders?: boolean;
+    mentions?: boolean;
+    directMessages?: boolean;
+    createdAt?: string;
+    updatedAt?: string;
+  };
+  
+  // Información del tenant (opcional)
+  tenant?: {
+    id: string;
+    name: string;
+    slug?: string;
+    domain?: string;
+    contactEmail?: string;
+    plan?: string;
+  };
+}
+
 export interface User {
   id: string;
   email: string;
@@ -242,49 +305,123 @@ export interface UserFormData {
 }
 
 // Función auxiliar para convertir User a UserFormData
-export const userToFormData = (user: User): UserFormData => {
-  return {
-    id: user.id,
-    email: user.email,
-    name: user.name,
-    lastName: user.lastName,
-    password: "", // Por seguridad, nunca cargar la contraseña
-    tenantId: user.tenantId,
-    roleIds: user.roleIds,
-    isActive: user.isActive,
+export const userToFormData = (backendUser: BackendUser): UserFormData => {
+  console.log('Convirtiendo usuario del backend:', backendUser);
+  
+  // Formatear fecha de nacimiento
+  const formatDateOfBirth = (date: Date | string | undefined | null): string => {
+    if (!date) return '';
+    
+    try {
+      const dateObj = typeof date === 'string' ? new Date(date) : date;
+      if (isNaN(dateObj.getTime())) return '';
+      return dateObj.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+    } catch {
+      return '';
+    }
+  };
+
+  // Manejar roles (viene como 'roles' en el backend, necesitamos 'roleIds')
+  const roleIds = Array.isArray(backendUser.roles) ? backendUser.roles : [];
+
+  const formData: UserFormData = {
+    id: backendUser.id,
+    email: backendUser.email || '',
+    name: backendUser.name || '',
+    lastName: backendUser.lastName || '',
+    password: '', // Nunca cargar contraseña por seguridad
+    tenantId: backendUser.tenantId || '',
+    roleIds: roleIds,
+    isActive: backendUser.isActive ?? true,
+    
+    // Mapear profileConfig corrigiendo inconsistencias del backend
+    profileConfig: {
+      phoneNumber: backendUser.profileConfig?.phoneNumber || '',
+      dateOfBirth: formatDateOfBirth(backendUser.profileConfig?.dateOfBirth),
+      bio: backendUser.profileConfig?.bio || '',
+      gender: backendUser.profileConfig?.genger || '', // Corrigiendo typo del backend
+      charge: backendUser.profileConfig?.charge || '',
+      type_document: backendUser.profileConfig?.type_document || '',
+      documentNumber: backendUser.profileConfig?.documentNumber || '',
+      organization: backendUser.profileConfig?.organization || '',
+      address: backendUser.profileConfig?.address || '',
+      city: backendUser.profileConfig?.City || '', // Corrigiendo mayúscula del backend
+      country: backendUser.profileConfig?.Country || '', // Corrigiendo mayúscula del backend
+    },
+    
+    // Mapear notificationConfig con valores por defecto
+    notificationConfig: {
+      enableNotifications: backendUser.notificationConfig?.enableNotifications ?? true,
+      smsNotifications: backendUser.notificationConfig?.smsNotifications ?? false,
+      browserNotifications: backendUser.notificationConfig?.browserNotifications ?? false,
+      securityAlerts: backendUser.notificationConfig?.securityAlerts ?? true,
+      accountUpdates: backendUser.notificationConfig?.accountUpdates ?? false,
+      systemUpdates: backendUser.notificationConfig?.systemUpdates ?? true,
+      marketingEmails: backendUser.notificationConfig?.marketingEmails ?? false,
+      newsletterEmails: backendUser.notificationConfig?.newsletterEmails ?? false,
+      reminders: backendUser.notificationConfig?.reminders ?? true,
+      mentions: backendUser.notificationConfig?.mentions ?? true,
+      directMessages: backendUser.notificationConfig?.directMessages ?? true,
+    },
+    
+    // Campos de auditoría
+    createdAt: backendUser.createdAt,
+    updatedAt: backendUser.updatedAt,
+    lastLoginAt: backendUser.lastLoginAt,
+  };
+
+  console.log('Usuario convertido para formulario:', formData);
+  return formData;
+};
+
+// Función para convertir datos del formulario al formato que espera el backend
+export const formDataToBackendUser = (formData: UserFormData): CreateUserRequest | UpdateUserRequest => {
+  console.log('Convirtiendo formulario a formato backend:', formData);
+  
+  const backendData = {
+    email: formData.email,
+    name: formData.name,
+    lastName: formData.lastName,
+    tenantId: formData.tenantId,
+    roleIds: formData.roleIds, // El backend espera 'roleIds' en las requests
+    isActive: formData.isActive ?? true,
     
     profileConfig: {
-      phoneNumber: user.phoneNumber,
-      dateOfBirth: user.dateOfBirth,
-      bio: user.bio,
-      gender: user.gender,
-      charge: user.charge,
-      type_document: user.type_document,
-      documentNumber: user.documentNumber,
-      organization: user.organization,
-      address: user.address,
-      city: user.city,
-      country: user.country,
+      phoneNumber: formData.profileConfig?.phoneNumber || '',
+      dateOfBirth: formData.profileConfig?.dateOfBirth || '',
+      bio: formData.profileConfig?.bio || '',
+      gender: formData.profileConfig?.gender || '', // Se envía como 'gender' al backend
+      charge: formData.profileConfig?.charge || '',
+      type_document: formData.profileConfig?.type_document || '',
+      documentNumber: formData.profileConfig?.documentNumber || '',
+      organization: formData.profileConfig?.organization || '',
+      address: formData.profileConfig?.address || '',
+      city: formData.profileConfig?.city || '', // Se envía como 'city' al backend
+      country: formData.profileConfig?.country || '', // Se envía como 'country' al backend
     },
     
     notificationConfig: {
-      enableNotifications: user.profile?.notifications?.enableNotifications,
-      smsNotifications: user.profile?.notifications?.smsNotifications,
-      browserNotifications: user.profile?.notifications?.browserNotifications,
-      securityAlerts: user.profile?.notifications?.securityAlerts,
-      accountUpdates: user.profile?.notifications?.accountUpdates,
-      systemUpdates: user.profile?.notifications?.systemUpdates,
-      marketingEmails: user.profile?.notifications?.marketingEmails,
-      newsletterEmails: user.profile?.notifications?.newsletterEmails,
-      reminders: user.profile?.notifications?.reminders,
-      mentions: user.profile?.notifications?.mentions,
-      directMessages: user.profile?.notifications?.directMessages,
+      enableNotifications: formData.notificationConfig?.enableNotifications ?? true,
+      smsNotifications: formData.notificationConfig?.smsNotifications ?? false,
+      browserNotifications: formData.notificationConfig?.browserNotifications ?? false,
+      securityAlerts: formData.notificationConfig?.securityAlerts ?? true,
+      accountUpdates: formData.notificationConfig?.accountUpdates ?? false,
+      systemUpdates: formData.notificationConfig?.systemUpdates ?? true,
+      marketingEmails: formData.notificationConfig?.marketingEmails ?? false,
+      newsletterEmails: formData.notificationConfig?.newsletterEmails ?? false,
+      reminders: formData.notificationConfig?.reminders ?? true,
+      mentions: formData.notificationConfig?.mentions ?? true,
+      directMessages: formData.notificationConfig?.directMessages ?? true,
     },
-    
-    createdAt: user.createdAt,
-    updatedAt: user.updatedAt,
-    lastLoginAt: user.lastLoginAt,
   };
+
+  // Solo incluir contraseña si se proporciona
+  if (formData.password && formData.password.trim() !== '') {
+    (backendData as any).password = formData.password;
+  }
+
+  console.log('Datos convertidos para backend:', backendData);
+  return backendData;
 };
 
 // Función auxiliar para convertir UserFormData a User (para envío a API)

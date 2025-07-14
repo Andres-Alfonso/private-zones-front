@@ -10,7 +10,8 @@ import {
   UserFilters,
   UserStats,
   UserActivity,
-  UserSession
+  UserSession,
+  BackendUser
 } from '../types/user.types';
 
 const USERS_ENDPOINTS = {
@@ -71,7 +72,7 @@ export const UsersAPI = {
   },
 
   // Obtener usuario por ID
-  getById: async (id: string): Promise<User> => {
+  getById: async (id: string): Promise<BackendUser> => {
     const response = await apiClient.get(USERS_ENDPOINTS.BY_ID(id));
     return response.data;
   },

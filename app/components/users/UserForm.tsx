@@ -80,8 +80,8 @@ export default function UserForm({
     });
 
     // Manejar roles por separado
-    if (formData.roles && Array.isArray(formData.roles)) {
-      formData.roles.forEach(roleId => {
+    if (formData.roleIds && Array.isArray(formData.roleIds)) {
+      formData.roleIds.forEach(roleId => {
         const hiddenInput = document.createElement('input');
         hiddenInput.type = 'hidden';
         hiddenInput.name = 'roles';

@@ -4,7 +4,7 @@ import type { ActionFunction, LoaderFunction, MetaFunction } from "@remix-run/no
 import { json, redirect } from "@remix-run/node";
 import { useActionData, useLoaderData, useParams } from "@remix-run/react";
 import { UsersAPI } from "~/api/endpoints/users";
-import { EditLoaderData, userToFormData } from "~/api/types/user.types";
+import { BackendUser, EditLoaderData, userToFormData } from "~/api/types/user.types";
 import UserForm from "~/components/users/UserForm";
 import type { LoaderData, ActionData, UserFormData } from "~/components/users/types/user-form.types";
 
@@ -22,65 +22,47 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     throw new Response("Usuario no encontrado", { status: 404 });
   }
 
-  // Aquí cargarías el usuario, tenants y roles desde tu API/base de datos
-  const userFromAPI = await UsersAPI.getById(userId);
-  const tenants = await UsersAPI.getTenants();
-  const roles = await UsersAPI.getRoles();
-  
-  // Datos simulados
-  // const user: UserFormData = {
-  //   id: userId,
-  //   email: "usuario@ejemplo.com",
-  //   password: "", // No se carga la contraseña por seguridad
-  //   name: "Juan",
-  //   lastName: "Pérez",
-  //   tenantId: "1",
-  //   isActive: true,
-  //   roles: ["2", "3"],
+  try {
+    console.log('Cargando usuario con ID:', userId);
     
-  //   // Perfil
-  //   bio: "Desarrollador Full Stack con 5 años de experiencia",
-  //   phoneNumber: "+57 300 123 4567",
-  //   type_document: "DNI",
-  //   documentNumber: "12345678",
-  //   Organization: "TechCorp",
-  //   Charge: "Senior Developer",
-  //   Genger: "Masculino",
-  //   City: "Bogotá",
-  //   Country: "Colombia",
-  //   address: "Calle 123 #45-67",
-  //   dateOfBirth: "1990-05-15",
+    // Realizar llamadas paralelas a la API
+    const [userFromAPI, tenants, roles] = await Promise.all([
+      UsersAPI.getById(userId),
+      UsersAPI.getTenants(),
+      UsersAPI.getRoles()
+    ]);
+
+    console.log('Usuario crudo del API:', userFromAPI);
+
+    // Convertir los datos del backend al formato del formulario
+    const user = userToFormData(userFromAPI as BackendUser);
+
+    console.log('Usuario convertido para formulario:', user);
+
+    return json<EditLoaderData>({ user, tenants, roles });
+  } catch (error: any) {
+    console.error('Error loading user:', error);
     
-  //   // Notificaciones
-  //   enableNotifications: true,
-  //   smsNotifications: false,
-  //   browserNotifications: true,
-  //   securityAlerts: true,
-  //   accountUpdates: true,
-  //   systemUpdates: true,
-  //   marketingEmails: false,
-  //   newsletterEmails: false,
-  //   reminders: true,
-  //   mentions: true,
-  //   directMessages: true,
-  // };
-  
-  // const tenants = [
-  //   { id: "1", name: "Tenant Principal" },
-  //   { id: "2", name: "Tenant Secundario" },
-  // ];
-  
-  // const roles = [
-  //   { id: "1", name: "admin", description: "Administrador del sistema" },
-  //   { id: "2", name: "moderator", description: "Moderador" },
-  //   { id: "3", name: "user", description: "Usuario estándar" },
-  // ];
-
-  const user = userToFormData(userFromAPI);
-
-  console.log(user);
-
-  return json<EditLoaderData>({ user, tenants, roles });
+    let errorMessage = 'Error al cargar el usuario';
+    if (error.response) {
+      const status = error.response.status;
+      switch (status) {
+        case 401:
+          errorMessage = 'No autorizado. Inicia sesión nuevamente.';
+          break;
+        case 403:
+          errorMessage = 'No tienes permisos para editar este usuario.';
+          break;
+        case 404:
+          errorMessage = 'Usuario no encontrado.';
+          break;
+        default:
+          errorMessage = error.response.data?.message || 'Error del servidor';
+      }
+    }
+    
+    throw new Response(errorMessage, { status: error.response?.status || 500 });
+  }
 };
 
 export const action: ActionFunction = async ({ request, params }) => {
@@ -167,17 +149,34 @@ export const action: ActionFunction = async ({ request, params }) => {
       userData.password = data.password;
     }
 
-    // Aquí harías la llamada a tu API para actualizar el usuario
-    // const updatedUser = await updateUser(userId, userData);
+    // Llamada a tu API para actualizar el usuario
+    const updatedUser = await UsersAPI.update(userId, userData);
+
+    if (!updatedUser) {
+      return json<ActionData>({
+        errors: { general: "Error al actualizar usuario. Intente nuevamente." },
+        values: data
+      }, { status: 500 });
+    }
     
     console.log('Datos del usuario a actualizar:', userData);
     
     // Simular éxito
     return redirect(`/users/${userId}`);
   } catch (error) {
+    let errorMessage = "Error al actualizar el usuario.";
+  
+    if (error && typeof error === "object" && "response" in error) {
+      const axiosError = error as any;
+      console.error("Error del servidor:", axiosError.response?.data);
+      errorMessage = axiosError.response?.data?.message || errorMessage;
+    } else {
+      console.error("Error desconocido:", error);
+    }
+
     return json<ActionData>({
-      errors: { general: "Error al actualizar el usuario. Intente nuevamente." },
-      values: data
+      errors: { general: errorMessage },
+      values: data,
     }, { status: 500 });
   }
 };

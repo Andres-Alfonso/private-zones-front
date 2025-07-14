@@ -4,30 +4,45 @@ import {
   User, Mail, Lock, Building2, Shield, Eye, EyeOff, 
   AlertCircle, Users as UsersIcon, Check 
 } from "lucide-react";
-import type { FormErrors, Tenant, Role } from "./types/user-form.types";
+import type { FormErrors, Tenant, Role, UserFormData } from "./types/user-form.types";
 import { RoleGuard } from "../AuthGuard";
 
 interface BasicInfoFormProps {
   errors?: FormErrors;
-  defaultValues?: Record<string, any>;
   tenants: Tenant[];
   roles: Role[];
   selectedRoles: string[];
   showPassword: boolean;
   onRoleToggle: (roleId: string) => void;
   onTogglePasswordVisibility: () => void;
+  
+  // Nuevas props para manejar el estado
+  formData: Partial<UserFormData>;
+  onFieldChange: (field: keyof UserFormData, value: any) => void;
 }
 
 export default function BasicInfoForm({
   errors,
-  defaultValues,
   tenants,
   roles,
   selectedRoles,
   showPassword,
   onRoleToggle,
-  onTogglePasswordVisibility
+  onTogglePasswordVisibility,
+  formData,
+  onFieldChange
 }: BasicInfoFormProps) {
+  
+  // Manejador genérico para cambios en inputs
+  const handleInputChange = (field: keyof UserFormData) => (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const value = e.target.type === 'checkbox' 
+      ? (e.target as HTMLInputElement).checked
+      : e.target.value;
+    onFieldChange(field, value);
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -45,7 +60,8 @@ export default function BasicInfoForm({
               id="email"
               name="email"
               required
-              defaultValue={defaultValues?.email}
+              value={formData.email || ''}
+              onChange={handleInputChange('email')}
               className={`w-full px-3 py-2 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                 errors?.email ? 'border-red-300' : 'border-gray-300'
               }`}
@@ -71,6 +87,8 @@ export default function BasicInfoForm({
                 id="password"
                 name="password"
                 required
+                value={formData.password || ''}
+                onChange={handleInputChange('password')}
                 className={`w-full px-3 py-2 pr-10 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                   errors?.password ? 'border-red-300' : 'border-gray-300'
                 }`}
@@ -107,7 +125,8 @@ export default function BasicInfoForm({
               id="name"
               name="name"
               required
-              defaultValue={defaultValues?.name}
+              value={formData.name || ''}
+              onChange={handleInputChange('name')}
               className={`w-full px-3 py-2 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                 errors?.name ? 'border-red-300' : 'border-gray-300'
               }`}
@@ -131,7 +150,8 @@ export default function BasicInfoForm({
               type="text"
               id="lastName"
               name="lastName"
-              defaultValue={defaultValues?.lastName}
+              value={formData.lastName || ''}
+              onChange={handleInputChange('lastName')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Apellido del usuario"
             />
@@ -147,7 +167,8 @@ export default function BasicInfoForm({
               id="tenantId"
               name="tenantId"
               required
-              defaultValue={defaultValues?.tenantId}
+              value={formData.tenantId || ''}
+              onChange={handleInputChange('tenantId')}
               className={`w-full px-3 py-2 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                 errors?.tenantId ? 'border-red-300' : 'border-gray-300'
               }`}
@@ -176,7 +197,8 @@ export default function BasicInfoForm({
             <select
               id="isActive"
               name="isActive"
-              defaultValue={defaultValues?.isActive ?? "true"}
+              value={formData.isActive ? "true" : "false"}
+              onChange={(e) => onFieldChange('isActive', e.target.value === "true")}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="true">Activo</option>
@@ -186,43 +208,46 @@ export default function BasicInfoForm({
         </div>
 
         <RoleGuard requiredRole="admin">
-            {/* Roles */}
-            <div className="mt-6">
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                    <UsersIcon className="h-4 w-4 inline mr-1" />
-                    Roles
-                </label>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {roles.map((role) => (
-                    <div
-                        key={role.id}
-                        className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                        selectedRoles.includes(role.id)
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                        onClick={() => onRoleToggle(role.id)}
-                    >
-                        <div className="flex items-center justify-between">
-                        <div>
-                            <div className="font-medium text-gray-900">{role.name}</div>
-                            {role.description && (
-                            <div className="text-sm text-gray-500">{role.description}</div>
-                            )}
-                        </div>
-                        {selectedRoles.includes(role.id) && (
-                            <Check className="h-5 w-5 text-blue-600" />
-                        )}
-                        </div>
-                        <input
-                        type="hidden"
-                        name="roles"
-                        value={selectedRoles.includes(role.id) ? role.id : ''}
-                        />
+          {/* Roles */}
+          <div className="mt-6">
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              <UsersIcon className="h-4 w-4 inline mr-1" />
+              Roles
+            </label>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {roles.map((role) => (
+                <div
+                  key={role.id}
+                  className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                    selectedRoles.includes(role.id)
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                  onClick={() => onRoleToggle(role.id)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-medium text-gray-900">{role.name}</div>
+                      {role.description && (
+                        <div className="text-sm text-gray-500">{role.description}</div>
+                      )}
                     </div>
-                    ))}
+                    {selectedRoles.includes(role.id) && (
+                      <Check className="h-5 w-5 text-blue-600" />
+                    )}
+                  </div>
+                  {/* Hidden inputs para envío del formulario */}
+                  {selectedRoles.includes(role.id) && (
+                    <input
+                      type="hidden"
+                      name="roles"
+                      value={role.id}
+                    />
+                  )}
                 </div>
+              ))}
             </div>
+          </div>
         </RoleGuard>
       </div>
     </div>

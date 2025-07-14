@@ -1,16 +1,23 @@
 // app/components/users/NotificationSettings.tsx
 
+import type { UserFormData } from "./types/user-form.types";
+
 interface NotificationSettingsProps {
-  defaultValues?: Record<string, any>;
+  formData: Partial<UserFormData>;
+  onFieldChange: (field: keyof UserFormData, value: any) => void;
 }
 
 interface SettingItem {
-  name: string;
+  name: keyof UserFormData;
   label: string;
   defaultChecked: boolean;
 }
 
-export default function NotificationSettings({ defaultValues }: NotificationSettingsProps) {
+export default function NotificationSettings({ 
+  formData, 
+  onFieldChange 
+}: NotificationSettingsProps) {
+  
   const generalSettings: SettingItem[] = [
     { name: 'enableNotifications', label: 'Habilitar notificaciones', defaultChecked: true },
     { name: 'smsNotifications', label: 'Notificaciones SMS', defaultChecked: false },
@@ -28,8 +35,14 @@ export default function NotificationSettings({ defaultValues }: NotificationSett
     { name: 'directMessages', label: 'Mensajes directos', defaultChecked: true },
   ];
 
-  const getDefaultValue = (name: string, fallback: boolean) => {
-    return defaultValues?.[name] !== undefined ? defaultValues[name] : fallback;
+  const getValue = (name: keyof UserFormData, fallback: boolean) => {
+    return formData[name] !== undefined ? formData[name] as boolean : fallback;
+  };
+
+  const handleToggleChange = (name: keyof UserFormData) => (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    onFieldChange(name, e.target.checked);
   };
 
   return (
@@ -47,7 +60,8 @@ export default function NotificationSettings({ defaultValues }: NotificationSett
                   key={setting.name}
                   name={setting.name}
                   label={setting.label}
-                  defaultChecked={getDefaultValue(setting.name, setting.defaultChecked)}
+                  checked={getValue(setting.name, setting.defaultChecked)}
+                  onChange={handleToggleChange(setting.name)}
                 />
               ))}
             </div>
@@ -62,7 +76,8 @@ export default function NotificationSettings({ defaultValues }: NotificationSett
                   key={setting.name}
                   name={setting.name}
                   label={setting.label}
-                  defaultChecked={getDefaultValue(setting.name, setting.defaultChecked)}
+                  checked={getValue(setting.name, setting.defaultChecked)}
+                  onChange={handleToggleChange(setting.name)}
                 />
               ))}
             </div>
@@ -74,12 +89,13 @@ export default function NotificationSettings({ defaultValues }: NotificationSett
 }
 
 interface SettingToggleProps {
-  name: string;
+  name: keyof UserFormData;
   label: string;
-  defaultChecked: boolean;
+  checked: boolean;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-function SettingToggle({ name, label, defaultChecked }: SettingToggleProps) {
+function SettingToggle({ name, label, checked, onChange }: SettingToggleProps) {
   return (
     <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
       <div>
@@ -91,7 +107,8 @@ function SettingToggle({ name, label, defaultChecked }: SettingToggleProps) {
         type="checkbox"
         id={name}
         name={name}
-        defaultChecked={defaultChecked}
+        checked={checked}
+        onChange={onChange}
         className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
       />
     </div>

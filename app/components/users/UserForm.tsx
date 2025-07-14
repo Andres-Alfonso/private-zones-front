@@ -8,6 +8,7 @@ import ProfileInfoForm from "./ProfileInfoForm";
 import NotificationSettings from "./NotificationSettings";
 import { useUserForm } from "./hooks/useUserForm";
 import type { ActionData, LoaderData, UserFormData } from "./types/user-form.types";
+import { useEffect } from "react";
 
 interface UserFormProps {
   mode: 'create' | 'edit';
@@ -34,10 +35,19 @@ export default function UserForm({
     togglePasswordVisibility,
     selectedRoles,
     handleRoleToggle,
+    formData,
+    updateField,
+    updateFields,
   } = useUserForm(initialData);
 
   const { tenants, roles } = loaderData;
-  const defaultValues = actionData?.values || initialData;
+
+  // Sincronizar con valores de actionData si hay errores de validación
+  useEffect(() => {
+    if (actionData?.values) {
+      updateFields(actionData.values);
+    }
+  }, [actionData?.values, updateFields]);
 
   const handleCancel = () => {
     if (onCancel) {
@@ -47,9 +57,44 @@ export default function UserForm({
     }
   };
 
+  // Función para manejar el envío del formulario
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    // El formulario se enviará normalmente, pero necesitamos asegurar
+    // que todos los valores estén en los campos hidden o sean manejados correctamente
+    
+    // Agregar campos hidden para todos los valores del estado
+    const form = e.currentTarget;
+    const existingHiddenInputs = form.querySelectorAll('input[type="hidden"][data-state-field]');
+    existingHiddenInputs.forEach(input => input.remove());
+
+    // Agregar campos hidden para valores que podrían no estar en la pestaña actual
+    Object.entries(formData).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && key !== 'roles') {
+        const hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.name = key;
+        hiddenInput.value = typeof value === 'boolean' ? (value ? 'on' : '') : String(value);
+        hiddenInput.setAttribute('data-state-field', 'true');
+        form.appendChild(hiddenInput);
+      }
+    });
+
+    // Manejar roles por separado
+    if (formData.roles && Array.isArray(formData.roles)) {
+      formData.roles.forEach(roleId => {
+        const hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.name = 'roles';
+        hiddenInput.value = roleId;
+        hiddenInput.setAttribute('data-state-field', 'true');
+        form.appendChild(hiddenInput);
+      });
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto">
-      <Form method="post" className="space-y-6">
+      <Form method="post" className="space-y-6" onSubmit={handleSubmit}>
         {/* Contenedor principal del formulario */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 overflow-hidden">
           {/* Pestañas */}
@@ -60,22 +105,29 @@ export default function UserForm({
             {activeTab === 'basic' && (
               <BasicInfoForm
                 errors={actionData?.errors}
-                defaultValues={defaultValues}
                 tenants={tenants}
                 roles={roles}
                 selectedRoles={selectedRoles}
                 showPassword={showPassword}
                 onRoleToggle={handleRoleToggle}
                 onTogglePasswordVisibility={togglePasswordVisibility}
+                formData={formData}
+                onFieldChange={updateField}
               />
             )}
 
             {activeTab === 'profile' && (
-              <ProfileInfoForm defaultValues={defaultValues} />
+              <ProfileInfoForm 
+                formData={formData}
+                onFieldChange={updateField}
+              />
             )}
 
             {activeTab === 'notifications' && (
-              <NotificationSettings defaultValues={defaultValues} />
+              <NotificationSettings 
+                formData={formData}
+                onFieldChange={updateField}
+              />
             )}
           </div>
         </div>
@@ -87,6 +139,20 @@ export default function UserForm({
               <AlertCircle className="h-5 w-5 text-red-400 mr-2" />
               <p className="text-red-800">{actionData.errors.general}</p>
             </div>
+          </div>
+        )}
+
+        {/* Indicador de estado del formulario en desarrollo */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <details>
+              <summary className="cursor-pointer text-blue-800 font-medium">
+                Debug: Estado del formulario
+              </summary>
+              <pre className="mt-2 text-xs bg-white p-2 rounded border overflow-auto max-h-40">
+                {JSON.stringify(formData, null, 2)}
+              </pre>
+            </details>
           </div>
         )}
 

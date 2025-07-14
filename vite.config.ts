@@ -44,10 +44,10 @@ export default defineConfig({
           // Rutas de gestión de usuarios
           route("users", "routes/users/_layout.tsx", () => {
             route("", "routes/users/_index.tsx", { index: true });
-            // route("create", "routes/users/create.tsx");
-            // route(":id", "routes/users/$id.tsx");
-            // route(":id/edit", "routes/users/$id.edit.tsx");
-            // Rutas adicionales para usuarios (opcionales)
+            route("create", "routes/users/create.tsx");
+            //route(":id", "routes/users/$id.tsx");
+            route(":id/edit", "routes/users/$id.edit.tsx");
+            //Rutas adicionales para usuarios (opcionales)
             // route(":id/settings", "routes/users/$id.settings.tsx");
           });
         });

@@ -23,16 +23,18 @@ export interface FormErrors {
 }
 
 export interface UserFormData {
-  // Básicos
+  // Campos básicos
+  id?: string;
   email: string;
   password: string;
+  confirmPassword?: string;
   name: string;
   lastName?: string;
   tenantId: string;
   isActive: boolean;
   roles: string[];
 
-  // Perfil
+  // Campos de perfil
   bio?: string;
   phoneNumber?: string;
   type_document?: string;
@@ -45,7 +47,7 @@ export interface UserFormData {
   address?: string;
   dateOfBirth?: string;
 
-  // Notificaciones
+  // Configuración de notificaciones
   enableNotifications: boolean;
   smsNotifications: boolean;
   browserNotifications: boolean;
@@ -57,6 +59,17 @@ export interface UserFormData {
   reminders: boolean;
   mentions: boolean;
   directMessages: boolean;
+
+  // Campos adicionales opcionales
+  timezone?: string;
+  language?: string;
+  sendWelcomeEmail?: boolean;
+  requirePasswordChange?: boolean;
+  
+  // Campos de auditoría (solo lectura)
+  createdAt?: string;
+  updatedAt?: string;
+  lastLoginAt?: string;
 }
 
 export interface LoaderData {
@@ -67,6 +80,7 @@ export interface LoaderData {
 export interface ActionData {
   errors?: FormErrors;
   values?: Partial<UserFormData>;
+  success?: boolean;
 }
 
 export interface TabConfig {

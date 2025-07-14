@@ -4,12 +4,25 @@ import {
   Phone, FileText, Building2, Briefcase, Calendar, 
   MapPin, Globe, Home 
 } from "lucide-react";
+import type { UserFormData } from "./types/user-form.types";
 
 interface ProfileInfoFormProps {
-  defaultValues?: Record<string, any>;
+  formData: Partial<UserFormData>;
+  onFieldChange: (field: keyof UserFormData, value: any) => void;
 }
 
-export default function ProfileInfoForm({ defaultValues }: ProfileInfoFormProps) {
+export default function ProfileInfoForm({ 
+  formData, 
+  onFieldChange 
+}: ProfileInfoFormProps) {
+  
+  // Manejador genérico para cambios en inputs
+  const handleInputChange = (field: keyof UserFormData) => (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
+    onFieldChange(field, e.target.value);
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -25,7 +38,8 @@ export default function ProfileInfoForm({ defaultValues }: ProfileInfoFormProps)
               id="bio"
               name="bio"
               rows={3}
-              defaultValue={defaultValues?.bio}
+              value={formData.bio || ''}
+              onChange={handleInputChange('bio')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Breve descripción del usuario"
             />
@@ -41,7 +55,8 @@ export default function ProfileInfoForm({ defaultValues }: ProfileInfoFormProps)
               type="tel"
               id="phoneNumber"
               name="phoneNumber"
-              defaultValue={defaultValues?.phoneNumber}
+              value={formData.phoneNumber || ''}
+              onChange={handleInputChange('phoneNumber')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="+57 300 123 4567"
             />
@@ -56,7 +71,8 @@ export default function ProfileInfoForm({ defaultValues }: ProfileInfoFormProps)
             <select
               id="type_document"
               name="type_document"
-              defaultValue={defaultValues?.type_document}
+              value={formData.type_document || ''}
+              onChange={handleInputChange('type_document')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">Seleccionar tipo</option>
@@ -76,7 +92,8 @@ export default function ProfileInfoForm({ defaultValues }: ProfileInfoFormProps)
               type="text"
               id="documentNumber"
               name="documentNumber"
-              defaultValue={defaultValues?.documentNumber}
+              value={formData.documentNumber || ''}
+              onChange={handleInputChange('documentNumber')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="123456789"
             />
@@ -92,7 +109,8 @@ export default function ProfileInfoForm({ defaultValues }: ProfileInfoFormProps)
               type="text"
               id="Organization"
               name="Organization"
-              defaultValue={defaultValues?.Organization}
+              value={formData.Organization || ''}
+              onChange={handleInputChange('Organization')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Nombre de la empresa"
             />
@@ -108,7 +126,8 @@ export default function ProfileInfoForm({ defaultValues }: ProfileInfoFormProps)
               type="text"
               id="Charge"
               name="Charge"
-              defaultValue={defaultValues?.Charge}
+              value={formData.Charge || ''}
+              onChange={handleInputChange('Charge')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Desarrollador, Gerente, etc."
             />
@@ -122,7 +141,8 @@ export default function ProfileInfoForm({ defaultValues }: ProfileInfoFormProps)
             <select
               id="Genger"
               name="Genger"
-              defaultValue={defaultValues?.Genger}
+              value={formData.Genger || ''}
+              onChange={handleInputChange('Genger')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">Seleccionar género</option>
@@ -143,7 +163,8 @@ export default function ProfileInfoForm({ defaultValues }: ProfileInfoFormProps)
               type="date"
               id="dateOfBirth"
               name="dateOfBirth"
-              defaultValue={defaultValues?.dateOfBirth}
+              value={formData.dateOfBirth || ''}
+              onChange={handleInputChange('dateOfBirth')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
@@ -158,7 +179,8 @@ export default function ProfileInfoForm({ defaultValues }: ProfileInfoFormProps)
               type="text"
               id="City"
               name="City"
-              defaultValue={defaultValues?.City}
+              value={formData.City || ''}
+              onChange={handleInputChange('City')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Bogotá"
             />
@@ -174,7 +196,8 @@ export default function ProfileInfoForm({ defaultValues }: ProfileInfoFormProps)
               type="text"
               id="Country"
               name="Country"
-              defaultValue={defaultValues?.Country}
+              value={formData.Country || ''}
+              onChange={handleInputChange('Country')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Colombia"
             />
@@ -190,7 +213,8 @@ export default function ProfileInfoForm({ defaultValues }: ProfileInfoFormProps)
               type="text"
               id="address"
               name="address"
-              defaultValue={defaultValues?.address}
+              value={formData.address || ''}
+              onChange={handleInputChange('address')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Calle 123 #45-67, Bogotá"
             />

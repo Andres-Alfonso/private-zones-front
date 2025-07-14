@@ -23,48 +23,54 @@ export interface FormErrors {
 }
 
 export interface UserFormData {
-  // Campos básicos
-  id?: string;
   email: string;
-  password: string;
-  confirmPassword?: string;
   name: string;
-  lastName?: string;
+  lastName: string;
+  password: string;
   tenantId: string;
-  isActive: boolean;
-  roles: string[];
+  roleIds: string[];
+  isActive?: boolean;
 
-  // Campos de perfil
-  bio?: string;
-  phoneNumber?: string;
-  type_document?: string;
-  documentNumber?: string;
-  Organization?: string;
-  Charge?: string;
-  Genger?: string;
-  City?: string;
-  Country?: string;
-  address?: string;
-  dateOfBirth?: string;
+  profileConfig: {
+    // Información personal
+    phoneNumber?: string;
+    dateOfBirth?: string;
+    bio?: string;
+    gender?: string;
+    charge?: string;
+    type_document?: string;
+    documentNumber?: string;
+    organization?: string;
+    address?: string;
+    city?: string;
+    country?: string;
+  },
 
-  // Configuración de notificaciones
-  enableNotifications: boolean;
-  smsNotifications: boolean;
-  browserNotifications: boolean;
-  securityAlerts: boolean;
-  accountUpdates: boolean;
-  systemUpdates: boolean;
-  marketingEmails: boolean;
-  newsletterEmails: boolean;
-  reminders: boolean;
-  mentions: boolean;
-  directMessages: boolean;
+  // Información del perfil profesional
+  // jobTitle?: string;
+  // department?: string;
+  // location?: string;
+  // timezone?: string;
+  // language?: string;
 
-  // Campos adicionales opcionales
-  timezone?: string;
-  language?: string;
-  sendWelcomeEmail?: boolean;
-  requirePasswordChange?: boolean;
+  // Configuración inicial
+  // sendWelcomeEmail?: boolean;
+  // requirePasswordChange?: boolean;
+
+  notificationConfig: { 
+    // Preferencias de notificación
+    enableNotifications?: boolean;
+    smsNotifications?: boolean;
+    browserNotifications?: boolean;
+    securityAlerts?: boolean;
+    accountUpdates?: boolean;
+    systemUpdates?: boolean;
+    marketingEmails?: boolean;
+    newsletterEmails?: boolean;
+    reminders?: boolean;
+    mentions?: boolean;
+    directMessages?: boolean;
+  },
   
   // Campos de auditoría (solo lectura)
   createdAt?: string;

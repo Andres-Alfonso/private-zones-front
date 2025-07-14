@@ -3,6 +3,8 @@
 import type { ActionFunction, LoaderFunction, MetaFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useActionData, useLoaderData, useParams } from "@remix-run/react";
+import { UsersAPI } from "~/api/endpoints/users";
+import { EditLoaderData, userToFormData } from "~/api/types/user.types";
 import UserForm from "~/components/users/UserForm";
 import type { LoaderData, ActionData, UserFormData } from "~/components/users/types/user-form.types";
 
@@ -13,10 +15,6 @@ export const meta: MetaFunction = () => {
   ];
 };
 
-interface EditLoaderData extends LoaderData {
-  user: UserFormData;
-}
-
 export const loader: LoaderFunction = async ({ request, params }) => {
   const userId = params.id;
   
@@ -25,58 +23,62 @@ export const loader: LoaderFunction = async ({ request, params }) => {
   }
 
   // Aquí cargarías el usuario, tenants y roles desde tu API/base de datos
-  // const user = await getUserById(userId);
-  // const tenants = await getTenants();
-  // const roles = await getRoles();
+  const userFromAPI = await UsersAPI.getById(userId);
+  const tenants = await UsersAPI.getTenants();
+  const roles = await UsersAPI.getRoles();
   
   // Datos simulados
-  const user: UserFormData = {
-    id: userId,
-    email: "usuario@ejemplo.com",
-    password: "", // No se carga la contraseña por seguridad
-    name: "Juan",
-    lastName: "Pérez",
-    tenantId: "1",
-    isActive: true,
-    roles: ["2", "3"],
+  // const user: UserFormData = {
+  //   id: userId,
+  //   email: "usuario@ejemplo.com",
+  //   password: "", // No se carga la contraseña por seguridad
+  //   name: "Juan",
+  //   lastName: "Pérez",
+  //   tenantId: "1",
+  //   isActive: true,
+  //   roles: ["2", "3"],
     
-    // Perfil
-    bio: "Desarrollador Full Stack con 5 años de experiencia",
-    phoneNumber: "+57 300 123 4567",
-    type_document: "DNI",
-    documentNumber: "12345678",
-    Organization: "TechCorp",
-    Charge: "Senior Developer",
-    Genger: "Masculino",
-    City: "Bogotá",
-    Country: "Colombia",
-    address: "Calle 123 #45-67",
-    dateOfBirth: "1990-05-15",
+  //   // Perfil
+  //   bio: "Desarrollador Full Stack con 5 años de experiencia",
+  //   phoneNumber: "+57 300 123 4567",
+  //   type_document: "DNI",
+  //   documentNumber: "12345678",
+  //   Organization: "TechCorp",
+  //   Charge: "Senior Developer",
+  //   Genger: "Masculino",
+  //   City: "Bogotá",
+  //   Country: "Colombia",
+  //   address: "Calle 123 #45-67",
+  //   dateOfBirth: "1990-05-15",
     
-    // Notificaciones
-    enableNotifications: true,
-    smsNotifications: false,
-    browserNotifications: true,
-    securityAlerts: true,
-    accountUpdates: true,
-    systemUpdates: true,
-    marketingEmails: false,
-    newsletterEmails: false,
-    reminders: true,
-    mentions: true,
-    directMessages: true,
-  };
+  //   // Notificaciones
+  //   enableNotifications: true,
+  //   smsNotifications: false,
+  //   browserNotifications: true,
+  //   securityAlerts: true,
+  //   accountUpdates: true,
+  //   systemUpdates: true,
+  //   marketingEmails: false,
+  //   newsletterEmails: false,
+  //   reminders: true,
+  //   mentions: true,
+  //   directMessages: true,
+  // };
   
-  const tenants = [
-    { id: "1", name: "Tenant Principal" },
-    { id: "2", name: "Tenant Secundario" },
-  ];
+  // const tenants = [
+  //   { id: "1", name: "Tenant Principal" },
+  //   { id: "2", name: "Tenant Secundario" },
+  // ];
   
-  const roles = [
-    { id: "1", name: "admin", description: "Administrador del sistema" },
-    { id: "2", name: "moderator", description: "Moderador" },
-    { id: "3", name: "user", description: "Usuario estándar" },
-  ];
+  // const roles = [
+  //   { id: "1", name: "admin", description: "Administrador del sistema" },
+  //   { id: "2", name: "moderator", description: "Moderador" },
+  //   { id: "3", name: "user", description: "Usuario estándar" },
+  // ];
+
+  const user = userToFormData(userFromAPI);
+
+  console.log(user);
 
   return json<EditLoaderData>({ user, tenants, roles });
 };
@@ -123,38 +125,41 @@ export const action: ActionFunction = async ({ request, params }) => {
     // Construir el objeto usuario con todos los datos
     const userData: Partial<UserFormData> = {
       // Datos básicos
-      email: data.email,
-      name: data.name,
-      lastName: data.lastName,
-      tenantId: data.tenantId,
+      email: String(data.email),
+      name: String(data.name),
+      lastName: String(data.lastName),
+      tenantId: String(data.tenantId),
       isActive: data.isActive === 'true',
-      roles: roles,
+      roleIds: roles.map(r => String(r)),
 
-      // Perfil
-      bio: data.bio,
-      phoneNumber: data.phoneNumber,
-      type_document: data.type_document,
-      documentNumber: data.documentNumber,
-      Organization: data.Organization,
-      Charge: data.Charge,
-      Genger: data.Genger,
-      City: data.City,
-      Country: data.Country,
-      address: data.address,
-      dateOfBirth: data.dateOfBirth,
+      profileConfig: {
+        bio: String(data.bio),
+        phoneNumber: String(data.phoneNumber),
+        type_document: String(data.type_document),
+        documentNumber: String(data.documentNumber),
+        organization: String(data.organization),
+        charge: String(data.charge),
+        gender: String(data.gender),
+        city: String(data.city),
+        country: String(data.country),
+        address: String(data.address),
+        dateOfBirth: String(data.dateOfBirth),
+      },
 
       // Notificaciones
-      enableNotifications: data.enableNotifications === 'on',
-      smsNotifications: data.smsNotifications === 'on',
-      browserNotifications: data.browserNotifications === 'on',
-      securityAlerts: data.securityAlerts === 'on',
-      accountUpdates: data.accountUpdates === 'on',
-      systemUpdates: data.systemUpdates === 'on',
-      marketingEmails: data.marketingEmails === 'on',
-      newsletterEmails: data.newsletterEmails === 'on',
-      reminders: data.reminders === 'on',
-      mentions: data.mentions === 'on',
-      directMessages: data.directMessages === 'on',
+      notificationConfig: {
+        enableNotifications: data.enableNotifications === 'on',
+        smsNotifications: data.smsNotifications === 'on',
+        browserNotifications: data.browserNotifications === 'on',
+        securityAlerts: data.securityAlerts === 'on',
+        accountUpdates: data.accountUpdates === 'on',
+        systemUpdates: data.systemUpdates === 'on',
+        marketingEmails: data.marketingEmails === 'on',
+        newsletterEmails: data.newsletterEmails === 'on',
+        reminders: data.reminders === 'on',
+        mentions: data.mentions === 'on',
+        directMessages: data.directMessages === 'on',
+      },
     };
 
     // Solo incluir contraseña si se proporcionó

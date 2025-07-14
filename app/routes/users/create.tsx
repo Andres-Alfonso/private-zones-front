@@ -7,6 +7,7 @@ import UserForm from "~/components/users/UserForm";
 import type { LoaderData, ActionData } from "~/components/users/types/user-form.types";
 import { UsersAPI } from "~/api/endpoints/users";
 import { commitSession, getSession } from "~/utils/session.server"; // Necesitarás crear este archivo
+import { CreateUserRequest } from "~/api/types/user.types";
 
 export const meta: MetaFunction = () => {
   return [
@@ -59,41 +60,42 @@ export const action: ActionFunction = async ({ request }) => {
 
   try {
     // Construir el objeto usuario con todos los datos
-    const userData = {
-      // Datos básicos
-      email: data.email,
-      password: data.password,
-      name: data.name,
-      lastName: data.lastName,
-      tenantId: data.tenantId,
+    const userData: CreateUserRequest = {
+      email: String(data.email),
+      password: String(data.password),
+      name: String(data.name),
+      lastName: String(data.lastName),
+      tenantId: String(data.tenantId),
       isActive: data.isActive === 'true',
-      roles: roles,
+      roleIds: roles.map(r => String(r)),
 
-      // Perfil
-      bio: data.bio,
-      phoneNumber: data.phoneNumber,
-      type_document: data.type_document,
-      documentNumber: data.documentNumber,
-      Organization: data.Organization,
-      Charge: data.Charge,
-      Genger: data.Genger,
-      City: data.City,
-      Country: data.Country,
-      address: data.address,
-      dateOfBirth: data.dateOfBirth,
+      profileConfig: {
+        bio: String(data.bio),
+        phoneNumber: String(data.phoneNumber),
+        type_document: String(data.type_document),
+        documentNumber: String(data.documentNumber),
+        organization: String(data.organization),
+        charge: String(data.charge),
+        gender: String(data.gender),
+        city: String(data.city),
+        country: String(data.country),
+        address: String(data.address),
+        dateOfBirth: String(data.dateOfBirth),
+      },
 
-      // Notificaciones
-      enableNotifications: data.enableNotifications === 'on',
-      smsNotifications: data.smsNotifications === 'on',
-      browserNotifications: data.browserNotifications === 'on',
-      securityAlerts: data.securityAlerts === 'on',
-      accountUpdates: data.accountUpdates === 'on',
-      systemUpdates: data.systemUpdates === 'on',
-      marketingEmails: data.marketingEmails === 'on',
-      newsletterEmails: data.newsletterEmails === 'on',
-      reminders: data.reminders === 'on',
-      mentions: data.mentions === 'on',
-      directMessages: data.directMessages === 'on',
+      notificationConfig: {
+        enableNotifications: data.enableNotifications === 'on',
+        smsNotifications: data.smsNotifications === 'on',
+        browserNotifications: data.browserNotifications === 'on',
+        securityAlerts: data.securityAlerts === 'on',
+        accountUpdates: data.accountUpdates === 'on',
+        systemUpdates: data.systemUpdates === 'on',
+        marketingEmails: data.marketingEmails === 'on',
+        newsletterEmails: data.newsletterEmails === 'on',
+        reminders: data.reminders === 'on',
+        mentions: data.mentions === 'on',
+        directMessages: data.directMessages === 'on',
+      },
     };
 
     // Crear el usuario
@@ -118,11 +120,25 @@ export const action: ActionFunction = async ({ request }) => {
     });
 
   } catch (error) {
-    console.error('Error al crear usuario:', error);
+    let errorMessage = "Error al crear el usuario.";
+  
+    if (error && typeof error === "object" && "response" in error) {
+      const axiosError = error as any;
+      console.error("Error del servidor:", axiosError.response?.data);
+      errorMessage = axiosError.response?.data?.message || errorMessage;
+    } else {
+      console.error("Error desconocido:", error);
+    }
+
     return json<ActionData>({
-      errors: { general: "Error al crear el usuario. Intente nuevamente." },
-      values: data
+      errors: { general: errorMessage },
+      values: data,
     }, { status: 500 });
+    // console.error('Error al crear usuario:', error);
+    // return json<ActionData>({
+    //   errors: { general: "Error al crear el usuario. Intente nuevamente." },
+    //   values: data
+    // }, { status: 500 });
   }
 };
 

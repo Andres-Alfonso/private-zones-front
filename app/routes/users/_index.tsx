@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { UsersAPI } from "~/api/endpoints/users";
 import { formatUserName, getUserStatus, formatUserRoles } from "~/utils/userValidation";
+import Alert from "~/components/ui/Alert";
 
 // Tipos basados en las entidades reales
 interface User {

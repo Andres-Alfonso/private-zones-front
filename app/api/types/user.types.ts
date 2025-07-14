@@ -7,17 +7,17 @@ export interface User {
   lastName: string;
   fullName?: string;
   avatar?: string;
-  phone?: string;
+  phoneNumber?: string; // Cambiado de 'phone' a 'phoneNumber' para coincidir con UserFormData
   dateOfBirth?: string;
   bio?: string;
-  roles: string[];
+  roleIds: string[]; // Cambiado de 'roles' a 'roleIds' para coincidir con UserFormData
   isActive: boolean;
   isEmailVerified: boolean;
   lastLoginAt?: string;
   createdAt: string;
   updatedAt: string;
   
-  // Información del perfil
+  // Información del perfil expandida
   profile?: UserProfile;
   
   // Información de actividad
@@ -32,11 +32,23 @@ export interface User {
     name: string;
     domain: string;
   };
+
+  // Campos adicionales del perfil para coincidir con UserFormData
+  gender?: string;
+  charge?: string;
+  type_document?: string;
+  documentNumber?: string;
+  organization?: string;
+  address?: string;
+  city?: string;
+  country?: string;
 }
 
 export interface UserProfile {
   id: string;
   userId: string;
+  
+  // Información profesional
   jobTitle?: string;
   department?: string;
   location?: string;
@@ -44,11 +56,38 @@ export interface UserProfile {
   language: string;
   dateFormat: string;
   preferredCurrency: string;
+  
+  // Información personal adicional
+  phoneNumber?: string;
+  dateOfBirth?: string;
+  bio?: string;
+  gender?: string;
+  charge?: string;
+  type_document?: string;
+  documentNumber?: string;
+  organization?: string;
+  address?: string;
+  city?: string;
+  country?: string;
+  
+  // Notificaciones expandidas para coincidir con UserFormData
   notifications: {
+    enableNotifications: boolean;
     email: boolean;
     push: boolean;
     sms: boolean;
+    smsNotifications: boolean;
+    browserNotifications: boolean;
+    securityAlerts: boolean;
+    accountUpdates: boolean;
+    systemUpdates: boolean;
+    marketingEmails: boolean;
+    newsletterEmails: boolean;
+    reminders: boolean;
+    mentions: boolean;
+    directMessages: boolean;
   };
+  
   socialLinks?: {
     linkedin?: string;
     twitter?: string;
@@ -61,22 +100,51 @@ export interface CreateUserRequest {
   name: string;
   lastName: string;
   password: string;
-  roles: string[];
+  tenantId: string;
+  roleIds: string[];
   isActive?: boolean;
-  phone?: string;
-  dateOfBirth?: string;
-  bio?: string;
-  
-  // Información del perfil
-  jobTitle?: string;
-  department?: string;
-  location?: string;
-  timezone?: string;
-  language?: string;
-  
+
+  profileConfig: {
+    // Información personal
+    phoneNumber?: string;
+    dateOfBirth?: string;
+    bio?: string;
+    gender?: string;
+    charge?: string;
+    type_document?: string;
+    documentNumber?: string;
+    organization?: string;
+    address?: string;
+    city?: string;
+    country?: string;
+  },
+
+  // Información del perfil profesional
+  // jobTitle?: string;
+  // department?: string;
+  // location?: string;
+  // timezone?: string;
+  // language?: string;
+
   // Configuración inicial
-  sendWelcomeEmail?: boolean;
-  requirePasswordChange?: boolean;
+  // sendWelcomeEmail?: boolean;
+  // requirePasswordChange?: boolean;
+
+  notificationConfig: { 
+    // Preferencias de notificación
+    enableNotifications?: boolean;
+    smsNotifications?: boolean;
+    browserNotifications?: boolean;
+    securityAlerts?: boolean;
+    accountUpdates?: boolean;
+    systemUpdates?: boolean;
+    marketingEmails?: boolean;
+    newsletterEmails?: boolean;
+    reminders?: boolean;
+    mentions?: boolean;
+    directMessages?: boolean;
+  },
+
 }
 
 export interface UpdateUserRequest extends Partial<CreateUserRequest> {
@@ -128,23 +196,148 @@ export interface UserStats {
 
 // Validación
 export interface UserFormData {
+  id?: string; // Agregado para edición
   email: string;
   name: string;
   lastName: string;
   password: string;
-  confirmPassword: string;
-  roles: string[];
-  isActive: boolean;
-  phone: string;
-  dateOfBirth: string;
-  bio: string;
-  jobTitle: string;
-  department: string;
-  location: string;
-  timezone: string;
-  language: string;
-  sendWelcomeEmail: boolean;
-  requirePasswordChange: boolean;
+  tenantId: string;
+  roleIds: string[];
+  isActive?: boolean;
+
+  profileConfig: {
+    // Información personal
+    phoneNumber?: string;
+    dateOfBirth?: string;
+    bio?: string;
+    gender?: string;
+    charge?: string;
+    type_document?: string;
+    documentNumber?: string;
+    organization?: string;
+    address?: string;
+    city?: string;
+    country?: string;
+  };
+
+  notificationConfig: { 
+    // Preferencias de notificación
+    enableNotifications?: boolean;
+    smsNotifications?: boolean;
+    browserNotifications?: boolean;
+    securityAlerts?: boolean;
+    accountUpdates?: boolean;
+    systemUpdates?: boolean;
+    marketingEmails?: boolean;
+    newsletterEmails?: boolean;
+    reminders?: boolean;
+    mentions?: boolean;
+    directMessages?: boolean;
+  };
+  
+  // Campos de auditoría (solo lectura)
+  createdAt?: string;
+  updatedAt?: string;
+  lastLoginAt?: string;
+}
+
+// Función auxiliar para convertir User a UserFormData
+export const userToFormData = (user: User): UserFormData => {
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    lastName: user.lastName,
+    password: "", // Por seguridad, nunca cargar la contraseña
+    tenantId: user.tenantId,
+    roleIds: user.roleIds,
+    isActive: user.isActive,
+    
+    profileConfig: {
+      phoneNumber: user.phoneNumber,
+      dateOfBirth: user.dateOfBirth,
+      bio: user.bio,
+      gender: user.gender,
+      charge: user.charge,
+      type_document: user.type_document,
+      documentNumber: user.documentNumber,
+      organization: user.organization,
+      address: user.address,
+      city: user.city,
+      country: user.country,
+    },
+    
+    notificationConfig: {
+      enableNotifications: user.profile?.notifications?.enableNotifications,
+      smsNotifications: user.profile?.notifications?.smsNotifications,
+      browserNotifications: user.profile?.notifications?.browserNotifications,
+      securityAlerts: user.profile?.notifications?.securityAlerts,
+      accountUpdates: user.profile?.notifications?.accountUpdates,
+      systemUpdates: user.profile?.notifications?.systemUpdates,
+      marketingEmails: user.profile?.notifications?.marketingEmails,
+      newsletterEmails: user.profile?.notifications?.newsletterEmails,
+      reminders: user.profile?.notifications?.reminders,
+      mentions: user.profile?.notifications?.mentions,
+      directMessages: user.profile?.notifications?.directMessages,
+    },
+    
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+    lastLoginAt: user.lastLoginAt,
+  };
+};
+
+// Función auxiliar para convertir UserFormData a User (para envío a API)
+export const formDataToUser = (formData: UserFormData): Partial<User> => {
+  return {
+    id: formData.id,
+    email: formData.email,
+    name: formData.name,
+    lastName: formData.lastName,
+    tenantId: formData.tenantId,
+    roleIds: formData.roleIds,
+    isActive: formData.isActive,
+    
+    // Campos del perfil principal
+    phoneNumber: formData.profileConfig.phoneNumber,
+    dateOfBirth: formData.profileConfig.dateOfBirth,
+    bio: formData.profileConfig.bio,
+    gender: formData.profileConfig.gender,
+    charge: formData.profileConfig.charge,
+    type_document: formData.profileConfig.type_document,
+    documentNumber: formData.profileConfig.documentNumber,
+    organization: formData.profileConfig.organization,
+    address: formData.profileConfig.address,
+    city: formData.profileConfig.city,
+    country: formData.profileConfig.country,
+    
+    // El perfil se actualizará por separado si es necesario
+    profile: {
+      notifications: {
+        enableNotifications: formData.notificationConfig.enableNotifications ?? false,
+        email: true, // Valor por defecto
+        push: true, // Valor por defecto
+        sms: formData.notificationConfig.smsNotifications ?? false,
+        smsNotifications: formData.notificationConfig.smsNotifications ?? false,
+        browserNotifications: formData.notificationConfig.browserNotifications ?? false,
+        securityAlerts: formData.notificationConfig.securityAlerts ?? true,
+        accountUpdates: formData.notificationConfig.accountUpdates ?? true,
+        systemUpdates: formData.notificationConfig.systemUpdates ?? true,
+        marketingEmails: formData.notificationConfig.marketingEmails ?? false,
+        newsletterEmails: formData.notificationConfig.newsletterEmails ?? false,
+        reminders: formData.notificationConfig.reminders ?? true,
+        mentions: formData.notificationConfig.mentions ?? true,
+        directMessages: formData.notificationConfig.directMessages ?? true,
+      }
+    } as UserProfile
+  };
+};
+
+// Tipos para el loader - user debe ser UserFormData para el formulario
+export interface EditLoaderData {
+  user: UserFormData;
+  tenants: Array<{ id: string; name: string }>;
+  roles: Array<{ id: string; name: string; description?: string }>;
 }
 
 export interface UserValidationError {

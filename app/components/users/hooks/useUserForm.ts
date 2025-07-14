@@ -11,7 +11,7 @@ export function useUserForm(initialValues?: Partial<UserFormData>) {
   const [formData, setFormData] = useState<Partial<UserFormData>>({
     // Valores por defecto
     isActive: true,
-    roles: [],
+    roleIds: [],
     enableNotifications: true,
     smsNotifications: false,
     browserNotifications: false,
@@ -67,7 +67,7 @@ export function useUserForm(initialValues?: Partial<UserFormData>) {
   const resetForm = useCallback(() => {
     setFormData({
       isActive: true,
-      roles: [],
+      roleIds: [],
       enableNotifications: true,
       smsNotifications: false,
       browserNotifications: false,

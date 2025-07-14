@@ -15,6 +15,18 @@ export default function ProfileInfoForm({
   formData, 
   onFieldChange 
 }: ProfileInfoFormProps) {
+
+  const handleProfileConfigChange = (
+    field: keyof UserFormData["profileConfig"]
+  ) => (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
+    onFieldChange("profileConfig", {
+      ...formData.profileConfig,
+      [field]: e.target.value,
+    });
+  };
+
   
   // Manejador genérico para cambios en inputs
   const handleInputChange = (field: keyof UserFormData) => (
@@ -38,8 +50,8 @@ export default function ProfileInfoForm({
               id="bio"
               name="bio"
               rows={3}
-              value={formData.bio || ''}
-              onChange={handleInputChange('bio')}
+              value={formData.profileConfig?.bio || ''}
+              onChange={handleProfileConfigChange('bio')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Breve descripción del usuario"
             />
@@ -55,8 +67,8 @@ export default function ProfileInfoForm({
               type="tel"
               id="phoneNumber"
               name="phoneNumber"
-              value={formData.phoneNumber || ''}
-              onChange={handleInputChange('phoneNumber')}
+              value={formData.profileConfig?.phoneNumber || ''}
+              onChange={handleProfileConfigChange('phoneNumber')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="+57 300 123 4567"
             />
@@ -71,8 +83,8 @@ export default function ProfileInfoForm({
             <select
               id="type_document"
               name="type_document"
-              value={formData.type_document || ''}
-              onChange={handleInputChange('type_document')}
+              value={formData.profileConfig?.type_document || ''}
+              onChange={handleProfileConfigChange('type_document')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">Seleccionar tipo</option>
@@ -92,8 +104,8 @@ export default function ProfileInfoForm({
               type="text"
               id="documentNumber"
               name="documentNumber"
-              value={formData.documentNumber || ''}
-              onChange={handleInputChange('documentNumber')}
+              value={formData.profileConfig?.documentNumber || ''}
+              onChange={handleProfileConfigChange('documentNumber')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="123456789"
             />
@@ -101,16 +113,16 @@ export default function ProfileInfoForm({
 
           {/* Organización */}
           <div>
-            <label htmlFor="Organization" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="organization" className="block text-sm font-medium text-gray-700 mb-2">
               <Building2 className="h-4 w-4 inline mr-1" />
               Organización
             </label>
             <input
               type="text"
-              id="Organization"
-              name="Organization"
-              value={formData.Organization || ''}
-              onChange={handleInputChange('Organization')}
+              id="organization"
+              name="organization"
+              value={formData.profileConfig?.organization || ''}
+              onChange={handleProfileConfigChange('organization')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Nombre de la empresa"
             />
@@ -118,16 +130,16 @@ export default function ProfileInfoForm({
 
           {/* Cargo */}
           <div>
-            <label htmlFor="Charge" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="charge" className="block text-sm font-medium text-gray-700 mb-2">
               <Briefcase className="h-4 w-4 inline mr-1" />
               Cargo
             </label>
             <input
               type="text"
-              id="Charge"
-              name="Charge"
-              value={formData.Charge || ''}
-              onChange={handleInputChange('Charge')}
+              id="charge"
+              name="charge"
+              value={formData.profileConfig?.charge || ''}
+              onChange={handleProfileConfigChange('charge')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Desarrollador, Gerente, etc."
             />
@@ -135,21 +147,21 @@ export default function ProfileInfoForm({
 
           {/* Género */}
           <div>
-            <label htmlFor="Genger" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="gender" className="block text-sm font-medium text-gray-700 mb-2">
               Género
             </label>
             <select
-              id="Genger"
-              name="Genger"
-              value={formData.Genger || ''}
-              onChange={handleInputChange('Genger')}
+              id="gender"
+              name="gender"
+              value={formData.profileConfig?.gender || ''}
+              onChange={handleProfileConfigChange('gender')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">Seleccionar género</option>
-              <option value="Masculino">Masculino</option>
-              <option value="Femenino">Femenino</option>
-              <option value="Otro">Otro</option>
-              <option value="Prefiero no decir">Prefiero no decir</option>
+              <option value="MASCULINO">Masculino</option>
+              <option value="FEMENINO">Femenino</option>
+              <option value="OTRO">Otro</option>
+              <option value="PREFIERO_NO_DECIR">Prefiero no decir</option>
             </select>
           </div>
 
@@ -163,24 +175,24 @@ export default function ProfileInfoForm({
               type="date"
               id="dateOfBirth"
               name="dateOfBirth"
-              value={formData.dateOfBirth || ''}
-              onChange={handleInputChange('dateOfBirth')}
+              value={formData.profileConfig?.dateOfBirth || ''}
+              onChange={handleProfileConfigChange('dateOfBirth')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
 
           {/* Ciudad */}
           <div>
-            <label htmlFor="City" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-2">
               <MapPin className="h-4 w-4 inline mr-1" />
               Ciudad
             </label>
             <input
               type="text"
-              id="City"
-              name="City"
-              value={formData.City || ''}
-              onChange={handleInputChange('City')}
+              id="city"
+              name="city"
+              value={formData.profileConfig?.city || ''}
+              onChange={handleProfileConfigChange('city')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Bogotá"
             />
@@ -188,16 +200,16 @@ export default function ProfileInfoForm({
 
           {/* País */}
           <div>
-            <label htmlFor="Country" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-2">
               <Globe className="h-4 w-4 inline mr-1" />
               País
             </label>
             <input
               type="text"
-              id="Country"
-              name="Country"
-              value={formData.Country || ''}
-              onChange={handleInputChange('Country')}
+              id="country"
+              name="country"
+              value={formData.profileConfig?.country || ''}
+              onChange={handleProfileConfigChange('country')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Colombia"
             />
@@ -213,8 +225,8 @@ export default function ProfileInfoForm({
               type="text"
               id="address"
               name="address"
-              value={formData.address || ''}
-              onChange={handleInputChange('address')}
+              value={formData.profileConfig?.address || ''}
+              onChange={handleProfileConfigChange('address')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Calle 123 #45-67, Bogotá"
             />

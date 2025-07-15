@@ -18,6 +18,11 @@ export default defineConfig({
             route("register", "routes/auth/register.tsx");
             route("login", "routes/auth/login.tsx");
           });
+
+          route("home", "routes/home/_layout.tsx", () => {
+            route("", "routes/home/_index.tsx", { index: true });
+          });
+
           route("courses", "routes/courses/_layout.tsx", () => {
             route("", "routes/courses/_index.tsx", { index: true });
             route("create", "routes/courses/create.tsx");

@@ -1,16 +1,20 @@
 // app/routes/courses/$id.tsx
 
 import { json, LoaderFunction, ActionFunction } from "@remix-run/node";
-import { useLoaderData, useActionData, Form, Link, useNavigation } from "@remix-run/react";
+import { useLoaderData, useActionData, Link, useNavigation } from "@remix-run/react";
 import { useState } from "react";
 import { 
-  Clock, Users, Star, Calendar, DollarSign, BookOpen, 
-  User, Edit, Trash2, UserPlus, UserMinus, AlertCircle 
+  AlertCircle, Edit, Trash2, ArrowLeft, Shield, Settings 
 } from "lucide-react";
-import { Course, CourseLevel } from "~/api/types/course.types";
+import { Course } from "~/api/types/course.types";
 // import { CoursesAPI } from "~/api/endpoints/courses";
 import { useCurrentUser } from "~/context/AuthContext";
 import { RoleGuard } from "~/components/AuthGuard";
+
+// Componentes de detalle
+import { CourseDetailHero } from "~/components/courses/CourseDetailHero";
+import { CourseDetailContent } from "~/components/courses/CourseDetailContent";
+import { CourseDetailSidebar } from "~/components/courses/CourseDetailSidebar";
 
 interface LoaderData {
   course: Course | null;
@@ -41,23 +45,29 @@ export const loader: LoaderFunction = async ({ params }) => {
       title: 'Introducción a React',
       description: `Este curso está diseñado para desarrolladores que quieren aprender React desde cero. 
       
-      Aprenderás los conceptos fundamentales de React, incluyendo componentes, estado, props, hooks, y el ecosistema de React. Al final del curso, serás capaz de construir aplicaciones web modernas utilizando React.
-      
-      El curso incluye:
-      - Fundamentos de React
-      - Componentes funcionales y de clase  
-      - Hooks (useState, useEffect, useContext)
-      - Manejo de formularios
-      - React Router
-      - Estado global con Context API
-      - Mejores prácticas
-      - Proyecto final`,
+Aprenderás los conceptos fundamentales de React, incluyendo componentes, estado, props, hooks, y el ecosistema de React. Al final del curso, serás capaz de construir aplicaciones web modernas utilizando React.
+
+El curso incluye:
+- Fundamentos de React y su ecosistema
+- Componentes funcionales y de clase  
+- Hooks (useState, useEffect, useContext)
+- Manejo de formularios
+- React Router
+- Estado global con Context API
+- Mejores prácticas
+- Proyecto final
+
+¿Qué aprenderás específicamente?
+
+En este curso completo de React, comenzarás desde los conceptos más básicos hasta llegar a construir aplicaciones complejas. Aprenderás a pensar en React, a estructurar tus componentes de manera eficiente, y a manejar el estado de tu aplicación de forma profesional.
+
+El curso está diseñado para ser práctico, con ejercicios en cada módulo y un proyecto final donde construirás una aplicación completa desde cero. Al finalizar, tendrás las habilidades necesarias para trabajar como desarrollador React en cualquier empresa.`,
       instructor: 'Juan Pérez',
       duration: 40,
-      level: CourseLevel.BEGINNER,
+      level: 'beginner' as any,
       category: 'Frontend',
       price: 99.99,
-      thumbnail: 'https://via.placeholder.com/800x400',
+      thumbnail: 'https://via.placeholder.com/800x400/4F46E5/ffffff?text=React+Course',
       isActive: true,
       maxStudents: 50,
       currentStudents: 23,
@@ -128,7 +138,7 @@ export default function CourseDetail() {
   const { course, error, isEnrolled } = useLoaderData<LoaderData>();
   const actionData = useActionData<ActionData>();
   const navigation = useNavigation();
-  const { user, hasRole } = useCurrentUser();
+  const { hasRole } = useCurrentUser();
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -136,312 +146,173 @@ export default function CourseDetail() {
 
   if (error || !course) {
     return (
-      <div className="text-center py-12">
-        <AlertCircle className="mx-auto h-12 w-12 text-red-400 mb-4" />
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Error</h1>
-        <p className="text-gray-600 mb-6">{error || 'Curso no encontrado'}</p>
-        <Link
-          to="/courses"
-          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-        >
-          Volver al catálogo
-        </Link>
+      <div className="text-center py-16">
+        <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-12 shadow-lg border border-gray-200/50 max-w-md mx-auto">
+          <AlertCircle className="mx-auto h-16 w-16 text-red-400 mb-6" />
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Error</h1>
+          <p className="text-gray-600 mb-8">{error || 'Curso no encontrado'}</p>
+          <Link
+            to="/courses"
+            className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+          >
+            Volver al catálogo
+          </Link>
+        </div>
       </div>
     );
   }
 
-  const getLevelColor = (level: CourseLevel) => {
-    switch (level) {
-      case CourseLevel.BEGINNER:
-        return 'bg-green-100 text-green-800';
-      case CourseLevel.INTERMEDIATE:
-        return 'bg-yellow-100 text-yellow-800';
-      case CourseLevel.ADVANCED:
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getLevelText = (level: CourseLevel) => {
-    switch (level) {
-      case CourseLevel.BEGINNER:
-        return 'Principiante';
-      case CourseLevel.INTERMEDIATE:
-        return 'Intermedio';
-      case CourseLevel.ADVANCED:
-        return 'Avanzado';
-      default:
-        return level;
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
-
-  const progressPercentage = (course.currentStudents / course.maxStudents) * 100;
-
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="space-y-8">
+      {/* Navegación superior */}
+      <div className="flex items-center justify-between">
+        <Link
+          to="/courses"
+          className="flex items-center space-x-3 text-gray-600 hover:text-blue-600 transition-colors bg-white/60 backdrop-blur-sm px-6 py-3 rounded-xl border border-gray-200/50 hover:bg-white/80 hover:shadow-md transform hover:scale-105 font-medium"
+        >
+          <ArrowLeft className="h-5 w-5" />
+          <span>Volver al catálogo</span>
+        </Link>
+
+        <RoleGuard requiredRoles={['admin', 'instructor']} requireAll={false}>
+          <div className="flex items-center space-x-3">
+            <Link
+              to={`/courses/${course.id}/edit`}
+              className="flex items-center space-x-2 px-6 py-3 bg-white/80 backdrop-blur-sm border border-gray-300 rounded-xl hover:bg-white hover:shadow-md transition-all duration-200 font-medium text-gray-700 transform hover:scale-105"
+            >
+              <Edit className="h-4 w-4" />
+              <span>Editar</span>
+            </Link>
+            
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 font-bold"
+            >
+              <Trash2 className="h-4 w-4" />
+              <span>Eliminar</span>
+            </button>
+          </div>
+        </RoleGuard>
+      </div>
+
       {/* Mensajes de estado */}
       {actionData?.error && (
-        <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-center">
-          <AlertCircle className="h-5 w-5 mr-2" />
-          {actionData.error}
+        <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-2xl flex items-center shadow-lg">
+          <AlertCircle className="h-6 w-6 mr-3 flex-shrink-0" />
+          <div>
+            <div className="font-bold">Error</div>
+            <div className="text-sm">{actionData.error}</div>
+          </div>
         </div>
       )}
 
       {actionData?.success && (
-        <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md">
-          {actionData.action === 'enroll' && '¡Te has inscrito al curso exitosamente!'}
-          {actionData.action === 'unenroll' && 'Te has desinscrito del curso'}
-          {actionData.action === 'delete' && 'Curso eliminado exitosamente'}
+        <div className="bg-green-50 border border-green-200 text-green-700 px-6 py-4 rounded-2xl shadow-lg">
+          <div className="font-bold">
+            {actionData.action === 'enroll' && '¡Te has inscrito al curso exitosamente!'}
+            {actionData.action === 'unenroll' && 'Te has desinscrito del curso'}
+            {actionData.action === 'delete' && 'Curso eliminado exitosamente'}
+          </div>
         </div>
       )}
 
+      {/* Hero del curso */}
+      <CourseDetailHero course={course} isEnrolled={isEnrolled} />
+
+      {/* Contenido principal */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Contenido principal */}
-        <div className="lg:col-span-2 space-y-8">
-          {/* Imagen del curso */}
-          {course.thumbnail && (
-            <div className="aspect-video overflow-hidden rounded-lg shadow-lg">
-              <img 
-                src={course.thumbnail} 
-                alt={course.title}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          )}
-
-          {/* Información básica */}
-          <div>
-            <div className="flex items-center space-x-3 mb-4">
-              <span className={`px-3 py-1 text-sm font-medium rounded-full ${getLevelColor(course.level)}`}>
-                {getLevelText(course.level)}
-              </span>
-              <span className="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
-                {course.category}
-              </span>
-              {!course.isActive && (
-                <span className="px-3 py-1 bg-gray-100 text-gray-800 text-sm font-medium rounded-full">
-                  Inactivo
-                </span>
-              )}
-            </div>
-
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">{course.title}</h1>
-
-            <div className="flex items-center space-x-6 text-sm text-gray-600 mb-6">
-              <div className="flex items-center space-x-1">
-                <User className="h-4 w-4" />
-                <span>Por {course.instructor}</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <Clock className="h-4 w-4" />
-                <span>{course.duration} horas</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <Users className="h-4 w-4" />
-                <span>{course.currentStudents} estudiantes</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <Star className="h-4 w-4 text-yellow-400" />
-                <span>4.5 (120 reseñas)</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Descripción */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Descripción del Curso</h2>
-            <div className="prose text-gray-700 whitespace-pre-line">
-              {course.description}
-            </div>
-          </div>
-
-          {/* Qué aprenderás */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Qué aprenderás</h2>
-            <ul className="space-y-2 text-gray-700">
-              <li className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                <span>Fundamentos de React y su ecosistema</span>
-              </li>
-              <li className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                <span>Componentes funcionales y hooks</span>
-              </li>
-              <li className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                <span>Manejo de estado y props</span>
-              </li>
-              <li className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                <span>React Router para navegación</span>
-              </li>
-              <li className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                <span>Mejores prácticas y patrones</span>
-              </li>
-            </ul>
-          </div>
+        {/* Contenido del curso */}
+        <div className="lg:col-span-2">
+          <CourseDetailContent course={course} />
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Card de inscripción */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border sticky top-6">
-            <div className="text-3xl font-bold text-gray-900 mb-4">
-              ${course.price}
-            </div>
-
-            {/* Progreso de inscripciones */}
-            <div className="mb-6">
-              <div className="flex justify-between text-sm text-gray-600 mb-2">
-                <span>{course.currentStudents} inscritos</span>
-                <span>{course.maxStudents} máximo</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${progressPercentage}%` }}
-                ></div>
-              </div>
-            </div>
-
-            {/* Botones de acción */}
-            <div className="space-y-3">
-              {isEnrolled ? (
-                <div className="space-y-2">
-                  <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-2 rounded-md text-center text-sm">
-                    Ya estás inscrito en este curso
-                  </div>
-                  <Form method="post">
-                    <input type="hidden" name="_action" value="unenroll" />
-                    <button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="w-full flex items-center justify-center space-x-2 px-4 py-3 border border-red-300 text-red-700 rounded-md hover:bg-red-50 disabled:opacity-50"
-                    >
-                      <UserMinus className="h-4 w-4" />
-                      <span>Desinscribirse</span>
-                    </button>
-                  </Form>
-                </div>
-              ) : (
-                <Form method="post">
-                  <input type="hidden" name="_action" value="enroll" />
-                  <button
-                    type="submit"
-                    disabled={isSubmitting || course.currentStudents >= course.maxStudents}
-                    className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <UserPlus className="h-4 w-4" />
-                    <span>
-                      {course.currentStudents >= course.maxStudents ? 'Curso Lleno' : 'Inscribirse'}
-                    </span>
-                  </button>
-                </Form>
-              )}
-
-              <button className="w-full px-4 py-3 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">
-                <BookOpen className="h-4 w-4 inline mr-2" />
-                Vista Previa
-              </button>
-            </div>
-
-            {/* Información adicional */}
-            <div className="mt-6 pt-6 border-t border-gray-200 space-y-3">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Fecha de inicio:</span>
-                <span className="font-medium">{formatDate(course.startDate)}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Fecha de fin:</span>
-                <span className="font-medium">{formatDate(course.endDate)}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Duración:</span>
-                <span className="font-medium">{course.duration} horas</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Información del instructor */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Instructor</h3>
-            <div className="flex items-start space-x-4">
-              <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center">
-                <User className="h-6 w-6 text-gray-600" />
-              </div>
-              <div>
-                <div className="font-medium text-gray-900">{course.instructor}</div>
-                <div className="text-sm text-gray-600">Desarrollador Senior</div>
-                <div className="flex items-center space-x-1 mt-2 text-sm text-gray-600">
-                  <Star className="h-4 w-4 text-yellow-400" />
-                  <span>4.8 (95 cursos)</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Panel administrativo */}
-          <RoleGuard requiredRoles={['admin', 'instructor']} requireAll={false}>
-            <div className="bg-yellow-50 border border-yellow-200 p-6 rounded-lg">
-              <h3 className="text-lg font-semibold text-yellow-800 mb-4">Panel Administrativo</h3>
-              <div className="space-y-3">
-                <Link
-                  to={`/courses/${course.id}/edit`}
-                  className="flex items-center space-x-2 w-full px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700"
-                >
-                  <Edit className="h-4 w-4" />
-                  <span>Editar Curso</span>
-                </Link>
-                
-                <button
-                  onClick={() => setShowDeleteConfirm(true)}
-                  className="flex items-center space-x-2 w-full px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  <span>Eliminar Curso</span>
-                </button>
-              </div>
-            </div>
-          </RoleGuard>
+        <div className="lg:col-span-1">
+          <CourseDetailSidebar 
+            course={course} 
+            isEnrolled={isEnrolled}
+            isSubmitting={isSubmitting}
+          />
         </div>
       </div>
 
+      {/* Panel administrativo adicional */}
+      <RoleGuard requiredRoles={['admin', 'instructor']} requireAll={false}>
+        <div className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 backdrop-blur-sm border border-yellow-200/50 rounded-2xl p-8 shadow-lg">
+          <div className="flex items-center space-x-3 mb-6">
+            <div className="p-3 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-xl text-white">
+              <Shield className="h-6 w-6" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-gray-900">Panel Administrativo</h3>
+              <p className="text-gray-600">Herramientas para gestionar este curso</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Link
+              to={`/courses/${course.id}/edit`}
+              className="flex items-center justify-center space-x-3 p-4 bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-xl hover:bg-white hover:shadow-md transition-all duration-200 font-medium text-gray-700 transform hover:scale-105"
+            >
+              <Edit className="h-5 w-5" />
+              <span>Editar Curso</span>
+            </Link>
+            
+            <Link
+              to={`/courses/${course.id}/analytics`}
+              className="flex items-center justify-center space-x-3 p-4 bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-xl hover:bg-white hover:shadow-md transition-all duration-200 font-medium text-gray-700 transform hover:scale-105"
+            >
+              <Settings className="h-5 w-5" />
+              <span>Analíticas</span>
+            </Link>
+            
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="flex items-center justify-center space-x-3 p-4 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
+            >
+              <Trash2 className="h-5 w-5" />
+              <span>Eliminar</span>
+            </button>
+          </div>
+        </div>
+      </RoleGuard>
+
       {/* Modal de confirmación de eliminación */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Confirmar Eliminación
-            </h3>
-            <p className="text-gray-600 mb-6">
-              ¿Estás seguro de que quieres eliminar este curso? Esta acción no se puede deshacer.
-            </p>
-            <div className="flex space-x-3">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-              >
-                Cancelar
-              </button>
-              <Form method="post" className="flex-1">
-                <input type="hidden" name="_action" value="delete" />
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 transform scale-100 transition-all duration-200">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Trash2 className="h-8 w-8 text-red-600" />
+              </div>
+              
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                Confirmar Eliminación
+              </h3>
+              
+              <p className="text-gray-600 mb-8">
+                ¿Estás seguro de que quieres eliminar el curso <strong>"{course.title}"</strong>? 
+                Esta acción no se puede deshacer y se perderán todos los datos asociados.
+              </p>
+              
+              <div className="flex space-x-4">
                 <button
-                  type="submit"
-                  className="w-full px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="flex-1 px-6 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-all duration-200 font-medium"
                 >
-                  Eliminar
+                  Cancelar
                 </button>
-              </Form>
+                
+                <form method="post" className="flex-1">
+                  <input type="hidden" name="_action" value="delete" />
+                  <button
+                    type="submit"
+                    className="w-full px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all duration-200 font-bold shadow-lg hover:shadow-xl"
+                  >
+                    Eliminar Curso
+                  </button>
+                </form>
+              </div>
             </div>
           </div>
         </div>

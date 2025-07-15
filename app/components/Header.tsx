@@ -77,12 +77,24 @@ export default function Header() {
               
               {/* Navegación principal - Desktop */}
               <nav className="hidden lg:flex items-center space-x-2">
-                <NavLink to="/" icon={<LayoutDashboard className="h-4 w-4" />}>
+                {/* <NavLink to="/" icon={<LayoutDashboard className="h-4 w-4" />}>
                   Inicio
-                </NavLink>
+                </NavLink> */}
                 
                 {isAuthenticated && (
                   <>
+                    <NavLink to="/home" icon={<LayoutDashboard className="h-4 w-4" />}>
+                      Inicio
+                    </NavLink>
+
+                    <RoleGuard requiredRole="admin">
+                      <NavLink 
+                        to="/users" 
+                        icon={<User className="h-4 w-4" />}
+                      >
+                        Usuarios
+                      </NavLink>
+                    </RoleGuard>
                     {/* Dropdown de Cursos */}
                     <div className="relative group">
                       <button className="flex items-center space-x-2 px-4 py-2 rounded-xl text-white/90 hover:text-white hover:bg-white/10 transition-all duration-200 font-medium group-hover:shadow-lg">
@@ -137,15 +149,6 @@ export default function Header() {
                     <NavLink to="/dashboard" icon={<LayoutDashboard className="h-4 w-4" />}>
                       Dashboard
                     </NavLink>
-
-                    <RoleGuard requiredRole="admin">
-                      <NavLink 
-                        to="/users" 
-                        icon={<User className="h-4 w-4" />}
-                      >
-                        Usuarios
-                      </NavLink>
-                    </RoleGuard>
                     
                     <RoleGuard requiredRole="admin">
                       <NavLink 

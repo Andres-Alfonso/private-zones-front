@@ -2,9 +2,158 @@
 
 import { CourseFormData, CourseValidationError, CourseLevel } from '~/api/types/course.types';
 
+export interface ValidationError {
+  field: string;
+  message: string;
+}
+
+export interface ValidationResult {
+  isValid: boolean;
+  errors: ValidationError[];
+  warnings?: ValidationError[];
+}
+
 export interface CourseValidationResult {
   isValid: boolean;
   errors: CourseValidationError[];
+}
+
+export function validateCourseStep(
+  step: number, 
+  formData: Partial<CourseFormData>
+): ValidationResult {
+  const errors: ValidationError[] = [];
+  const warnings: ValidationError[] = [];
+
+  switch (step) {
+    case 1: // Información Básica
+      if (!formData.title || formData.title.trim().length < 5) {
+        errors.push({ field: 'title', message: 'El título debe tener al menos 5 caracteres' });
+      }
+      
+      if (!formData.description || formData.description.trim().length < 20) {
+        errors.push({ field: 'description', message: 'La descripción debe tener al menos 20 caracteres' });
+      }
+      
+      if (!formData.instructor || formData.instructor.trim().length < 2) {
+        errors.push({ field: 'instructor', message: 'El instructor es obligatorio' });
+      }
+      
+      if (!formData.category || formData.category.trim().length < 2) {
+        errors.push({ field: 'category', message: 'La categoría es obligatoria' });
+      }
+      
+      if (!formData.level) {
+        errors.push({ field: 'level', message: 'Selecciona un nivel de dificultad' });
+      }
+      break;
+
+    case 2: // Configuración Académica
+      if (formData.acronym && formData.acronym.length > 10) {
+        errors.push({ field: 'acronym', message: 'Las siglas no pueden exceder 10 caracteres' });
+      }
+      
+      if (formData.estimatedHours && (isNaN(Number(formData.estimatedHours)) || Number(formData.estimatedHours) <= 0)) {
+        errors.push({ field: 'estimatedHours', message: 'Las horas estimadas deben ser un número mayor a 0' });
+      }
+      
+      if (!formData.intensity || formData.intensity < 1 || formData.intensity > 4) {
+        warnings.push({ field: 'intensity', message: 'Considera seleccionar una intensidad para ayudar a los estudiantes' });
+      }
+      break;
+
+    case 3: // Fechas y Inscripciones
+      if (formData.startDate && formData.endDate && new Date(formData.startDate) >= new Date(formData.endDate)) {
+        errors.push({ field: 'endDate', message: 'La fecha de fin debe ser posterior a la fecha de inicio' });
+      }
+      
+      if (formData.enrollmentStartDate && formData.enrollmentEndDate && 
+          new Date(formData.enrollmentStartDate) >= new Date(formData.enrollmentEndDate)) {
+        errors.push({ field: 'enrollmentEndDate', message: 'La fecha de fin de inscripciones debe ser posterior al inicio' });
+      }
+      
+      if (formData.maxEnrollments && (isNaN(Number(formData.maxEnrollments)) || Number(formData.maxEnrollments) <= 0)) {
+        errors.push({ field: 'maxEnrollments', message: 'El número máximo de estudiantes debe ser mayor a 0' });
+      }
+      
+      if (formData.invitationLink && !isValidUrl(formData.invitationLink)) {
+        errors.push({ field: 'invitationLink', message: 'El enlace de invitación debe ser una URL válida' });
+      }
+      break;
+
+    case 4: // Imágenes y Diseño
+      if (formData.coverImage && !isValidUrl(formData.coverImage)) {
+        warnings.push({ field: 'coverImage', message: 'Verifica que la URL de la imagen de portada sea válida' });
+      }
+      
+      if (formData.menuImage && !isValidUrl(formData.menuImage)) {
+        warnings.push({ field: 'menuImage', message: 'Verifica que la URL de la imagen del menú sea válida' });
+      }
+      
+      if (formData.thumbnailImage && !isValidUrl(formData.thumbnailImage)) {
+        warnings.push({ field: 'thumbnailImage', message: 'Verifica que la URL de la imagen miniatura sea válida' });
+      }
+      break;
+
+    case 5: // Traducciones
+      if (formData.titleEn && formData.titleEn.trim().length < 5) {
+        warnings.push({ field: 'titleEn', message: 'El título en inglés debería tener al menos 5 caracteres' });
+      }
+      
+      if (formData.descriptionEn && formData.descriptionEn.trim().length < 20) {
+        warnings.push({ field: 'descriptionEn', message: 'La descripción en inglés debería tener al menos 20 caracteres' });
+      }
+      break;
+
+    case 6: // Configuración de Vistas
+      // Las validaciones para vistas son opcionales
+      break;
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+    warnings: warnings.length > 0 ? warnings : undefined
+  };
+}
+
+function isValidUrl(url: string): boolean {
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function getStepCompletionStatus(
+  step: number, 
+  formData: Partial<CourseFormData>
+): 'incomplete' | 'valid' | 'invalid' {
+  const validation = validateCourseStep(step, formData);
+  
+  if (!validation.isValid) {
+    return 'invalid';
+  }
+  
+  // Verificar si el paso tiene la información mínima requerida
+  switch (step) {
+    case 1:
+      return (formData.title && formData.description && formData.instructor && 
+              formData.category && formData.level) ? 'valid' : 'incomplete';
+    case 2:
+      return 'valid'; // Este paso es completamente opcional
+    case 3:
+      return 'valid'; // Este paso es completamente opcional
+    case 4:
+      return 'valid'; // Este paso es completamente opcional
+    case 5:
+      return 'valid'; // Este paso es completamente opcional
+    case 6:
+      return 'valid'; // Este paso es completamente opcional
+    default:
+      return 'incomplete';
+  }
 }
 
 // Reglas de validación específicas para cursos
@@ -270,35 +419,35 @@ export const validateCourseForm = (formData: CourseFormData): CourseValidationRe
     errors.push({ field: 'instructor', message: instructorError });
   }
 
-  const durationError = validateCourseDuration(formData.duration);
-  if (durationError) {
-    errors.push({ field: 'duration', message: durationError });
-  }
+  // const durationError = validateCourseDuration(formData.duration);
+  // if (durationError) {
+  //   errors.push({ field: 'duration', message: durationError });
+  // }
 
   const categoryError = validateCourseCategory(formData.category);
   if (categoryError) {
     errors.push({ field: 'category', message: categoryError });
   }
 
-  const priceError = validateCoursePrice(formData.price);
-  if (priceError) {
-    errors.push({ field: 'price', message: priceError });
-  }
+  // const priceError = validateCoursePrice(formData.price);
+  // if (priceError) {
+  //   errors.push({ field: 'price', message: priceError });
+  // }
 
-  const maxStudentsError = validateMaxStudents(formData.maxStudents);
-  if (maxStudentsError) {
-    errors.push({ field: 'maxStudents', message: maxStudentsError });
-  }
+  // const maxStudentsError = validateMaxStudents(formData.maxStudents);
+  // if (maxStudentsError) {
+  //   errors.push({ field: 'maxStudents', message: maxStudentsError });
+  // }
 
-  const startDateError = validateStartDate(formData.startDate);
-  if (startDateError) {
-    errors.push({ field: 'startDate', message: startDateError });
-  }
+  // const startDateError = validateStartDate(formData.startDate);
+  // if (startDateError) {
+  //   errors.push({ field: 'startDate', message: startDateError });
+  // }
 
-  const endDateError = validateEndDate(formData.endDate, formData.startDate);
-  if (endDateError) {
-    errors.push({ field: 'endDate', message: endDateError });
-  }
+  // const endDateError = validateEndDate(formData.endDate, formData.startDate);
+  // if (endDateError) {
+  //   errors.push({ field: 'endDate', message: endDateError });
+  // }
 
   return {
     isValid: errors.length === 0,
@@ -312,11 +461,11 @@ export const validateCourseFormData = (formData: FormData): CourseValidationResu
     title: formData.get('title') as string || '',
     description: formData.get('description') as string || '',
     instructor: formData.get('instructor') as string || '',
-    duration: formData.get('duration') as string || '',
+    // duration: formData.get('duration') as string || '',
     level: formData.get('level') as CourseLevel || CourseLevel.BEGINNER,
     category: formData.get('category') as string || '',
-    price: formData.get('price') as string || '',
-    maxStudents: formData.get('maxStudents') as string || '',
+    // price: formData.get('price') as string || '',
+    // maxStudents: formData.get('maxStudents') as string || '',
     startDate: formData.get('startDate') as string || '',
     endDate: formData.get('endDate') as string || '',
   };

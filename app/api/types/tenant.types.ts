@@ -25,6 +25,56 @@ export interface Tenant {
   contactInfo?: TenantContactInfo;
 
   componentConfigs?: TenantComponentConfig[];
+
+  viewConfigs?: TenantViewConfig[];
+}
+
+export interface TenantViewConfig {
+  id: string;
+
+  tenant: Tenant;
+
+  viewType: string;
+
+  title: string;
+
+  description: string;
+
+  allowBackground: boolean;
+
+  backgroundType: string;
+
+  backgroundImagePath: string;
+
+  backgroundColor: string;
+
+  welcomeTitle: string;
+
+  welcomeMessage: string;
+
+  introVideoUrl: string;
+
+  tutorialVideoUrl: string;
+
+  autoplayVideo: boolean;
+
+  showVideoControls: boolean;
+
+  instructionsText: string;
+
+  helpText: string;
+
+  disclaimerText: string;
+
+  helpUrl: string;
+
+  documentationUrl: string;
+
+  supportUrl: string;
+
+  additionalSettings: Record<string, any>;
+
+  isActive?: boolean;
 }
 
 export interface TenantComponentConfig {

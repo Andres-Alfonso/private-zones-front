@@ -20,8 +20,12 @@ export interface LoginResponse {
   user: {
     id: string;
     email: string;
+    lastName: string;
+    isActive: boolean;
     name: string;
     roles: string[];
+    profileConfig: string[];
+    notificationConfig: string[];
     createdAt?: string;
     updatedAt?: string;
   };

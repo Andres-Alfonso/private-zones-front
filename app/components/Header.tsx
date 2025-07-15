@@ -17,6 +17,7 @@ import {
   User
 } from 'lucide-react';
 import { useState } from 'react';
+import { useTenant } from "~/context/TenantContext";
 
 const getRoleIcon = (roles: string[]) => {
   if (roles.includes('admin')) return <Crown className="h-3 w-3" />;
@@ -25,16 +26,27 @@ const getRoleIcon = (roles: string[]) => {
 };
 
 export default function Header() {
+  const { state: tenantState } = useTenant();
+  const { tenant } = tenantState;
   const { state } = useAuth();
   const { isAuthenticated, user } = useCurrentUser();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const navbarConfig = tenant?.componentConfigs?.find(
+    (config: any) => config.componentType === 'navbar'
+  );
 
   return (
     <>
       {/* Header principal */}
       <header className="fixed top-0 left-0 right-0 z-50">
         {/* Fondo con blur y gradiente */}
-        <div className="absolute inset-0 bg-[#484848] border-b border-white/10"></div>
+        <div className="absolute inset-0 bg-[#484848] border-b border-white/10"
+          style={{
+          backgroundColor: navbarConfig?.backgroundColor || '#484848',
+          color: navbarConfig?.textColor || '#ffffff'
+        }}
+        ></div>
         
         {/* Contenido del header */}
         <div className="relative">
@@ -50,8 +62,12 @@ export default function Header() {
                   <div className="absolute -inset-1 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
                 </div>
                 <div className="hidden sm:block">
-                  <span className="text-xl font-bold bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
-                    Mi Aplicación
+                  <span className="text-xl font-bold bg-gradient-to-r bg-clip-text text-transparent"
+                  style={{
+                    color: navbarConfig?.textColor || '#ffffff'
+                  }}
+                  >
+                    {tenant?.name || 'KalmSystem'}
                   </span>
                   {/* <div className="text-xs text-blue-200/70 -mt-1">
                     Sistema de Gestión
@@ -158,7 +174,6 @@ export default function Header() {
                     
                     {/* Información rápida del usuario - Desktop */}
                     <div className="hidden xl:block text-right mr-2 space-y-1">
-                      {/* Nombre del usuario (opcional, descomenta si lo quieres mostrar) */}
                       {/* <div className="text-sm font-medium text-white">
                         {user?.name}
                       </div> */}
@@ -180,7 +195,7 @@ export default function Header() {
 
                     {/* Menú de usuario */}
                     <div className="relative">
-                      <UserMenu />
+                      <UserMenu tenant={tenant} />
                     </div>
                   </div>
                 ) : (

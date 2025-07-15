@@ -23,6 +23,26 @@ export interface Tenant {
 
   config?: TenantConfig;
   contactInfo?: TenantContactInfo;
+
+  componentConfigs?: TenantComponentConfig[];
+}
+
+export interface TenantComponentConfig {
+  id: string;
+  componentType?: string;
+  componentName?: string;
+  isVisible?: boolean;
+  visibleOnViews?: string;
+  hiddenOnViews?: string;
+  position?: string;
+  backgroundColor?: string;
+  textColor?: string;
+  logoUrl?: string;
+  logoAlt?: string;
+  title?: string;
+  showUserAvatar?: boolean;
+  showNotifications?: boolean;
+  isActive?: boolean;
 }
 
 export interface TenantConfig {

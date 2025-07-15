@@ -56,7 +56,7 @@ export default function LoginPage() {
   // Redirigir si ya está autenticado
   useEffect(() => {
     if (state.isAuthenticated) {
-      redirectAfterLogin('/products'); // Ruta por defecto después del login
+      redirectAfterLogin('/home'); // Ruta por defecto después del login
     }
   }, [state.isAuthenticated, redirectAfterLogin]);
 

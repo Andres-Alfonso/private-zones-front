@@ -23,9 +23,11 @@ export const loader: LoaderFunction = async ({ request }) => {
 
 export default function CoursesLayout() {
   return (
-    // <AuthGuard>
-      <CoursesLayoutContent />
-    // </AuthGuard>
+    <AuthGuard>
+      <RoleGuard requiredRole="admin">
+        <CoursesLayoutContent />
+      </RoleGuard>
+    </AuthGuard>
   );
 }
 

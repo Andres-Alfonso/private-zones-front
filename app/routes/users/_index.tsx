@@ -552,6 +552,13 @@ export default function UsersIndex() {
                 >
                   Usuario
                 </th>
+
+                <th 
+                  className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100/50 transition-colors"
+                  onClick={() => handleSort('name')}
+                >
+                  Identificacion
+                </th>
                 <th 
                   className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100/50 transition-colors"
                   onClick={() => handleSort('email')}
@@ -721,6 +728,14 @@ function UserRow({
               </div>
             )}
           </div>
+        </div>
+      </td>
+
+      <td className="px-6 py-4">
+        <div className="space-y-1">
+          <span className="px-3 py-1 text-xs font-semibold rounded-full">
+            {user.profileConfig?.documentNumber ?? 'N/A'}
+          </span>
         </div>
       </td>
 

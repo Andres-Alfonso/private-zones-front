@@ -42,7 +42,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <style dangerouslySetInnerHTML={{
           __html: `
             :root {
-              --tenant-primary-color: #0052cc;
+              --tenant-primary-color: #feeae7;
               --tenant-secondary-color: #ffffff;
             }
           `

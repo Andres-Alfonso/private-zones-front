@@ -14,7 +14,8 @@ import {
   X,
   Crown,
   Sparkles,
-  User
+  User,
+  LayoutPanelTop
 } from 'lucide-react';
 import { useState } from 'react';
 import { useTenant } from "~/context/TenantContext";
@@ -89,12 +90,30 @@ export default function Header() {
 
                     <RoleGuard requiredRole="admin">
                       <NavLink 
+                        to="/tenants" 
+                        icon={<Building2 className="h-4 w-4" />}
+                        variant="primary"
+                      >
+                        Clientes
+                      </NavLink>
+                    </RoleGuard>
+
+                    <RoleGuard requiredRole="admin">
+                      <NavLink 
                         to="/users" 
                         icon={<User className="h-4 w-4" />}
                       >
                         Usuarios
                       </NavLink>
+
+                      <NavLink 
+                        to="/sections" 
+                        icon={<LayoutPanelTop className="h-4 w-4" />}
+                      >
+                        Secciones
+                      </NavLink>
                     </RoleGuard>
+
                     {/* Dropdown de Cursos */}
                     <div className="relative group">
                       <button className="flex items-center space-x-2 px-4 py-2 rounded-xl text-white/90 hover:text-white hover:bg-white/10 transition-all duration-200 font-medium group-hover:shadow-lg">
@@ -142,23 +161,14 @@ export default function Header() {
                       </div>
                     </div>
                     
-                    <NavLink to="/products" icon={<Package className="h-4 w-4" />}>
+                    {/* <NavLink to="/products" icon={<Package className="h-4 w-4" />}>
                       Productos
-                    </NavLink>
+                    </NavLink> */}
                     
                     <NavLink to="/dashboard" icon={<LayoutDashboard className="h-4 w-4" />}>
                       Dashboard
                     </NavLink>
                     
-                    <RoleGuard requiredRole="admin">
-                      <NavLink 
-                        to="/tenants" 
-                        icon={<Building2 className="h-4 w-4" />}
-                        variant="primary"
-                      >
-                        Clientes
-                      </NavLink>
-                    </RoleGuard>
                   </>
                 )}
               </nav>

@@ -84,7 +84,11 @@ export default function Header() {
                 
                 {isAuthenticated && (
                   <>
-                    <NavLink to="/home" icon={<LayoutDashboard className="h-4 w-4" />}>
+                    <NavLink
+                      to="/home"
+                      textColor={navbarConfig?.textColor || '#ffffff'}
+                      icon={<LayoutDashboard className="h-4 w-4" />}
+                    >
                       Inicio
                     </NavLink>
 
@@ -92,7 +96,7 @@ export default function Header() {
                       <NavLink 
                         to="/tenants" 
                         icon={<Building2 className="h-4 w-4" />}
-                        variant="primary"
+                        textColor={navbarConfig?.textColor || '#ffffff'}
                       >
                         Clientes
                       </NavLink>
@@ -100,14 +104,16 @@ export default function Header() {
 
                     <RoleGuard requiredRole="admin">
                       <NavLink 
-                        to="/users" 
+                        to="/users"
+                        textColor={navbarConfig?.textColor || '#ffffff'}
                         icon={<User className="h-4 w-4" />}
                       >
                         Usuarios
                       </NavLink>
 
                       <NavLink 
-                        to="/sections" 
+                        to="/sections"
+                        textColor={navbarConfig?.textColor || '#ffffff'}
                         icon={<LayoutPanelTop className="h-4 w-4" />}
                       >
                         Secciones
@@ -115,57 +121,13 @@ export default function Header() {
                     </RoleGuard>
 
                     {/* Dropdown de Cursos */}
-                    <div className="relative group">
-                      <button className="flex items-center space-x-2 px-4 py-2 rounded-xl text-white/90 hover:text-white hover:bg-white/10 transition-all duration-200 font-medium group-hover:shadow-lg">
-                        <BookOpen className="h-4 w-4" />
-                        <span>Cursos</span>
-                        <ChevronDown className="h-3 w-3 transition-transform duration-200 group-hover:rotate-180" />
-                      </button>
-                      
-                      {/* Dropdown Menu */}
-                      <div className="absolute top-full left-0 mt-2 w-56 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
-                        <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 overflow-hidden">
-                          <div className="p-2">
-                            <DropdownLink 
-                              to="/courses" 
-                              icon={<BookOpen className="h-4 w-4" />}
-                              title="Catálogo"
-                              description="Explora todos los cursos"
-                            />
-                            
-                            <DropdownLink 
-                              to="/courses/my-courses" 
-                              icon={<GraduationCap className="h-4 w-4" />}
-                              title="Mis Cursos"
-                              description="Cursos en progreso"
-                            />
-                            
-                            <RoleGuard requiredRoles={['admin', 'instructor']} requireAll={false}>
-                              <div className="border-t border-gray-200/50 my-2"></div>
-                              <DropdownLink 
-                                to="/courses/create" 
-                                icon={<div className="text-green-600 font-bold">+</div>}
-                                title="Crear Curso"
-                                description="Nuevo contenido"
-                              />
-                              
-                              <DropdownLink 
-                                to="/courses/manage" 
-                                icon={<Settings className="h-4 w-4" />}
-                                title="Gestionar"
-                                description="Administrar cursos"
-                              />
-                            </RoleGuard>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                    <CourseDropdown textColor={navbarConfig?.textColor || '#ffffff'} />
                     
                     {/* <NavLink to="/products" icon={<Package className="h-4 w-4" />}>
                       Productos
                     </NavLink> */}
                     
-                    <NavLink to="/dashboard" icon={<LayoutDashboard className="h-4 w-4" />}>
+                    <NavLink to="/dashboard" textColor={navbarConfig?.textColor || '#ffffff'} icon={<LayoutDashboard className="h-4 w-4" />}>
                       Dashboard
                     </NavLink>
                     
@@ -192,7 +154,7 @@ export default function Header() {
                       </div> */}
 
                       {/* Roles del usuario */}
-                      <div className="text-xs text-blue-200/80">
+                      <div className="text-xs" style={{color: navbarConfig?.textColor || '#ffffff'}}>
                         {user?.roles
                           .map(role => role.charAt(0).toUpperCase() + role.slice(1))
                           .join(', ')}
@@ -208,14 +170,15 @@ export default function Header() {
 
                     {/* Menú de usuario */}
                     <div className="relative">
-                      <UserMenu tenant={tenant} />
+                      <UserMenu colorText={navbarConfig?.textColor || '#ffffff'} />
                     </div>
                   </div>
                 ) : (
                   <div className="flex items-center space-x-3">
                     <Link 
                       to="/auth/login" 
-                      className="text-white/80 hover:text-white transition-colors font-medium px-4 py-2 rounded-xl hover:bg-white/10"
+                      className="transition-colors font-medium px-4 py-2 rounded-xl hover:bg-white/10"
+                      style={{color: navbarConfig?.textColor || '#ffffff'}}
                     >
                       Iniciar Sesión
                     </Link>
@@ -325,27 +288,86 @@ export default function Header() {
   );
 }
 
-// Componente para enlaces de navegación principal
+type NavLinkProps = {
+  to: string;
+  children: React.ReactNode;
+  icon?: React.ReactNode;
+  variant?: "default" | "primary";
+  className?: string;
+  style?: React.CSSProperties;
+  textColor?: string; // Nueva prop específica para el color del texto
+};
+
 function NavLink({ 
   to, 
   children, 
   icon, 
-  variant = "default" 
-}: { 
-  to: string; 
-  children: React.ReactNode; 
-  icon?: React.ReactNode;
-  variant?: "default" | "primary";
-}) {
+  variant = "default",
+  className = "",
+  style,
+  textColor
+}: NavLinkProps) {
   const baseClasses = "flex items-center space-x-2 px-4 py-2 rounded-xl font-medium transition-all duration-200 hover:scale-105";
+  
   const variantClasses = variant === "primary" 
-    ? "bg-gradient-to-r from-gray-600 to-gray-700 text-white shadow-lg hover:shadow-xl hover:from-gray-700 hover:to-gray-800"
-    : "text-white/90 hover:text-white hover:bg-white/10 hover:shadow-lg";
+    ? "bg-gradient-to-r from-gray-600 to-gray-700 shadow-lg hover:shadow-xl hover:from-gray-700 hover:to-gray-800 text-white"
+    : "hover:bg-white/10 hover:shadow-lg";
+
+  // Determinar contraste (claro/oscuro) basado en luminosidad
+  const getContrastClass = (color: string) => {
+    if (!color) return 'text-white';
+    
+    try {
+      const hex = color.replace('#', '');
+      if (hex.length !== 6) return 'text-white';
+      
+      const r = parseInt(hex.substring(0, 2), 16) / 255;
+      const g = parseInt(hex.substring(2, 4), 16) / 255;
+      const b = parseInt(hex.substring(4, 6), 16) / 255;
+      
+      const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      return luminance > 0.5 ? 'text-gray-800' : 'text-white';
+    } catch {
+      return 'text-white';
+    }
+  };
+
+  // Determinar el color del texto
+  const finalTextColor = textColor || style?.color;
+  const textColorClass = variant === "primary" 
+    ? 'text-white' // Para primary siempre blanco
+    : finalTextColor 
+      ? '' // Si hay color personalizado, no usar clase
+      : 'text-white'; // Color por defecto
 
   return (
-    <Link to={to} className={`${baseClasses} ${variantClasses}`}>
-      {icon}
-      <span>{children}</span>
+    <Link
+      to={to}
+      className={`${baseClasses} ${variantClasses} ${textColorClass} ${className}`}
+      style={{
+        ...style,
+        // Solo aplicar color si no es primary y hay un color personalizado
+        ...(variant !== "primary" && finalTextColor && {
+          color: finalTextColor
+        })
+      }}
+    >
+      {icon && (
+        <span 
+          style={{
+            color: variant !== "primary" && finalTextColor ? finalTextColor : undefined
+          }}
+        >
+          {icon}
+        </span>
+      )}
+      <span 
+        style={{
+          color: variant !== "primary" && finalTextColor ? finalTextColor : undefined
+        }}
+      >
+        {children}
+      </span>
     </Link>
   );
 }
@@ -355,13 +377,63 @@ function DropdownLink({
   to, 
   icon, 
   title, 
-  description 
+  description,
+  textColor
 }: { 
   to: string; 
   icon: React.ReactNode; 
   title: string; 
   description: string;
+  textColor?: string;
 }) {
+  // Función para determinar si un color es claro u oscuro
+  const getContrastColors = (color: string) => {
+    if (!color) return {
+      primary: 'text-gray-900',
+      secondary: 'text-gray-600',
+      hover: 'text-gray-800'
+    };
+    
+    try {
+      const hex = color.replace('#', '');
+      if (hex.length !== 6) return {
+        primary: 'text-gray-900',
+        secondary: 'text-gray-600', 
+        hover: 'text-gray-800'
+      };
+      
+      const r = parseInt(hex.substring(0, 2), 16) / 255;
+      const g = parseInt(hex.substring(2, 4), 16) / 255;
+      const b = parseInt(hex.substring(4, 6), 16) / 255;
+      
+      const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      
+      // Si el color es claro, usar textos oscuros
+      if (luminance > 0.5) {
+        return {
+          primary: 'text-gray-900',
+          secondary: 'text-gray-600',
+          hover: 'text-gray-800'
+        };
+      } else {
+        // Si el color es oscuro, usar textos claros
+        return {
+          primary: 'text-white',
+          secondary: 'text-white/70',
+          hover: 'text-white'
+        };
+      }
+    } catch {
+      return {
+        primary: 'text-gray-900',
+        secondary: 'text-gray-600',
+        hover: 'text-gray-800'
+      };
+    }
+  };
+
+  const colors = getContrastColors(textColor);
+
   return (
     <Link 
       to={to} 
@@ -369,18 +441,83 @@ function DropdownLink({
     >
       <div className="flex items-start space-x-3">
         <div className="p-2 rounded-lg bg-gray-100/50 group-hover:bg-gray-200/50 transition-colors">
-          {icon}
+          <span style={{ color: textColor }} className={!textColor ? colors.primary : ''}>
+            {icon}
+          </span>
         </div>
         <div>
-          <div className="font-medium text-gray-900 group-hover:text-gray-800">
+          <div 
+            className={`font-medium group-hover:opacity-80 transition-opacity ${!textColor ? colors.primary : ''}`}
+            style={{ color: textColor }}
+          >
             {title}
           </div>
-          <div className="text-xs text-gray-600 mt-0.5">
+          <div 
+            className={`text-xs mt-0.5 opacity-70 ${!textColor ? colors.secondary : ''}`}
+            style={{ color: textColor }}
+          >
             {description}
           </div>
         </div>
       </div>
     </Link>
+  );
+}
+
+// Componente CourseDropdown mejorado
+function CourseDropdown({ textColor }: { textColor?: string }) {
+  return (
+    <div className="relative group">
+      <button 
+        className="flex items-center space-x-2 px-4 py-2 rounded-xl hover:bg-white/10 transition-all duration-200 font-medium group-hover:shadow-lg"
+        style={{ color: textColor || '#ffffff' }}
+      >
+        <BookOpen className="h-4 w-4" />
+        <span>Cursos</span>
+        <ChevronDown className="h-3 w-3 transition-transform duration-200 group-hover:rotate-180" />
+      </button>
+      
+      {/* Dropdown Menu */}
+      <div className="absolute top-full left-0 mt-2 w-56 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+        <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 overflow-hidden">
+          <div className="p-2">
+            <DropdownLink 
+              to="/courses" 
+              icon={<BookOpen className="h-4 w-4" />}
+              title="Catálogo"
+              description="Explora todos los cursos"
+              textColor={textColor}
+            />
+            
+            <DropdownLink 
+              to="/courses/my-courses" 
+              icon={<GraduationCap className="h-4 w-4" />}
+              title="Mis Cursos"
+              description="Cursos en progreso"
+              textColor={textColor}
+            />
+            
+            {/* RoleGuard component aquí */}
+            <div className="border-t border-gray-200/50 my-2"></div>
+            <DropdownLink 
+              to="/courses/create" 
+              icon={<div className="text-green-600 font-bold">+</div>}
+              title="Crear Curso"
+              description="Nuevo contenido"
+              textColor={textColor}
+            />
+            
+            <DropdownLink 
+              to="/courses/manage" 
+              icon={<Settings className="h-4 w-4" />}
+              title="Gestionar"
+              description="Administrar cursos"
+              textColor={textColor}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 

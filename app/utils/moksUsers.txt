@@ -1,0 +1,121 @@
+// Datos simulados basados en las entidades reales
+    const mockUsers: User[] = [
+      {
+        id: '1',
+        email: 'admin@empresa.com',
+        name: 'Juan',
+        lastName: 'Pérez',
+        tenantId: 'tenant-1',
+        isActive: true,
+        roles: ['admin'],
+        createdAt: '2024-01-01T00:00:00Z',
+        updatedAt: '2024-01-20T10:30:00Z',
+        tenant: { id: 'tenant-1', name: 'Tenant Principal' },
+        profileConfig: {
+          id: '1',
+          avatarPath: 'https://via.placeholder.com/40',
+          phoneNumber: '+57 300 123 4567',
+          Organization: 'TechCorp',
+          Charge: 'Administrador de Sistemas',
+          City: 'Bogotá',
+          Country: 'Colombia',
+          type_document: 'DNI',
+          documentNumber: '12345678',
+          Genger: 'Masculino',
+          bio: 'Administrador con más de 10 años de experiencia'
+        },
+        notificationConfig: {
+          enableNotifications: true,
+          smsNotifications: false,
+          browserNotifications: true
+        }
+      },
+      {
+        id: '2',
+        email: 'maria.garcia@empresa.com',
+        name: 'María',
+        lastName: 'García',
+        tenantId: 'tenant-1',
+        isActive: true,
+        roles: ['moderator', 'user'],
+        createdAt: '2024-01-05T00:00:00Z',
+        updatedAt: '2024-01-19T15:45:00Z',
+        tenant: { id: 'tenant-1', name: 'Tenant Principal' },
+        profileConfig: {
+          id: '2',
+          phoneNumber: '+57 301 987 6543',
+          Organization: 'EduCorp',
+          Charge: 'Coordinadora Académica',
+          City: 'Medellín',
+          Country: 'Colombia',
+          type_document: 'DNI',
+          documentNumber: '87654321',
+          Genger: 'Femenino'
+        },
+        notificationConfig: {
+          enableNotifications: true,
+          smsNotifications: true,
+          browserNotifications: false
+        }
+      },
+      {
+        id: '3',
+        email: 'carlos.rodriguez@empresa.com',
+        name: 'Carlos',
+        lastName: 'Rodríguez',
+        tenantId: 'tenant-2',
+        isActive: false,
+        roles: ['user'],
+        createdAt: '2024-01-15T00:00:00Z',
+        updatedAt: '2024-01-15T00:00:00Z',
+        tenant: { id: 'tenant-2', name: 'Tenant Secundario' },
+        profileConfig: {
+          id: '3',
+          Organization: 'StartupXYZ',
+          Charge: 'Desarrollador',
+          City: 'Cali',
+          Country: 'Colombia',
+          type_document: 'Passport',
+          documentNumber: 'A1234567'
+        },
+        notificationConfig: {
+          enableNotifications: false,
+          smsNotifications: false,
+          browserNotifications: false
+        }
+      }
+    ];
+
+    const mockStats: UserStats = {
+      totalUsers: 3,
+      activeUsers: 2,
+      inactiveUsers: 1,
+      newUsersThisMonth: 2,
+      usersByRole: [
+        { role: 'admin', count: 1 },
+        { role: 'moderator', count: 1 },
+        { role: 'user', count: 2 }
+      ],
+      usersByTenant: [
+        { tenant: 'Tenant Principal', count: 2 },
+        { tenant: 'Tenant Secundario', count: 1 }
+      ]
+    };
+
+    const mockTenants = [
+      { id: 'tenant-1', name: 'Tenant Principal' },
+      { id: 'tenant-2', name: 'Tenant Secundario' }
+    ];
+
+    const mockRoles = [
+      { id: 'admin', name: 'Administrador', description: 'Acceso completo al sistema' },
+      { id: 'moderator', name: 'Moderador', description: 'Gestión de contenido y usuarios' },
+      { id: 'user', name: 'Usuario', description: 'Usuario estándar del sistema' }
+    ];
+
+    const response: UserListResponse = {
+      data: mockUsers,
+      total: 3,
+      page: 1,
+      limit: 20,
+    };

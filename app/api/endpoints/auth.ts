@@ -2,7 +2,7 @@
 import { createApiClient } from "../client";
 import apiClient from '../client';
 import { API_CONFIG } from '../config';
-import { LoginRequest, LoginResponse, RegisterRequest, UserProfileResponse } from '../types/auth.types';
+import { LoginRequest, LoginResponse, RegisterRequest, UserProfileResponse, ForgotPasswordRequest, ForgotPasswordResponse } from '../types/auth.types';
 
 
 function getCurrentDomain(): string {
@@ -88,4 +88,59 @@ export const AuthAPI = {
 
     return response.json();
   },
+
+  forgotPassword: async (data: ForgotPasswordRequest): Promise<ForgotPasswordResponse> => {
+    try {
+      const response = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw {
+          response: {
+            status: response.status,
+            data: errorData
+          }
+        };
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error en forgot password API:', error);
+      throw error;
+    }
+  },
+
+  // También podrías agregar el método para reset password
+  resetPassword: async (data: { token: string; password: string; confirmPassword: string }) => {
+    try {
+      const response = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw {
+          response: {
+            status: response.status,
+            data: errorData
+          }
+        };
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error en reset password API:', error);
+      throw error;
+    }
+  }
 };

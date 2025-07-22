@@ -5,8 +5,9 @@ import { useAuth, useCurrentUser } from '~/context/AuthContext';
 import { useNavigate, useNavigation } from '@remix-run/react';
 import { RoleGuard } from './AuthGuard';
 import { ChevronDown } from 'lucide-react';
+import { useTenant } from '~/context/TenantContext';
 
-export function UserMenu() {
+export function UserMenu({ colorText }: { colorText: string }) {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useCurrentUser();
@@ -47,14 +48,15 @@ export function UserMenu() {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center space-x-2 p-2 rounded-xl text-white/90 hover:text-white hover:bg-white/10 focus:outline-none transition-all duration-200 group"
+        className="flex items-center space-x-2 p-2 rounded-xl hover:bg-white/10 focus:outline-none transition-all duration-200 group"
+        style={{ color: colorText }}
       >
         {/* Avatar mejorado */}
         <div className={`w-10 h-10 bg-gradient-to-br ${getAvatarColor(user.roles)} rounded-xl flex items-center justify-center text-white text-sm font-bold shadow-lg group-hover:shadow-xl transition-all duration-200 group-hover:scale-105`}>
           {getInitials(user.name)}
         </div>
         
-        <span className="hidden md:block font-medium">{user.name}</span>
+        <span className="hidden md:block font-medium" style={{color: colorText}}>{user.name}</span>
         
         <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
       </button>

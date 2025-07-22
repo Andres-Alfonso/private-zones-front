@@ -149,3 +149,12 @@ export interface UserProfileResponse {
   name: string;
   role: string[];
 }
+
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ForgotPasswordResponse {
+  message: string;
+  email: string;
+}

@@ -2,13 +2,14 @@
 import { json, redirect, ActionFunction, LoaderFunction } from '@remix-run/node';
 import { useActionData, Form, useNavigation, useLoaderData, useNavigate } from '@remix-run/react';
 import type { MetaFunction } from "@remix-run/node";
+import { useEffect, useState } from 'react';
 import Input from '~/components/ui/Input';
-import Select from '~/components/ui/Select'; // Asumiendo que tienes un componente Select
+import Select from '~/components/ui/Select';
 import Checkbox from '~/components/ui/Checkbox';
+import Modal from '~/components/ui/Modal';
 import { validateRegisterForm, getErrorByField } from '~/utils/validation';
 import { AuthAPI } from '~/api/endpoints/auth';
 import SuccessModal from '~/components/ui/SuccessModal';
-import { useEffect } from 'react';
 import { useAuthRedirect } from '~/components/AuthGuard';
 import { useAuth } from '~/context/AuthContext';
 import { useTenant } from '~/context/TenantContext';
@@ -184,6 +185,9 @@ export default function RegisterPage() {
   const navigate = useNavigate();
   const { state, login, clearError } = useAuth();
   const { redirectAfterLogin } = useAuthRedirect();
+
+  // ← Estado para controlar el modal de términos
+  const [showTermsModal, setShowTermsModal] = useState(false);
 
   const { tenantConfig, documentTypes, genderOptions } = loaderData;
 
@@ -411,14 +415,44 @@ export default function RegisterPage() {
           placeholder="Repite tu contraseña"
         />
         
-        <Checkbox
-          id="agree-terms"
-          name="agree-terms"
-          label="Acepto los términos y condiciones y la política de privacidad"
-          required
-          error={getErrorByField(errors, 'agree-terms')}
-          disabled={isSubmitting}
-        />
+        {/* ← Checkbox con enlace personalizado para términos */}
+        <div className="space-y-2">
+          <div className="flex items-start">
+            <input
+              type="checkbox"
+              id="agree-terms"
+              name="agree-terms"
+              required
+              disabled={isSubmitting}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-1"
+            />
+            <label htmlFor="agree-terms" className="ml-3 text-sm text-gray-700">
+              Acepto los{' '}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setShowTermsModal(true);
+                }}
+                className="text-blue-600 hover:text-blue-700 underline font-medium"
+              >
+                términos y condiciones
+              </button>
+              {' '}y la{' '}
+              <a
+                href="/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-700 underline font-medium"
+              >
+                política de privacidad
+              </a>
+            </label>
+          </div>
+          {getErrorByField(errors, 'agree-terms') && (
+            <p className="text-sm text-red-600">{getErrorByField(errors, 'agree-terms')}</p>
+          )}
+        </div>
         
         <div>
           <button
@@ -500,6 +534,76 @@ export default function RegisterPage() {
           </a>
         </p>
       </div>
+
+      {/* ← Modal de términos y condiciones */}
+      <Modal
+        title="Términos y Condiciones"
+        isOpen={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+      >
+        <div className="space-y-4">
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-2">1. Aceptación de Términos</h4>
+            <p className="text-gray-700">
+              Al registrarte en nuestra plataforma, aceptas cumplir con estos términos y condiciones. 
+              Si no estás de acuerdo, no debes utilizar nuestros servicios.
+            </p>
+          </div>
+          
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-2">2. Uso del Servicio</h4>
+            <p className="text-gray-700">
+              Te comprometes a utilizar nuestros servicios de manera responsable y conforme a las leyes aplicables.
+              No debes usar la plataforma para actividades ilegales o que violen los derechos de otros.
+            </p>
+          </div>
+          
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-2">3. Privacidad y Datos</h4>
+            <p className="text-gray-700">
+              Nos comprometemos a proteger tu información personal de acuerdo con nuestra política de privacidad.
+              Al registrarte, consientes el procesamiento de tus datos según se describe en dicha política.
+            </p>
+          </div>
+          
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-2">4. Responsabilidades del Usuario</h4>
+            <p className="text-gray-700">
+              Eres responsable de mantener la confidencialidad de tu cuenta y contraseña.
+              Debes notificarnos inmediatamente sobre cualquier uso no autorizado de tu cuenta.
+            </p>
+          </div>
+          
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-2">5. Limitaciones</h4>
+            <p className="text-gray-700">
+              Nos reservamos el derecho de modificar, suspender o discontinuar el servicio en cualquier momento.
+              No seremos responsables por daños indirectos o consecuenciales derivados del uso del servicio.
+            </p>
+          </div>
+          
+          <div className="pt-4 border-t border-gray-200">
+            <p className="text-sm text-gray-600">
+              Última actualización: {new Date().toLocaleDateString('es-ES')}
+            </p>
+          </div>
+          
+          <div className="flex justify-end gap-3 mt-6">
+            <button
+              onClick={() => setShowTermsModal(false)}
+              className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              Cerrar
+            </button>
+            <button
+              onClick={() => setShowTermsModal(false)}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       <SuccessModal
         isOpen={actionData?.success === true}

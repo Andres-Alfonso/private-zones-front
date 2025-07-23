@@ -121,24 +121,24 @@ export const action: ActionFunction = async ({ request }) => {
       },
       groupsSettings:{
         type: 'courses',
-        customBackground: formData.get('metricsCustomBackground') === 'true',
-        backgroundType: formData.get('metricsBackgroundType') as 'imagen' | 'color' || 'color',
-        backgroundImage: formData.get('metricsBackgroundImage') as string || '',
-        backgroundColor: formData.get('metricsBackgroundColor') as string || '#eff4ff',
+        customBackground: formData.get('groupsCustomBackground') === 'true',
+        backgroundType: formData.get('groupsBackgroundType') as 'imagen' | 'color' || 'color',
+        backgroundImage: formData.get('groupsBackgroundImage') as string || '',
+        backgroundColor: formData.get('groupsBackgroundColor') as string || '#eff4ff',
       },
       sectionsSettings: {
         type: 'sections',
-        customBackground: formData.get('metricsCustomBackground') === 'true',
-        backgroundType: formData.get('metricsBackgroundType') as 'imagen' | 'color' || 'color',
-        backgroundImage: formData.get('metricsBackgroundImage') as string || '',
-        backgroundColor: formData.get('metricsBackgroundColor') as string || '#eff4ff',
+        customBackground: formData.get('sectionsCustomBackground') === 'true',
+        backgroundType: formData.get('sectionsBackgroundType') as 'imagen' | 'color' || 'color',
+        backgroundImage: formData.get('sectionsBackgroundImage') as string || '',
+        backgroundColor: formData.get('sectionsBackgroundColor') as string || '#eff4ff',
       },
       faqSettings: {
         type: 'frequentlyask',
-        customBackground: formData.get('metricsCustomBackground') === 'true',
-        backgroundType: formData.get('metricsBackgroundType') as 'imagen' | 'color' || 'color',
-        backgroundImage: formData.get('metricsBackgroundImage') as string || '',
-        backgroundColor: formData.get('metricsBackgroundColor') as string || '#eff4ff',
+        customBackground: formData.get('faqCustomBackground') === 'true',
+        backgroundType: formData.get('faqBackgroundType') as 'imagen' | 'color' || 'color',
+        backgroundImage: formData.get('faqBackgroundImage') as string || '',
+        backgroundColor: formData.get('faqBackgroundColor') as string || '#eff4ff',
       }
     };
 
@@ -1070,7 +1070,7 @@ export default function CreateTenant() {
             ) : (
               <>
                 <Save className="h-4 w-4" />
-                <span>Crear Tenant</span>
+                <span>Crear Cliente</span>
               </>
             )}
           </button>

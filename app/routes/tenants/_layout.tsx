@@ -10,8 +10,8 @@ import { useCurrentUser } from '~/context/AuthContext';
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "Gestión de Tenants - Admin Panel" },
-    { name: "description", content: "Administración y gestión de tenants" },
+    { title: "Gestión de Clientes - Admin Panel" },
+    { name: "description", content: "Administración y gestión de clientes" },
   ];
 };
 
@@ -108,17 +108,17 @@ function TenantsLayoutContent() {
                   </div>
                   <div>
                     <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                      {isCreatePage ? 'Crear Nuevo Tenant' : 
-                       isEditPage ? 'Editar Tenant' :
-                       isDetailPage ? 'Detalle del Tenant' :
-                       isStatsPage ? 'Estadísticas de Tenants' :
-                       'Gestión de Tenants'}
+                      {isCreatePage ? 'Crear Nuevo Cliente' : 
+                       isEditPage ? 'Editar Cliente' :
+                       isDetailPage ? 'Detalle del Cliente' :
+                       isStatsPage ? 'Estadísticas de Clientes' :
+                       'Gestión de Clientes'}
                     </h1>
                     <p className="text-gray-600 mt-1 text-lg">
-                      {isCreatePage ? 'Complete la información para crear un nuevo tenant' :
-                       isEditPage ? 'Modifique la información del tenant' :
-                       isStatsPage ? 'Analiza el rendimiento y uso de los tenants' :
-                       'Administra y supervisa todos los tenants de la plataforma'}
+                      {isCreatePage ? 'Complete la información para crear un nuevo cliente' :
+                       isEditPage ? 'Modifique la información del cliente' :
+                       isStatsPage ? 'Analiza el rendimiento y uso de los clientes' :
+                       'Administra y supervisa todos los clientes de la plataforma'}
                     </p>
                   </div>
                 </div>

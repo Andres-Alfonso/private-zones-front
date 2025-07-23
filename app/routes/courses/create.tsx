@@ -22,6 +22,7 @@ import { CourseVisibilityFields } from '~/components/courses/CourseVisibilityFie
 import { CourseTranslationFields } from '~/components/courses/CourseTranslationFields';
 import { CourseViewConfigFields } from '~/components/courses/CourseViewConfigFields';
 import { CourseFormActions } from '~/components/courses/CourseFormActions';
+import { generateAcronym } from '~/utils/acronymGenerator';
 
 interface ActionData {
   errors?: Array<{ field: string; message: string }>;
@@ -34,11 +35,14 @@ interface ActionData {
 function validateCourseForm(formData: FormData) {
   const errors: Array<{ field: string; message: string }> = [];
 
+  // console.log('Validating course form data:', Object.fromEntries(formData.entries()));
+
   // Validaciones básicas
   const title = formData.get('title') as string;
+  // console.log('Validating title:', title);
   const description = formData.get('description') as string;
-  const instructor = formData.get('instructor') as string;
-  const category = formData.get('category') as string;
+  // const instructor = formData.get('instructor') as string;
+  // const category = formData.get('category') as string;
   const acronym = formData.get('acronym') as string;
   const estimatedHours = formData.get('estimatedHours') as string;
 
@@ -50,13 +54,13 @@ function validateCourseForm(formData: FormData) {
     errors.push({ field: 'description', message: 'La descripción debe tener al menos 20 caracteres' });
   }
 
-  if (!instructor || instructor.trim().length < 2) {
-    errors.push({ field: 'instructor', message: 'El instructor es obligatorio' });
-  }
+  // if (!instructor || instructor.trim().length < 2) {
+  //   errors.push({ field: 'instructor', message: 'El instructor es obligatorio' });
+  // }
 
-  if (!category || category.trim().length < 2) {
-    errors.push({ field: 'category', message: 'La categoría es obligatoria' });
-  }
+  // if (!category || category.trim().length < 2) {
+  //   errors.push({ field: 'category', message: 'La categoría es obligatoria' });
+  // }
 
   if (acronym && acronym.length > 10) {
     errors.push({ field: 'acronym', message: 'Las siglas no pueden exceder 10 caracteres' });
@@ -113,14 +117,14 @@ export const action: ActionFunction = async ({ request }) => {
       // Información básica
       title: formData.get('title') as string,
       description: formData.get('description') as string,
-      instructor: formData.get('instructor') as string,
-      category: formData.get('category') as string,
+      // instructor: formData.get('instructor') as string,
+      // category: formData.get('category') as string,
       subcategory: formData.get('subcategory') as string,
 
       // Información académica
       acronym: formData.get('acronym') as string,
       code: formData.get('code') as string,
-      level: formData.get('level') as CourseLevel,
+      // level: formData.get('level') as CourseLevel,
       intensity: Number(formData.get('intensity')) || 0,
       estimatedHours: Number(formData.get('estimatedHours')) || 0,
 
@@ -168,21 +172,21 @@ export const action: ActionFunction = async ({ request }) => {
       },
 
       // Configuración de vistas
-      viewsConfig: {
-        contents: {
-          isActive: formData.get('contentsViewActive') === 'true',
-          backgroundType: formData.get('contentsBackgroundType') as string,
-          backgroundColor: formData.get('contentsBackgroundColor') as string,
-          customTitle: formData.get('contentsCustomTitle') as string
-        },
-        forums: {
-          isActive: formData.get('forumsViewActive') === 'true',
-          backgroundType: formData.get('forumsBackgroundType') as string,
-          backgroundColor: formData.get('forumsBackgroundColor') as string,
-          customTitle: formData.get('forumsCustomTitle') as string
-        }
-        // Agregar más vistas según sea necesario
-      }
+      // viewsConfig: {
+      //   contents: {
+      //     isActive: formData.get('contentsViewActive') === 'true',
+      //     backgroundType: formData.get('contentsBackgroundType') as string,
+      //     backgroundColor: formData.get('contentsBackgroundColor') as string,
+      //     customTitle: formData.get('contentsCustomTitle') as string
+      //   },
+      //   forums: {
+      //     isActive: formData.get('forumsViewActive') === 'true',
+      //     backgroundType: formData.get('forumsBackgroundType') as string,
+      //     backgroundColor: formData.get('forumsBackgroundColor') as string,
+      //     customTitle: formData.get('forumsCustomTitle') as string
+      //   }
+      //   // Agregar más vistas según sea necesario
+      // }
     };
 
     // En producción, aquí llamarías al API
@@ -215,6 +219,7 @@ export default function CreateCourse() {
 
 function CreateCourseContent() {
   const actionData = useActionData<ActionData>();
+  const [localErrors, setLocalErrors] = useState<Array<{ field: string; message: string }>>([]);
   const navigation = useNavigation();
   const navigate = useNavigate();
 
@@ -222,10 +227,10 @@ function CreateCourseContent() {
     // Básicos
     title: '',
     description: '',
-    instructor: '',
-    category: '',
+    // instructor: '',
+    // category: '',
     subcategory: '',
-    level: CourseLevel.BEGINNER,
+    // level: CourseLevel.BEGINNER,
 
     // Académicos
     acronym: '',
@@ -281,6 +286,8 @@ function CreateCourseContent() {
     thumbnailImage?: File;
   }>({});
 
+  const [isAcronymManuallyEdited, setIsAcronymManuallyEdited] = useState(false);
+
   const isSubmitting = navigation.state === 'submitting';
   const errors = actionData?.errors || [];
 
@@ -293,9 +300,39 @@ function CreateCourseContent() {
 
   // Manejar cambios en el formulario
   const handleChange = (field: string, value: string | boolean | number) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => {
+      const newData = { ...prev, [field]: value };
+      
+      // Si se está cambiando el título y el acrónimo no ha sido editado manualmente
+      if (field === 'title' && !isAcronymManuallyEdited) {
+        const newAcronym = generateAcronym(value as string);
+        newData.acronym = newAcronym;
+      }
+      
+      // Si se está editando el acrónimo manualmente, marcar como editado
+      if (field === 'acronym') {
+        setIsAcronymManuallyEdited(true);
+      }
+      
+      return newData;
+    });
     setHasChanges(true);
   };
+
+  // Función para resetear la edición manual del acrónimo
+  const resetAcronymToAuto = () => {
+    const newAcronym = generateAcronym(formData.title as string);
+    setFormData(prev => ({ ...prev, acronym: newAcronym }));
+    setIsAcronymManuallyEdited(false);
+    setHasChanges(true);
+  };
+
+  // función para limpiar errores
+  const clearFieldError = (field: string) => {
+    setLocalErrors(prev => prev.filter(error => error.field !== field));
+  };
+
+  const allErrors = [...(actionData?.errors || []), ...localErrors];
 
   // Manejar carga de archivos de imagen
   const handleImageUpload = (field: string, file: File | null) => {
@@ -426,10 +463,11 @@ function CreateCourseContent() {
             >
               <CourseBasicFields
                 formData={formData}
-                errors={errors}
+                errors={allErrors}
                 categories={categories}
                 isSubmitting={isSubmitting}
                 onChange={handleChange}
+                onClearError={clearFieldError}
               />
             </CourseFormSection>
           )}
@@ -601,6 +639,62 @@ function CreateCourseContent() {
               )}
             </div>
           </div>
+
+          <input type="hidden" name="title" value={formData.title || ''} />
+          <input type="hidden" name="description" value={formData.description || ''} />
+          <input type="hidden" name="subcategory" value={formData.subcategory || ''} />
+          <input type="hidden" name="acronym" value={formData.acronym || ''} />
+          <input type="hidden" name="code" value={formData.code || ''} />
+          <input type="hidden" name="intensity" value={formData.intensity || 0} />
+          <input type="hidden" name="estimatedHours" value={formData.estimatedHours || ''} />
+          <input type="hidden" name="visibility" value={formData.visibility || ''} />
+          <input type="hidden" name="status" value={formData.status || ''} />
+          <input type="hidden" name="colorTitle" value={formData.colorTitle || ''} />
+          <input type="hidden" name="order" value={formData.order || 0} />
+          <input type="hidden" name="startDate" value={formData.startDate || ''} />
+          <input type="hidden" name="endDate" value={formData.endDate || ''} />
+          <input type="hidden" name="enrollmentStartDate" value={formData.enrollmentStartDate || ''} />
+          <input type="hidden" name="enrollmentEndDate" value={formData.enrollmentEndDate || ''} />
+          <input type="hidden" name="maxEnrollments" value={formData.maxEnrollments || ''} />
+          <input type="hidden" name="requiresApproval" value={formData.requiresApproval ? 'true' : 'false'} />
+          <input type="hidden" name="allowSelfEnrollment" value={formData.allowSelfEnrollment ? 'true' : 'false'} />
+          <input type="hidden" name="invitationLink" value={formData.invitationLink || ''} />
+          <input type="hidden" name="coverImageUrl" value={formData.coverImageUrl || ''} />
+          <input type="hidden" name="menuImageUrl" value={formData.menuImageUrl || ''} />
+          <input type="hidden" name="thumbnailImageUrl" value={formData.thumbnailImageUrl || ''} />
+          <input type="hidden" name="titleEn" value={formData.titleEn || ''} />
+          <input type="hidden" name="descriptionEn" value={formData.descriptionEn || ''} />
+          <input type="hidden" name="tagsEs" value={formData.tagsEs || ''} />
+          <input type="hidden" name="tagsEn" value={formData.tagsEn || ''} />
+          <input type="hidden" name="keywordsEs" value={formData.keywordsEs || ''} />
+          <input type="hidden" name="keywordsEn" value={formData.keywordsEn || ''} />
+          <input type="hidden" name="contentsViewActive" value={formData.contentsViewActive ? 'true' : 'false'} />
+          <input type="hidden" name="forumsViewActive" value={formData.forumsViewActive ? 'true' : 'false'} />
+          <input type="hidden" name="contentsBackgroundType" value={formData.contentsBackgroundType || ''} />
+          <input type="hidden" name="contentsBackgroundColor" value={formData.contentsBackgroundColor || ''} />
+          <input type="hidden" name="contentsCustomTitle" value={formData.contentsCustomTitle || ''} />
+          <input type="hidden" name="forumsBackgroundType" value={formData.forumsBackgroundType || ''} />
+          <input type="hidden" name="forumsBackgroundColor" value={formData.forumsBackgroundColor || ''} />
+          <input type="hidden" name="forumsCustomTitle" value={formData.forumsCustomTitle || ''} />
+
+          {/* Campos ocultos para archivos */}
+          {Object.entries(imageFiles).map(([key, file]) => (
+            file && (
+              <input 
+                key={key}
+                type="file" 
+                name={`${key}File`} 
+                style={{ display: 'none' }}
+                ref={(input) => {
+                  if (input && file) {
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    input.files = dataTransfer.files;
+                  }
+                }}
+              />
+            )
+          ))}
         </Form>
       </div>
     </div>

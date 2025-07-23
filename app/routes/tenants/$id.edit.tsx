@@ -386,6 +386,8 @@ export default function EditTenant() {
         return new Date(dateString).toISOString().split('T')[0];
       };
 
+      const homeConfig = tenant.viewConfigs?.find(view => view.viewType === 'home');
+
       setFormData({
         name: tenant.name || '',
         slug: tenant.slug || '',
@@ -414,31 +416,93 @@ export default function EditTenant() {
         currency: tenant.config?.currency || 'USD',
 
         // Navbar
-        backgroundColorNavbar: tenant.config?.backgroundColorNavbar || '#0052cc',
-        textColorNavbar: tenant.config?.textColorNavbar || '#ffffff',
-        logoNavbar: tenant.config?.logoNavbar || 'K&LM',
-        showNotifications: tenant.config?.showNotifications || true,
-        showProfile: tenant.config?.showProfile || true,
+        backgroundColorNavbar: homeConfig?.backgroundColor || tenant.config?.primaryColor || '#0052cc'
+        // textColorNavbar: tenant.config?.textColorNavbar || '#ffffff',
+        // logoNavbar: tenant.config?.logoNavbar || 'K&LM',
+        // showNotifications: tenant.config?.showNotifications || true,
+        // showProfile: tenant.config?.showProfile || true,
       });
 
-      // Cargar configuraciones de vistas
-      if (tenant.config?.homeSettings) {
-        setHomeSettings(tenant.config.homeSettings);
-      }
-      if (tenant.config?.videoCallSettings) {
-        setVideoCallSettings(tenant.config.videoCallSettings);
-      }
-      if (tenant.config?.metricsSettings) {
-        setMetricsSettings(tenant.config.metricsSettings);
-      }
-      if (tenant.config?.groupsSettings) {
-        setGroupsSettings(tenant.config.groupsSettings);
-      }
-      if (tenant.config?.sectionsSettings) {
-        setSectionsSettings(tenant.config.sectionsSettings);
-      }
-      if (tenant.config?.faqSettings) {
-        setFaqSettings(tenant.config.faqSettings);
+      // Cargar configuraciones de vistas específicas
+      if (tenant.viewConfigs && tenant.viewConfigs.length > 0) {
+        // Buscar cada tipo de vista específica
+        const homeView = tenant.viewConfigs.find(view => view.viewType === 'home');
+        const videoCallView = tenant.viewConfigs.find(view => view.viewType === 'videoCall');
+        const metricsView = tenant.viewConfigs.find(view => view.viewType === 'metrics');
+        const groupsView = tenant.viewConfigs.find(view => view.viewType === 'groups');
+        const sectionsView = tenant.viewConfigs.find(view => view.viewType === 'sections');
+        const faqView = tenant.viewConfigs.find(view => view.viewType === 'faq');
+
+        if (homeView) {
+          setHomeSettings({
+            title: homeView.title,
+            description: homeView.description,
+            allowBackground: homeView.allowBackground,
+            backgroundType: homeView.backgroundType,
+            backgroundImagePath: homeView.backgroundImagePath,
+            backgroundColor: homeView.backgroundColor,
+            welcomeTitle: homeView.welcomeTitle,
+            welcomeMessage: homeView.welcomeMessage,
+            // welcomeContentType: homeView.welcomeContentType,
+            introVideoUrl: homeView.introVideoUrl,
+            tutorialVideoUrl: homeView.tutorialVideoUrl,
+            autoplayVideo: homeView.autoplayVideo,
+            showVideoControls: homeView.showVideoControls,
+            instructionsText: homeView.instructionsText,
+            helpText: homeView.helpText,
+            disclaimerText: homeView.disclaimerText,
+            helpUrl: homeView.helpUrl,
+            documentationUrl: homeView.documentationUrl,
+            supportUrl: homeView.supportUrl,
+            additionalSettings: homeView.additionalSettings,
+            isActive: homeView.isActive
+          });
+        }
+
+        if (videoCallView) {
+          setVideoCallSettings({
+            // mapear propiedades específicas del videoCall
+            title: videoCallView.title,
+            description: videoCallView.description,
+            // ... otras propiedades específicas
+          });
+        }
+
+        if (metricsView) {
+          setMetricsSettings({
+            // mapear propiedades específicas de metrics
+            title: metricsView.title,
+            description: metricsView.description,
+            // ... otras propiedades específicas
+          });
+        }
+
+        if (groupsView) {
+          setGroupsSettings({
+            // mapear propiedades específicas de groups
+            title: groupsView.title,
+            description: groupsView.description,
+            // ... otras propiedades específicas
+          });
+        }
+
+        if (sectionsView) {
+          setSectionsSettings({
+            // mapear propiedades específicas de sections
+            title: sectionsView.title,
+            description: sectionsView.description,
+            // ... otras propiedades específicas
+          });
+        }
+
+        if (faqView) {
+          setFaqSettings({
+            // mapear propiedades específicas de FAQ
+            title: faqView.title,
+            description: faqView.description,
+            // ... otras propiedades específicas
+          });
+        }
       }
     }
   }, [tenant]);

@@ -23,10 +23,8 @@ export interface Tenant {
 
   config?: TenantConfig;
   contactInfo?: TenantContactInfo;
-
-  componentConfigs?: TenantComponentConfig[];
-
   viewConfigs?: TenantViewConfig[];
+  componentConfigs?: TenantComponentConfig[];
 }
 
 export interface TenantViewConfig {
@@ -79,6 +77,7 @@ export interface TenantViewConfig {
 
 export interface TenantComponentConfig {
   id: string;
+  tenant: Tenant;
   componentType?: string;
   componentName?: string;
   isVisible?: boolean;
@@ -128,6 +127,8 @@ export interface TenantContactInfo {
   country: string;
   postalCode: string;
   taxId?: string;
+  url_portal?: string; // URL del portal del tenant
+  nit?: string; // NIT o número de identificación fiscal del tenant
 }
 
 export interface TenantValidationResponse {
@@ -306,47 +307,76 @@ export interface TenantListResponse {
 }
 
 export interface TenantFormData {
+  // Datos básicos del tenant (existen en la estructura real)
   name: string;
   slug: string;
   domain: string;
   contactEmail: string;
-  plan: TenantPlan;
+  plan?: TenantPlan;
+  
+  // Config - datos que SÍ existen
   maxUsers: string;
   storageLimit: string;
-  billingEmail: string;
-  expiresAt: string;
   status: boolean;
-  features: string[];
-  url_portal: string;
-  nit: string;
-
-  adminFirstName: string,
-  adminLastName: string,
-  adminEmail: string,
-  adminPassword: string,
-
-  backgroundColorNavbar: string;
-  textColorNavbar: string;
-  logoNavbar: string;
-
-  showSearch: boolean;
-  showNotifications: boolean;
-  showProfile: boolean;
-  
-  // Información de contacto
-  contactPerson: string;
-  phone: string;
-  address: string;
-  city: string;
-  country: string;
-  postalCode: string;
-  
-  // Configuración
   primaryColor: string;
   secondaryColor: string;
   timezone: string;
-  language: string;
-  currency: string;
+  
+  // ContactInfo - datos que SÍ existen  
+  contactPerson: string;
+  phone: string;
+  address: string;
+  url_portal: string;
+  nit: string;
+  
+  // Config adicional que existe en los datos reales
+  showLearningModule?: boolean;
+  enableChatSupport?: boolean;
+  allowGamification?: boolean;
+  allowUserPasswordChange?: boolean;
+  enableEmailNotifications?: boolean;
+  faviconPath?: string;
+  logoPath?: string;
+  loginBackgroundPath?: string;
+  iconPath?: string;
+  allowSelfRegistration?: boolean;
+  allowGoogleLogin?: boolean;
+  allowFacebookLogin?: boolean;
+  loginMethod?: string;
+  allowValidationStatusUsers?: boolean;
+  requireLastName?: boolean;
+  requirePhone?: boolean;
+  requireDocumentType?: boolean;
+  requireDocument?: boolean;
+  requireOrganization?: boolean;
+  requirePosition?: boolean;
+  requireGender?: boolean;
+  requireCity?: boolean;
+  requireAddress?: boolean;
+  
+  // Propiedades para el formulario de admin (solo para creación)
+  adminFirstName?: string;
+  adminLastName?: string;
+  adminEmail?: string;
+  adminPassword?: string;
+  
+  // Propiedades para navbar customizer (UI específicas - no en DB)
+  backgroundColorNavbar?: string;
+  textColorNavbar?: string;
+  logoNavbar?: string;
+  showSearch?: boolean;
+  showNotifications?: boolean;
+  showProfile?: boolean;
+  
+  // Propiedades opcionales que podrían agregarse después
+  city?: string;
+  country?: string;
+  postalCode?: string;
+  language?: string;
+  currency?: string;
+  billingEmail?: string;
+  expiresAt?: string;
+  features?: string[];
 }
 
 export interface ViewConfiguration {

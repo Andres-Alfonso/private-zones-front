@@ -13,7 +13,7 @@ export interface ViewCustomizerProps {
     initialBackgroundColor?: string;
     // Configuraciones actuales desde el estado padre
     settings?: {
-        customBackground?: boolean;
+        allowBackground?: boolean;
         backgroundType?: 'imagen' | 'color';
         backgroundImage?: string;
         backgroundColor?: string;
@@ -34,7 +34,7 @@ const ViewCustomizer: React.FC<ViewCustomizerProps> = ({
 }) => {
     // Estados locales inicializados con valores del padre o defaults
     const [customBackground, setCustomBackground] = useState(
-        settings.customBackground ?? initialCustomBackground
+        settings.allowBackground ?? initialCustomBackground
     );
     const [backgroundType, setBackgroundType] = useState<'imagen' | 'color'>(
         settings.backgroundType ?? initialBackgroundType
@@ -48,8 +48,8 @@ const ViewCustomizer: React.FC<ViewCustomizerProps> = ({
 
     // Sincronizar con cambios externos del estado padre
     useEffect(() => {
-        if (settings.customBackground !== undefined) {
-            setCustomBackground(settings.customBackground);
+        if (settings.allowBackground !== undefined) {
+            setCustomBackground(settings.allowBackground);
         }
         if (settings.backgroundType !== undefined) {
             setBackgroundType(settings.backgroundType);

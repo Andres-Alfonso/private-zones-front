@@ -73,6 +73,8 @@ export default function CreateSection() {
   const actionData = useActionData<ActionData>();
   const navigation = useNavigation();
   const navigate = useNavigate();
+
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
   
   const [formData, setFormData] = useState<SectionFormData>({
     name: '',
@@ -94,11 +96,11 @@ export default function CreateSection() {
 
   // Generar slug automáticamente desde el nombre
   useEffect(() => {
-    if (formData.name && !hasChanges) {
+    if (formData.name && !slugManuallyEdited) {
       const generatedSlug = generateSlug(formData.name);
       setFormData(prev => ({ ...prev, slug: generatedSlug }));
     }
-  }, [formData.name, hasChanges]);
+  }, [formData.name, slugManuallyEdited]);
 
   const generateSlug = (name: string): string => {
     return name
@@ -181,7 +183,7 @@ export default function CreateSection() {
                   value={formData.slug}
                   onChange={(e) => {
                     updateField('slug', e.target.value);
-                    setHasChanges(true);
+                    setSlugManuallyEdited(true);
                   }}
                   error={getErrorByField(errors, 'slug')}
                   placeholder="colaboradores, medicina-general"

@@ -11,6 +11,8 @@ import {
 import Input from '~/components/ui/Input';
 import Checkbox from '~/components/ui/Checkbox';
 import { validateSectionForm, getErrorByField } from '~/utils/sectionValidation';
+import { SectionApi } from '~/api/endpoints/sections';
+import { SectionErrorResponse } from '~/api/types/section.types';
 
 interface Section {
   id: string;
@@ -48,12 +50,26 @@ interface SectionFormData {
   bannerPath: string;
 }
 
+
+function isSectinoErrorResponse(result: Section | SectionErrorResponse): result is SectionErrorResponse {
+  return 'error' in result && 'message' in result;
+}
+
 export const loader: LoaderFunction = async ({ params }) => {
   try {
     const sectionId = params.id as string;
     
     if (!sectionId) {
       throw new Error('ID de sección no proporcionado');
+    }
+
+    const result = await SectionApi.getById(sectionId);
+
+    if (isSectinoErrorResponse(result)) {
+      return json<LoaderData>({ 
+        section: null, 
+        error: result.message 
+      });
     }
     
     // Datos mock - en una aplicación real, estos vendrían de la base de datos
@@ -73,7 +89,7 @@ export const loader: LoaderFunction = async ({ params }) => {
     };
 
     return json<LoaderData>({ 
-      section: mockSection, 
+      section: result, 
       error: null 
     });
   } catch (error: any) {

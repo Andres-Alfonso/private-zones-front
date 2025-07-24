@@ -30,9 +30,20 @@ export const API_CONFIG = {
       },
       TENANTS: {
         BASE: '/v1/tenants',
+        CREATE_TENANT: '/v1/tenants/create',
+        TOGGLE_ACTIVE: '/tenants/toggle-active', // + /{id}
+        GET_STATUS: '/tenants/status', // + /{id}
         VALIDATE_DOMAIN: '/v1/tenants/validate-domain',
         CHECK_STATUS: '/v1/tenants/check-status',
         BY_DOMAIN: '/v1/tenants/by-domain'
-      }
+      },
+      SECTIONS: {
+        BASE: '/v1/sections',
+        BY_ID: (id: string) => `/v1/sections/${id}`,
+        CREATE: '/v1/sections/create',
+        UPDATE: (id: string) => `/v1/sections/${id}/update`,
+        TOGGLE_ACTIVE: (id: string) => `/v1/sections/${id}/toggle-active`,
+        GET_STATUS: (id: string) => `/v1/sections/${id}/status`
+      },
     },
   };

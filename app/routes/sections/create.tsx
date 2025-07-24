@@ -10,6 +10,9 @@ import {
 import Input from '~/components/ui/Input';
 import Checkbox from '~/components/ui/Checkbox';
 import { validateSectionForm, getErrorByField } from '~/utils/sectionValidation';
+import { SectionApi } from '~/api/endpoints/sections';
+import { SectionErrorResponse } from '~/api/types/section.types';
+import { useTenant } from '~/context/TenantContext';
 
 interface ActionData {
   errors?: Array<{ field: string; message: string }>;
@@ -26,6 +29,35 @@ interface SectionFormData {
   order: number;
   allowBanner: boolean;
   bannerPath: string;
+  tenantId: string;
+}
+
+// Función helper para obtener mensajes específicos
+function getSpecificErrorMessage(error: SectionErrorResponse): string {
+  switch (error.error) {
+    case 'SLUG_ALREADY_EXISTS':
+      return `El identificador "${error.value}" ya está en uso. Elige otro identificador.`;
+    case 'DOMAIN_ALREADY_EXISTS':
+      return `El dominio "${error.value}" ya está en uso. Elige otro dominio.`;
+    case 'RESERVED_SLUG':
+      return `El identificador "${error.value}" contiene palabras reservadas. Elige otro identificador.`;
+    case 'INVALID_DOMAIN':
+      return `El dominio "${error.value}" no es válido para el entorno actual.`;
+    case 'DATABASE_ERROR':
+      return 'Error al guardar en la base de datos. Intenta nuevamente.';
+    default:
+      return error.message || 'Error al crear el tenant';
+  }
+}
+
+// Función helper para convertir errores a errores de campo
+function getFieldErrors(error: SectionErrorResponse): Array<{ field: string; message: string }> {
+  const message = getSpecificErrorMessage(error);
+  if (!error.field) {
+    return [{ field: 'general', message }];
+  }
+
+  return [{ field: error.field, message }];
 }
 
 export const action: ActionFunction = async ({ request }) => {
@@ -47,10 +79,23 @@ export const action: ActionFunction = async ({ request }) => {
       slug: formData.get('slug') as string,
       description: formData.get('description') as string,
       thumbnailImagePath: formData.get('thumbnailImagePath') as string,
-      order: parseInt(formData.get('order') as string) || null,
+      order: parseInt(formData.get('order') as string) || 1,
       allowBanner: formData.get('allowBanner') === 'on',
       bannerPath: formData.get('bannerPath') as string,
+      tenantId: formData.get('tenantId') as string
     };
+
+    const sectionResult = await SectionApi.create(sectionData);
+
+    if ('error' in sectionResult) {
+      const fieldErrors = getFieldErrors(sectionResult);
+
+      return json<ActionData>({
+        success: false,
+        errors: fieldErrors,
+        generalError: fieldErrors.find(e => e.field === 'general')?.message
+      }, { status: 400 });
+    }
 
     // Aquí se llamaría al API para crear la sección
     console.log('Crear sección:', sectionData);
@@ -58,7 +103,7 @@ export const action: ActionFunction = async ({ request }) => {
     // Simulación de respuesta exitosa
     const mockSectionId = 'section-' + Date.now();
     
-    return redirect(`/sections/${mockSectionId}?created=true`);
+    return redirect(`/sections/${sectionResult.slug}?created=true`);
     
   } catch (error: any) {
     console.error('Error creating section:', error);
@@ -71,8 +116,12 @@ export const action: ActionFunction = async ({ request }) => {
 
 export default function CreateSection() {
   const actionData = useActionData<ActionData>();
+  const { state: tenantState } = useTenant();
+  const { tenant } = tenantState;
   const navigation = useNavigation();
   const navigate = useNavigate();
+
+  console.log('Tenant en CreateSection:', tenant);
 
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
   
@@ -84,6 +133,7 @@ export default function CreateSection() {
     order: 1,
     allowBanner: false,
     bannerPath: '',
+    tenantId: tenant?.id || ''
   });
   
   const [currentStep, setCurrentStep] = useState(1);
@@ -527,6 +577,7 @@ export default function CreateSection() {
           <input type="hidden" name="order" value={formData.order} />
           <input type="hidden" name="allowBanner" value={formData.allowBanner ? 'on' : ''} />
           <input type="hidden" name="bannerPath" value={formData.bannerPath} />
+          <input type="hidden" name="tenantId" value={formData.tenantId} />
 
           {/* Contenido del paso actual */}
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-6">

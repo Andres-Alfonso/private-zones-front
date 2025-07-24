@@ -6,8 +6,13 @@ import { useState, useEffect } from 'react';
 import { 
   Plus, Search, Filter, MoreVertical, Edit2, Trash2, Eye, 
   Image, FileText, Hash, CheckCircle, XCircle, Calendar,
-  Layers3, ArrowUpDown, ChevronLeft, ChevronRight
+  Layers3, ArrowUpDown, ChevronLeft, ChevronRight,
+  TrendingUp,
+  Building2,
+  Users
 } from 'lucide-react';
+import { SectionApi } from '~/api/endpoints/sections';
+import { SectionFilters, SectionListResponse } from '~/api/types/section.types';
 
 // Tipos para las secciones
 interface Section {
@@ -26,13 +31,8 @@ interface Section {
 }
 
 interface LoaderData {
-  sections: Section[];
-  totalSections: number;
-  currentPage: number;
-  totalPages: number;
-  searchQuery: string;
-  sortBy: string;
-  sortOrder: 'asc' | 'desc';
+  sections: SectionListResponse;
+  error: string | null;
 }
 
 interface ActionData {
@@ -46,126 +46,83 @@ export const loader: LoaderFunction = async ({ request }) => {
   const currentPage = parseInt(url.searchParams.get('page') || '1');
   const sortBy = url.searchParams.get('sortBy') || 'order';
   const sortOrder = (url.searchParams.get('sortOrder') as 'asc' | 'desc') || 'asc';
-  const limit = 10;
+  const limit = 20;
 
-  // Datos mock - en una aplicación real, estos vendrían de la base de datos
-  const mockSections: Section[] = [
-    {
-      id: '1',
-      tenantId: 'tenant-1',
-      slug: 'colaboradores',
-      name: 'Colaboradores',
-      description: 'Sección dedicada a contenido para colaboradores internos',
-      thumbnailImagePath: '/images/sections/colaboradores.jpg',
-      order: 1,
-      allowBanner: true,
-      bannerPath: '/images/banners/colaboradores-banner.jpg',
-      courseCount: 12,
-      createdAt: '2024-01-15T10:00:00Z',
-      updatedAt: '2024-01-20T14:30:00Z'
-    },
-    {
-      id: '2',
-      tenantId: 'tenant-1',
-      slug: 'medicina-general',
-      name: 'Medicina General',
-      description: 'Cursos y contenido relacionado con medicina general',
-      thumbnailImagePath: null,
-      order: 2,
-      allowBanner: false,
-      bannerPath: null,
-      courseCount: 8,
-      createdAt: '2024-01-10T09:00:00Z',
-      updatedAt: '2024-01-18T16:45:00Z'
-    },
-    {
-      id: '3',
-      tenantId: 'tenant-1',
-      slug: 'enfermeria',
-      name: 'Enfermería',
-      description: 'Contenido especializado para profesionales de enfermería',
-      thumbnailImagePath: '/images/sections/enfermeria.jpg',
-      order: 3,
-      allowBanner: true,
-      bannerPath: '/images/banners/enfermeria-banner.jpg',
-      courseCount: 15,
-      createdAt: '2024-01-08T11:30:00Z',
-      updatedAt: '2024-01-22T10:15:00Z'
-    },
-    {
-      id: '4',
-      tenantId: 'tenant-1',
-      slug: 'cardiologia',
-      name: 'Cardiología',
-      description: null,
-      thumbnailImagePath: null,
-      order: 4,
-      allowBanner: false,
-      bannerPath: null,
-      courseCount: 6,
-      createdAt: '2024-01-05T08:00:00Z',
-      updatedAt: '2024-01-19T13:20:00Z'
-    }
-  ];
+  try {
 
-  // Filtrar por búsqueda
-  let filteredSections = mockSections;
-  if (searchQuery) {
-    filteredSections = mockSections.filter(section =>
-      section.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      section.slug.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (section.description && section.description.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
+    const filters: SectionFilters = {
+      search: url.searchParams.get('search') || undefined,
+      isActive: url.searchParams.get('active') ? url.searchParams.get('active') === 'true' : undefined,
+      page: parseInt(url.searchParams.get('page') || '1'),
+      limit: parseInt(url.searchParams.get('limit') || '20'),
+    };
+
+    const sections = await SectionApi.getAll(filters);
+
+    console.log('Sections loaded:', sections);
+    const { data, total, page, limit } = sections;
+    
+    // Filtrar por búsqueda
+    let filteredSections = sections.data;
+    // if (searchQuery) {
+    //   filteredSections = sections.filter(section =>
+    //     section.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    //     section.slug.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    //     (section.description && section.description.toLowerCase().includes(searchQuery.toLowerCase()))
+    //   );
+    // }
+
+    // Ordenar
+    // filteredSections.sort((a, b) => {
+    //   let aValue: any;
+    //   let bValue: any;
+
+    //   switch (sortBy) {
+    //     case 'name':
+    //       aValue = a.name.toLowerCase();
+    //       bValue = b.name.toLowerCase();
+    //       break;
+    //     case 'order':
+    //       aValue = a.order || 999;
+    //       bValue = b.order || 999;
+    //       break;
+    //     case 'courseCount':
+    //       aValue = a.courseCount || 0;
+    //       bValue = b.courseCount || 0;
+    //       break;
+    //     case 'createdAt':
+    //       aValue = new Date(a.createdAt).getTime();
+    //       bValue = new Date(b.createdAt).getTime();
+    //       break;
+    //     default:
+    //       return 0;
+    //   }
+
+    //   if (sortOrder === 'asc') {
+    //     return aValue > bValue ? 1 : -1;
+    //   } else {
+    //     return aValue < bValue ? 1 : -1;
+    //   }
+    // });
+
+    // // Paginar
+    const totalSections = filteredSections.length;
+    const totalPages = Math.ceil(totalSections / limit);
+    const startIndex = (currentPage - 1) * limit;
+    const paginatedSections = filteredSections.slice(startIndex, startIndex + limit);
+
+    return json<LoaderData>({ 
+      sections: sections,
+      error: null 
+    });
+  } catch (error: any) {
+    console.error('Error loading tenants:', error);
+    return json<LoaderData>({ 
+      sections: { data: [], total: 0, page: 1, limit: 20 },
+      // stats: { totalTenants: 0, activeTenants: 0, trialTenants: 0, expiredTenants: 0, totalUsers: 0, totalRevenue: 0, storageUsed: 0, averageUsers: 0 },
+      error: error.message || 'Error al cargar los tenants' 
+    });
   }
-
-  // Ordenar
-  filteredSections.sort((a, b) => {
-    let aValue: any;
-    let bValue: any;
-
-    switch (sortBy) {
-      case 'name':
-        aValue = a.name.toLowerCase();
-        bValue = b.name.toLowerCase();
-        break;
-      case 'order':
-        aValue = a.order || 999;
-        bValue = b.order || 999;
-        break;
-      case 'courseCount':
-        aValue = a.courseCount || 0;
-        bValue = b.courseCount || 0;
-        break;
-      case 'createdAt':
-        aValue = new Date(a.createdAt).getTime();
-        bValue = new Date(b.createdAt).getTime();
-        break;
-      default:
-        return 0;
-    }
-
-    if (sortOrder === 'asc') {
-      return aValue > bValue ? 1 : -1;
-    } else {
-      return aValue < bValue ? 1 : -1;
-    }
-  });
-
-  // Paginar
-  const totalSections = filteredSections.length;
-  const totalPages = Math.ceil(totalSections / limit);
-  const startIndex = (currentPage - 1) * limit;
-  const paginatedSections = filteredSections.slice(startIndex, startIndex + limit);
-
-  return json<LoaderData>({
-    sections: paginatedSections,
-    totalSections,
-    currentPage,
-    totalPages,
-    searchQuery,
-    sortBy,
-    sortOrder
-  });
 };
 
 export const action: ActionFunction = async ({ request }) => {
@@ -195,42 +152,17 @@ export const action: ActionFunction = async ({ request }) => {
 };
 
 export default function SectionsIndex() {
-  const { 
-    sections, 
-    totalSections, 
-    currentPage, 
-    totalPages, 
-    searchQuery, 
-    sortBy, 
-    sortOrder 
-  } = useLoaderData<LoaderData>();
-  
+  const { sections, error } = useLoaderData<LoaderData>();
+
   const actionData = useActionData<ActionData>();
   const navigation = useNavigation();
   const [searchParams, setSearchParams] = useSearchParams();
   
   const [selectedSections, setSelectedSections] = useState<string[]>([]);
-  const [showFilters, setShowFilters] = useState(false);
-  const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
+  const [localSearchQuery, setLocalSearchQuery] = useState(searchParams.get('search') || '');
+  // const [showFilters, setShowFilters] = useState(false);
 
   const isSubmitting = navigation.state === 'submitting';
-
-  // Manejar selección de secciones
-  const handleSelectSection = (sectionId: string) => {
-    setSelectedSections(prev =>
-      prev.includes(sectionId)
-        ? prev.filter(id => id !== sectionId)
-        : [...prev, sectionId]
-    );
-  };
-
-  const handleSelectAll = () => {
-    if (selectedSections.length === sections.length) {
-      setSelectedSections([]);
-    } else {
-      setSelectedSections(sections.map(section => section.id));
-    }
-  };
 
   // Manejar búsqueda
   const handleSearch = (query: string) => {
@@ -244,16 +176,38 @@ export default function SectionsIndex() {
     setSearchParams(newSearchParams);
   };
 
+
+  // Manejar selección de secciones
+  const handleSelectSection = (sectionId: string) => {
+    setSelectedSections(prev =>
+      prev.includes(sectionId)
+        ? prev.filter(id => id !== sectionId)
+        : [...prev, sectionId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    setSelectedSections(
+      selectedSections.length === sections.data.length 
+        ? [] 
+        : sections.data.map(u => u.id)
+    );
+  };
+
   // Manejar ordenamiento
-  const handleSort = (field: string) => {
-    const newSearchParams = new URLSearchParams(searchParams);
-    if (sortBy === field) {
-      newSearchParams.set('sortOrder', sortOrder === 'asc' ? 'desc' : 'asc');
+  const handleSort = (sortBy: string) => {
+    const newParams = new URLSearchParams(searchParams);
+    const currentSortBy = searchParams.get('sortBy');
+    const currentSortOrder = searchParams.get('sortOrder') || 'desc';
+    
+    if (currentSortBy === sortBy) {
+      newParams.set('sortOrder', currentSortOrder === 'asc' ? 'desc' : 'asc');
     } else {
-      newSearchParams.set('sortBy', field);
-      newSearchParams.set('sortOrder', 'asc');
+      newParams.set('sortBy', sortBy);
+      newParams.set('sortOrder', 'desc');
     }
-    setSearchParams(newSearchParams);
+    
+    setSearchParams(newParams);
   };
 
   // Efectos
@@ -285,13 +239,13 @@ export default function SectionsIndex() {
 
           {/* Acciones */}
           <div className="flex items-center space-x-3">
-            <button
+            {/* <button
               onClick={() => setShowFilters(!showFilters)}
               className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors"
             >
               <Filter className="h-4 w-4" />
               <span>Filtros</span>
-            </button>
+            </button> */}
 
             {selectedSections.length > 0 && (
               <Form method="post" className="inline">
@@ -322,18 +276,67 @@ export default function SectionsIndex() {
 
         {/* Estadísticas */}
         <div className="mt-4 pt-4 border-t border-gray-200/50">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-white bg-gradient-to-r shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 backdrop-blur-sm p-4 rounded-xl">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            
+            <div className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 backdrop-blur-sm bg-white/80 group">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 mb-1">Total de Secciones</p>
+                  {/* <p className="text-2xl font-bold text-gray-900">{totalSections}</p> */}
+                </div>
+                <div className="p-3 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 group-hover:scale-110 transition-transform duration-200">
+                  <Building2 className="h-8 w-8 text-blue-600" />
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 backdrop-blur-sm bg-white/80 group">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 mb-1">Con Banner</p>
+                  <p className="text-2xl font-bold text-gray-900">{sections.data.filter(s => s.allowBanner).length}</p>
+                </div>
+                <div className="p-3 rounded-xl bg-gradient-to-br from-green-50 to-green-100 group-hover:scale-110 transition-transform duration-200">
+                  <TrendingUp className="h-8 w-8 text-green-600" />
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 backdrop-blur-sm bg-white/80 group">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 mb-1">Total Cursos</p>
+                  <p className="text-2xl font-bold text-gray-900">{sections.data.reduce((sum, s) => sum + (s.courseCount || 0), 0)}</p>
+                </div>
+                <div className="p-3 rounded-xl bg-gradient-to-br from-purple-50 to-purple-100 group-hover:scale-110 transition-transform duration-200">
+                  <Users className="h-8 w-8 text-purple-600" />
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 backdrop-blur-sm bg-white/80 group">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 mb-1">Seleccionadas</p>
+                  <p className="text-2xl font-bold text-gray-900">{selectedSections.length}</p>
+                </div>
+                <div className="p-3 rounded-xl bg-gradient-to-br from-yellow-50 to-yellow-100 group-hover:scale-110 transition-transform duration-200">
+                  <TrendingUp className="h-8 w-8 text-yellow-600" />
+                </div>
+              </div>
+            </div>
+            
+            {/* <div className="bg-white bg-gradient-to-r shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 backdrop-blur-sm p-4 rounded-xl">
               <div className="font-semibold text-gray-600 mb-1">Total de Secciones</div>
               <div className="text-2xl font-bold text-gray-900">{totalSections}</div>
-            </div>
-            <div className="bg-white bg-gradient-to-r shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 backdrop-blur-sm p-4 rounded-xl">
+            </div> */}
+            {/* <div className="bg-white bg-gradient-to-r shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 backdrop-blur-sm p-4 rounded-xl">
               <div className="font-semibold text-gray-600 mb-1">Con Banner</div>
               <div className="text-2xl font-bold text-gray-900">
                 {sections.filter(s => s.allowBanner).length}
               </div>
-            </div>
-            <div className="bg-white bg-gradient-to-r shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 backdrop-blur-sm p-4 rounded-xl">
+            </div> */}
+            {/* <div className="bg-white bg-gradient-to-r shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 backdrop-blur-sm p-4 rounded-xl">
               <div className="font-semibold text-gray-600 mb-1">Total Cursos</div>
               <div className="text-2xl font-bold text-gray-900">
                 {sections.reduce((sum, s) => sum + (s.courseCount || 0), 0)}
@@ -342,7 +345,7 @@ export default function SectionsIndex() {
             <div className="bg-white bg-gradient-to-r shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 backdrop-blur-sm p-4 rounded-xl">
               <div className="font-semibold text-gray-600 mb-1">Seleccionadas</div>
               <div className="text-2xl font-bold text-gray-900">{selectedSections.length}</div>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>
@@ -356,7 +359,7 @@ export default function SectionsIndex() {
                 <th className="px-6 py-4 text-left">
                   <input
                     type="checkbox"
-                    checked={selectedSections.length === sections.length && sections.length > 0}
+                    checked={selectedSections.length === sections.data.length && sections.data.length > 0}
                     onChange={handleSelectAll}
                     className="h-4 w-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
                   />
@@ -400,7 +403,7 @@ export default function SectionsIndex() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200/50">
-              {sections.map((section) => (
+              {sections.data.map((section) => (
                 <tr key={section.id} className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-6 py-4">
                     <input
@@ -497,68 +500,10 @@ export default function SectionsIndex() {
         </div>
 
         {/* Paginación */}
-        {totalPages > 1 && (
-          <div className="px-6 py-4 border-t border-gray-200/50 bg-gray-50/50 backdrop-blur-sm">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-600">
-                Mostrando {((currentPage - 1) * 10) + 1} a {Math.min(currentPage * 10, totalSections)} de {totalSections} secciones
-              </div>
-              <div className="flex items-center space-x-2">
-                <Link
-                  to={`/sections?${new URLSearchParams({
-                    ...Object.fromEntries(searchParams),
-                    page: String(currentPage - 1)
-                  }).toString()}`}
-                  className={`p-2 rounded-lg transition-colors ${
-                    currentPage <= 1
-                      ? 'text-gray-400 cursor-not-allowed'
-                      : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50'
-                  }`}
-                  {...(currentPage <= 1 && { 'aria-disabled': 'true' })}
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </Link>
-                
-                {/* Números de página */}
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                  <Link
-                    key={page}
-                    to={`/sections?${new URLSearchParams({
-                      ...Object.fromEntries(searchParams),
-                      page: String(page)
-                    }).toString()}`}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      page === currentPage
-                        ? 'bg-purple-500 text-white'
-                        : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50'
-                    }`}
-                  >
-                    {page}
-                  </Link>
-                ))}
-
-                <Link
-                  to={`/sections?${new URLSearchParams({
-                    ...Object.fromEntries(searchParams),
-                    page: String(currentPage + 1)
-                  }).toString()}`}
-                  className={`p-2 rounded-lg transition-colors ${
-                    currentPage >= totalPages
-                      ? 'text-gray-400 cursor-not-allowed'
-                      : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50'
-                  }`}
-                  {...(currentPage >= totalPages && { 'aria-disabled': 'true' })}
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Estado vacío */}
-      {sections.length === 0 && (
+      {/* {sections.data.length === 0 && (
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-12 text-center">
           <Layers3 className="h-16 w-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -580,7 +525,7 @@ export default function SectionsIndex() {
             </Link>
           )}
         </div>
-      )}
+      )} */}
 
       {/* Mensaje de éxito/error */}
       {actionData?.success && (

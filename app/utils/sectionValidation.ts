@@ -190,8 +190,14 @@ export const validateSectionForm = (formData: FormData): SectionValidationResult
   const order = formData.get('order') as string;
   const thumbnailImagePath = formData.get('thumbnailImagePath') as string;
   const bannerPath = formData.get('bannerPath') as string;
+  const tenantId = formData.get('tenantId') as string;
 
   const errors: SectionValidationError[] = [];
+
+  // Validar tenantId
+  if (!tenantId || !tenantId.trim()) {
+    errors.push({ field: 'tenantId', message: 'El ID del tenant es obligatorio' });
+  }
 
   // Validar nombre
   const nameError = validateSectionName(name);
@@ -218,10 +224,10 @@ export const validateSectionForm = (formData: FormData): SectionValidationResult
   }
 
   // Validar imagen thumbnail
-  const thumbnailError = validateImageUrl(thumbnailImagePath, 'thumbnailImagePath');
-  if (thumbnailError) {
-    errors.push({ field: 'thumbnailImagePath', message: thumbnailError });
-  }
+  // const thumbnailError = validateImageUrl(thumbnailImagePath, 'thumbnailImagePath');
+  // if (thumbnailError) {
+  //   errors.push({ field: 'thumbnailImagePath', message: thumbnailError });
+  // }
 
   // Validar imagen banner
   const bannerError = validateImageUrl(bannerPath, 'bannerPath');

@@ -55,6 +55,14 @@ export default defineConfig({
             //Rutas adicionales para usuarios (opcionales)
             // route(":id/settings", "routes/users/$id.settings.tsx");
           });
+
+          // Rutas para secciones
+          route("sections", "routes/sections/_layout.tsx", () => {
+            route("", "routes/sections/_index.tsx", { index: true });
+            route("create", "routes/sections/create.tsx");
+            route(":id/edit", "routes/sections/$id.edit.tsx");
+            route(":id", "routes/sections/$id.tsx");
+          });
         });
       },
       future: {
@@ -70,6 +78,7 @@ export default defineConfig({
   ],
   server: {
     host: true, // permite conexiones externas (equivale a --host)
-    allowedHosts: ['localhost', 'devel.klmsystem.test', 'klmsystem.online'], // permite este host personalizado
+    allowedHosts: true, // permite este host personalizado
+    // allowedHosts: ['localhost', 'devel.klmsystem.test', 'klmsystem.online'], // permite este host personalizado
   }
 });

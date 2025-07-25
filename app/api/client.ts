@@ -7,7 +7,23 @@ const isBrowser = typeof window !== 'undefined';
 // Configura la URL base según el entorno
 const BASE_URL = process.env.NODE_ENV === 'production' 
   ? 'https://api.klmsystem.online' 
-  : 'http://192.168.2.21:3028';
+  : 'http://192.168.1.12:3020';
+
+function getCurrentDomain(): string {
+  if (typeof window === 'undefined') {
+      return 'localhost'; // Para SSR
+  }
+
+  const hostname = window.location.hostname;
+
+  // En desarrollo, manejar casos como cardio.klmsystem.test
+  if (hostname.includes('.test') || hostname.includes('.local')) {
+      return hostname;
+  }
+
+  // En producción, usar el hostname completo
+  return hostname;
+}
 
 // Factory function to create API client with optional tenant domain
 export const createApiClient = (tenantDomain?: string): AxiosInstance => {
@@ -62,7 +78,7 @@ export const createApiClient = (tenantDomain?: string): AxiosInstance => {
 };
 
 // Default client for browser usage (backward compatibility)
-const apiClient = createApiClient();
+const apiClient = createApiClient(getCurrentDomain());
 
 // Helper function to create client from Remix request
 export const createApiClientFromRequest = (request: Request): AxiosInstance => {

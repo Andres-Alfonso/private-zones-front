@@ -20,6 +20,12 @@ import {
 import { useState } from 'react';
 import { useTenant } from "~/context/TenantContext";
 
+
+type CourseDropdownProps = {
+  textColor?: string;
+  navbarColor?: string;
+};
+
 const getRoleIcon = (roles: string[]) => {
   if (roles.includes('admin')) return <Crown className="h-3 w-3" />;
   if (roles.includes('instructor')) return <Sparkles className="h-3 w-3" />;
@@ -121,7 +127,7 @@ export default function Header() {
                     </RoleGuard>
 
                     {/* Dropdown de Cursos */}
-                    <CourseDropdown textColor={navbarConfig?.textColor || '#ffffff'} />
+                    <CourseDropdown textColor={navbarConfig?.textColor || '#ffffff'} navbarColor={navbarConfig?.backgroundColor ?? '#ffffff'} />
                     
                     {/* <NavLink to="/products" icon={<Package className="h-4 w-4" />}>
                       Productos
@@ -465,7 +471,7 @@ function DropdownLink({
 }
 
 // Componente CourseDropdown mejorado
-function CourseDropdown({ textColor }: { textColor?: string }) {
+function CourseDropdown({ textColor, navbarColor }: CourseDropdownProps) {
   return (
     <div className="relative group">
       <button 
@@ -479,7 +485,7 @@ function CourseDropdown({ textColor }: { textColor?: string }) {
       
       {/* Dropdown Menu */}
       <div className="absolute top-full left-0 mt-2 w-56 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
-        <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 overflow-hidden">
+        <div className="backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 overflow-hidden" style={{backgroundColor: navbarColor || '#484848'}}>
           <div className="p-2">
             <DropdownLink 
               to="/courses" 

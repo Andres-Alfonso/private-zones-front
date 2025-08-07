@@ -30,8 +30,18 @@ export default defineConfig({
             route("manage", "routes/courses/manage.tsx");
             route(":id", "routes/courses/$id.tsx");
             route(":id/edit", "routes/courses/$id.edit.tsx");
-            // Ruta para el reproductor de curso (opcional)
-            // route(":id/learn", "routes/courses/$id.learn.tsx");
+
+          });
+
+          // Rutas para realizar cursos (nuevo layout)
+          route("make/courses", "routes/courses/make/_layout.tsx", () => {
+            route(":courseId", "routes/courses/make/$courseId/_index.tsx", { index: true });
+            route(":courseId/content/:contentId", "routes/courses/make/$courseId/content/$contentId.tsx");
+            // route(":courseId/quiz/:quizId", "routes/courses/make/$courseId/quiz/$quizId.tsx");
+            // route(":courseId/task/:taskId", "routes/courses/make/$courseId/task/$taskId.tsx");
+            // route(":courseId/forum/:forumId", "routes/courses/make/$courseId/forum/$forumId.tsx");
+            // route(":courseId/survey/:surveyId", "routes/courses/make/$courseId/survey/$surveyId.tsx");
+            // route(":courseId/activity/:activityId", "routes/courses/make/$courseId/activity/$activityId.tsx");
           });
 
           // Rutas de gestión de tenants (solo para administradores)
@@ -40,6 +50,7 @@ export default defineConfig({
             route("create", "routes/tenants/create.tsx");
             route(":id", "routes/tenants/$id.tsx");
             route(":id/edit", "routes/tenants/$id.edit.tsx");
+            route("manage/:id", "routes/tenants/manage.$id.tsx");
             // Rutas adicionales para tenants (opcionales)
             // route(":id/settings", "routes/tenants/$id.settings.tsx");
             // route(":id/users", "routes/tenants/$id.users.tsx");

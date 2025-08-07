@@ -18,6 +18,7 @@ export interface SectionFormData {
   order: number;
   allowBanner: boolean;
   bannerPath: string;
+  courseIds: string[];
 }
 
 // Reglas de validación específicas para secciones

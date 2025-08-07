@@ -2,28 +2,57 @@
 
 export interface Section {
   id: string;
-  slug: string;
   tenantId: string;
-  thumbnailImagePath: string;
-  bannerPath: string;
-  order: number;
+  slug: string;
   name: string;
-  description: string;
+  description?: string;
+  thumbnailImagePath?: string;
+  order?: number;
   allowBanner: boolean;
-  courseCount: number;
-  isActive: boolean;
+  bannerPath?: string;
+  courses?: Array<{
+    id: string;
+    title: string;
+    slug: string;
+    isActive: boolean;
+  }>;
+  courseCount?: number;
   createdAt: string;
   updatedAt: string;
 }
 
+export interface CreateSectionData {
+  name: string;
+  slug: string;
+  description?: string;
+  thumbnailImagePath?: string;
+  order?: number;
+  allowBanner?: boolean;
+  bannerPath?: string;
+  tenantId: string;
+  courseIds?: string[];
+}
+
+export interface UpdateSectionData {
+  name?: string;
+  slug?: string;
+  description?: string;
+  thumbnailImagePath?: string;
+  order?: number;
+  allowBanner?: boolean;
+  bannerPath?: string;
+  courseIds?: string[];
+}
+
 export interface CreateTenantRequest {
-    name: string;
-    slug: string;
-    thumbnailImagePath: string;
-    bannerPath: string;
-    order: number;
-    description: string;
-    allowBanner: boolean;
+  name: string;
+  slug: string;
+  thumbnailImagePath: string;
+  bannerPath: string;
+  order: number;
+  description?: string;
+  allowBanner: boolean;
+  courseIds?: string[];
 }
 
 // Errores específicos del tenant

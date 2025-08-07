@@ -139,6 +139,31 @@ export interface CourseFormStepConfig {
   isCompleted?: boolean;
 }
 
+export interface CourseBasic {
+  id: string;
+  tenantId: string;
+  sections: any[];
+  title: string;
+  slug: string;
+  isActive: boolean;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+  translations: CourseTranslation[];
+}
+
+export interface CourseFromAPI {
+  id: string;
+  slug: string;
+  tenantId: string;
+  sections: any[];
+  isActive: boolean;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+  translations: CourseTranslation[]; // ARRAY de traducciones
+}
+
 export enum CourseLevel {
   BEGINNER = 'beginner',
   INTERMEDIATE = 'intermediate',

@@ -141,38 +141,41 @@ function TenantsLayoutContent() {
             </div>
           </div>
 
-          {/* Navegación del módulo */}
-          {!isCreatePage && !isEditPage && !isDetailPage && (
-            <div className="py-6">
-              <div className="flex items-center justify-between">
-                {/* Navegación principal */}
-                <nav className="flex space-x-2">
-                  {navigation.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <NavLink
-                        key={item.name}
-                        to={item.href}
-                        className={({ isActive }) =>
-                          `flex items-center space-x-3 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
-                            isActive
-                              ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg transform scale-105'
-                              : 'text-gray-600 hover:text-gray-900 hover:bg-white/80 hover:shadow-md hover:scale-105 backdrop-blur-sm border border-gray-200/50'
-                          }`
-                        }
-                      >
-                        <Icon className="h-5 w-5" />
-                        <span>{item.name}</span>
-                      </NavLink>
-                    );
-                  })}
-                </nav>
+          <RoleGuard requiredRoles={['superadmin']}>
+            {/* Navegación del módulo */}
+            {!isCreatePage && !isEditPage && !isDetailPage && (
+              <div className="py-6">
+                <div className="flex items-center justify-between">
+                  {/* Navegación principal */}
+                  <nav className="flex space-x-2">
+                    {navigation.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <NavLink
+                          key={item.name}
+                          to={item.href}
+                          className={({ isActive }) =>
+                            `flex items-center space-x-3 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                              isActive
+                                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg transform scale-105'
+                                : 'text-gray-600 hover:text-gray-900 hover:bg-white/80 hover:shadow-md hover:scale-105 backdrop-blur-sm border border-gray-200/50'
+                            }`
+                          }
+                        >
+                          <Icon className="h-5 w-5" />
+                          <span>{item.name}</span>
+                        </NavLink>
+                      );
+                    })}
+                  </nav>
 
-                {/* Navegación administrativa */}
-                <NavTabs items={adminNavigation} />
+                  {/* Navegación administrativa */}
+                  <NavTabs items={adminNavigation} />
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </RoleGuard>
+
 
           {/* Acciones para páginas específicas */}
           {isDetailPage && (

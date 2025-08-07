@@ -16,6 +16,7 @@ import Input from '~/components/ui/Input';
 import Checkbox from '~/components/ui/Checkbox';
 import { validateTenantFormData, generateSlugFromName, validateSlug } from '~/utils/tenantValidation';
 import NavbarCustomizer from '~/components/tenant/NavbarCustomizer';
+import { HomeAdditionalSettings, ViewSettings } from '~/components/tenant/viewCustomizers/types';
 
 import { 
     HomeViewCustomizer,
@@ -23,8 +24,12 @@ import {
     MetricsViewCustomizer,
     GroupsViewCustomizer,
     SectionsViewCustomizer,
-    FAQViewCustomizer 
+    FAQViewCustomizer,
+    RegistrationViewCustomizer,
+    NotificationViewCustomizer
 } from '~/components/tenant/viewCustomizers';
+import TermsPrivacyConfig from '~/components/tenant/RichTextEditor';
+import { LoginMethod } from '~/components/tenant/viewCustomizers/RegistrationViewCustomizer';
 
 interface ActionData {
   errors?: Record<string, string>;
@@ -33,15 +38,6 @@ interface ActionData {
   tenantId?: string;
 }
 
-// Interfaz para configuraciones de vista
-interface ViewSettings {
-  type?: string,
-  customBackground?: boolean;
-  backgroundType?: 'imagen' | 'color';
-  backgroundImage?: string;
-  backgroundColor?: string;
-  backgroundImageFile?: File;
-}
 
 export const action: ActionFunction = async ({ request }) => {
   const formData = await request.formData();
@@ -104,6 +100,7 @@ export const action: ActionFunction = async ({ request }) => {
         backgroundType: formData.get('homeBackgroundType') as 'imagen' | 'color' || 'color',
         backgroundImage: formData.get('homeBackgroundImage') as string || '',
         backgroundColor: formData.get('homeBackgroundColor') as string || '#eff4ff',
+        additionalSettings: JSON.parse(formData.get('homeAdditionalSettings') as string || '{}')
       },
       videoCallSettings: {
         type: 'videocalls',
@@ -111,6 +108,7 @@ export const action: ActionFunction = async ({ request }) => {
         backgroundType: formData.get('videoCallBackgroundType') as 'imagen' | 'color' || 'color',
         backgroundImage: formData.get('videoCallBackgroundImage') as string || '',
         backgroundColor: formData.get('videoCallBackgroundColor') as string || '#eff4ff',
+        additionalSettings: JSON.parse(formData.get('videoCallAdditionalSettings') as string || '{}')
       },
       metricsSettings: {
         type: 'metrics',
@@ -132,6 +130,7 @@ export const action: ActionFunction = async ({ request }) => {
         backgroundType: formData.get('sectionsBackgroundType') as 'imagen' | 'color' || 'color',
         backgroundImage: formData.get('sectionsBackgroundImage') as string || '',
         backgroundColor: formData.get('sectionsBackgroundColor') as string || '#eff4ff',
+        additionalSettings: JSON.parse(formData.get('SectionsAdditionalSettings') as string || '{}')
       },
       faqSettings: {
         type: 'frequentlyask',
@@ -139,7 +138,29 @@ export const action: ActionFunction = async ({ request }) => {
         backgroundType: formData.get('faqBackgroundType') as 'imagen' | 'color' || 'color',
         backgroundImage: formData.get('faqBackgroundImage') as string || '',
         backgroundColor: formData.get('faqBackgroundColor') as string || '#eff4ff',
-      }
+        additionalSettings: JSON.parse(formData.get('faqAdditionalSettings') as string || '{}')
+      },
+
+      // Configuración de registro
+      allowSelfRegistration: formData.get('allowSelfRegistration') === 'true',
+      allowGoogleLogin: formData.get('allowGoogleLogin') === 'true',
+      allowFacebookLogin: formData.get('allowFacebookLogin') === 'true',
+      loginMethod: formData.get('loginMethod') as LoginMethod || LoginMethod.EMAIL,
+      allowValidationStatusUsers: formData.get('allowValidationStatusUsers') === 'true',
+      
+      // Campos requeridos en registro
+      requireLastName: formData.get('requireLastName') === 'true',
+      requirePhone: formData.get('requirePhone') === 'true',
+      requireDocumentType: formData.get('requireDocumentType') === 'true',
+      requireDocument: formData.get('requireDocument') === 'true',
+      requireOrganization: formData.get('requireOrganization') === 'true',
+      requirePosition: formData.get('requirePosition') === 'true',
+      requireGender: formData.get('requireGender') === 'true',
+      requireCity: formData.get('requireCity') === 'true',
+      requireAddress: formData.get('requireAddress') === 'true',
+      
+      // Configuración de notificaciones
+      enableEmailNotifications: formData.get('enableEmailNotifications') === 'true'
     };
 
     const tenantResult = await TenantsAPI.create(tenantData);
@@ -232,7 +253,59 @@ export default function CreateTenant() {
     backgroundType: 'color',
     backgroundImage: '',
     backgroundColor: '#eff4ff',
+    additionalSettings: {
+      showCourses: false,
+      showPrivateCourses: false,
+      showSections: false,
+      selectedSections: [],
+      enableBanner: false,
+      bannerType: 'image',
+      bannerImageUrl: '',
+      bannerVideoUrl: '',
+      bannerPosition: 'top',
+      customTitles: {
+        en: 'Home',
+        es: 'Inicio'
+      },
+      // showWelcomeMessage: true,
+      // showQuickActions: true,
+      // showRecentActivity: true
+    }
   });
+
+  // const useAvailableUsers = (tenantId?: string) => {
+  //   const [users, setUsers] = useState<Array<{ id: string; name: string; email: string; }>>([]);
+  //   const [loading, setLoading] = useState(false);
+
+  //   useEffect(() => {
+  //     if (tenantId) {
+  //       setLoading(true);
+  //       // Aquí harías la llamada a la API para obtener usuarios del tenant
+  //       // Por ejemplo: UsersAPI.getByTenant(tenantId)
+  //       // Por ahora, simulamos datos
+  //       setTimeout(() => {
+  //         setUsers([
+  //           { id: '1', name: 'Juan Pérez', email: 'juan@empresa.com' },
+  //           { id: '2', name: 'María González', email: 'maria@empresa.com' },
+  //           { id: '3', name: 'Carlos López', email: 'carlos@empresa.com' },
+  //           { id: '4', name: 'Ana Rodríguez', email: 'ana@empresa.com' }
+  //         ]);
+  //         setLoading(false);
+  //       }, 1000);
+  //     }
+  //   }, [tenantId]);
+
+  //   return { users, loading };
+  // };
+
+  // Nuevo estado para usuarios disponibles (normalmente vendría de una API)
+  const [availableUsers, setAvailableUsers] = useState<Array<{ id: string; name: string; email: string; }>>([
+    // Esto normalmente vendría de una consulta a la API de usuarios del tenant
+    { id: '1', name: 'Juan Pérez', email: 'juan@empresa.com' },
+    { id: '2', name: 'María González', email: 'maria@empresa.com' },
+    { id: '3', name: 'Carlos López', email: 'carlos@empresa.com' },
+    { id: '4', name: 'Ana Rodríguez', email: 'ana@empresa.com' }
+  ]);
   
   const [videoCallSettings, setVideoCallSettings] = useState<ViewSettings>({
     type: 'videocalls',
@@ -240,6 +313,31 @@ export default function CreateTenant() {
     backgroundType: 'color',
     backgroundImage: '',
     backgroundColor: '#eff4ff',
+    additionalSettings: {
+      customTitles: {
+        en: 'Video Calls',
+        es: 'Video Llamadas'
+      },
+      enableInvitationLinks: true, // por defecto true como solicitaste
+      invitationLinkExpiration: 60,
+      allowGuestAccess: false,
+      enableAllUsersReservations: false,
+      requireApprovalForReservations: false,
+      maxReservationDuration: 120,
+      advanceBookingLimit: 30,
+      videoCallAdministrators: [],
+      enableAdminNotifications: true,
+      enableRecording: false,
+      enableScreenShare: true,
+      enableChat: true,
+      maxParticipants: 10,
+      autoJoinAudio: false,
+      autoJoinVideo: false,
+      allowedTimeSlots: {
+        enabled: false,
+        slots: []
+      }
+    }
   });
   
   const [metricsSettings, setMetricsSettings] = useState<ViewSettings>({
@@ -264,6 +362,12 @@ export default function CreateTenant() {
     backgroundType: 'color',
     backgroundImage: '',
     backgroundColor: '#eff4ff',
+    additionalSettings: {
+      customTitles: {
+        en: 'Sections',
+        es: 'Secciones'
+      },
+    }
   });
 
   const [faqSettings, setFaqSettings] = useState<ViewSettings>({
@@ -272,15 +376,70 @@ export default function CreateTenant() {
     backgroundType: 'color',
     backgroundImage: '',
     backgroundColor: '#eff4ff',
+    additionalSettings: {
+      customTitles: {
+        en: 'Frequently Asked Questions',
+        es: 'Preguntas Frecuentes'
+      },
+      enableSearch: true,
+      groupByCategory: false,
+      showContactInfo: true,
+      allowVoting: false,
+      enableComments: false,
+      questionsPerPage: 10,
+      showQuestionNumbers: true,
+      faqItems: [], // Array vacío para empezar
+      allowPublicSubmissions: false,
+      requireApprovalForSubmissions: true,
+      showAuthor: false,
+      enableEmailNotifications: true
+    }
+  });
+
+  const [configActiveTab, setConfigActiveTab] = useState('registration');
+
+  const [registrationSettings, setRegistrationSettings] = useState({
+    allowSelfRegistration: true,
+    allowGoogleLogin: false,
+    allowFacebookLogin: false,
+    loginMethod: LoginMethod.EMAIL,
+    allowValidationStatusUsers: true,
+    requireLastName: true,
+    requirePhone: true,
+    requireDocumentType: true,
+    requireDocument: true,
+    requireOrganization: false,
+    requirePosition: false,
+    requireGender: false,
+    requireCity: false,
+    requireAddress: false
+  });
+
+  const [notificationSettings, setNotificationSettings] = useState({
+    enableEmailNotifications: true
   });
 
   // Handlers individuales mejorados
-  const handleHomeChange = (field: string, value: string | boolean | File) => {
-    setHomeSettings(prev => ({ ...prev, [field]: value }));
+  const handleHomeChange = (field: string, value: string | boolean | File | any) => {
+    if (field === 'additionalSettings') {
+      setHomeSettings(prev => ({
+        ...prev,
+        additionalSettings: { ...prev.additionalSettings, ...value }
+      }));
+    } else {
+      setHomeSettings(prev => ({ ...prev, [field]: value }));
+    }
   };
 
-  const handleVideoCallChange = (field: string, value: string | boolean | File) => {
-    setVideoCallSettings(prev => ({ ...prev, [field]: value }));
+  const handleVideoCallChange = (field: string, value: string | boolean | File | any) => {
+    if (field === 'additionalSettings') {
+      setVideoCallSettings(prev => ({
+        ...prev,
+        additionalSettings: { ...prev.additionalSettings, ...value }
+      }));
+    } else {
+      setVideoCallSettings(prev => ({ ...prev, [field]: value }));
+    }
   };
 
   const handleMetricsChange = (field: string, value: string | boolean | File) => {
@@ -291,13 +450,55 @@ export default function CreateTenant() {
     setGroupsSettings(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSectionsChange = (field: string, value: string | boolean | File) => {
-    setSectionsSettings(prev => ({ ...prev, [field]: value }));
+  const handleSectionsChange = (field: string, value: string | boolean | File | any) => {
+    if (field === 'additionalSettings') {
+      setVideoCallSettings(prev => ({
+        ...prev,
+        additionalSettings: { ...prev.additionalSettings, ...value }
+      }));
+    } else {
+      setSectionsSettings(prev => ({ ...prev, [field]: value }));
+    }
   };
 
-  const handleFaqChange = (field: string, value: string | boolean | File) => {
-    setFaqSettings(prev => ({ ...prev, [field]: value }));
+  const handleFaqChange = (field: string, value: string | boolean | File | any) => {
+    if (field === 'additionalSettings') {
+      setFaqSettings(prev => ({
+        ...prev,
+        additionalSettings: { ...prev.additionalSettings, ...value }
+      }));
+    } else {
+      setFaqSettings(prev => ({ ...prev, [field]: value }));
+    }
   };
+
+  const handleRegistrationChange = (field: string, value: any) => {
+    setRegistrationSettings(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleNotificationChange = (field: string, value: any) => {
+    setNotificationSettings(prev => ({ ...prev, [field]: value }));
+  };
+
+  const configTabs = [
+    { 
+      id: 'registration', 
+      label: 'Registro', 
+      component: RegistrationViewCustomizer, 
+      handler: handleRegistrationChange,
+      settings: registrationSettings
+    },
+    { 
+      id: 'notifications', 
+      label: 'Notificaciones', 
+      component: NotificationViewCustomizer, 
+      handler: handleNotificationChange,
+      settings: notificationSettings
+    }
+  ];
+
+  const currentConfigTab = configTabs.find(tab => tab.id === configActiveTab);
+  const CurrentConfigComponent = currentConfigTab?.component;
 
   const tabs = [
     { 
@@ -305,21 +506,24 @@ export default function CreateTenant() {
       label: 'Home', 
       component: HomeViewCustomizer, 
       handler: handleHomeChange,
-      settings: homeSettings 
+      settings: homeSettings,
+      // Props adicionales específicos para Home
+      extraProps: {
+        // availableSections: availableSections,
+        homeSettings: homeSettings
+      }
     },
     { 
       id: 'videoCall', 
       label: 'Video Llamadas', 
       component: VideoCallViewCustomizer, 
       handler: handleVideoCallChange,
-      settings: videoCallSettings 
-    },
-    { 
-      id: 'metrics', 
-      label: 'Métricas', 
-      component: MetricsViewCustomizer, 
-      handler: handleMetricsChange,
-      settings: metricsSettings 
+      settings: videoCallSettings,
+      // Props adicionales específicos para VideoCall
+      extraProps: {
+        availableUsers: availableUsers,
+        videoCallSettings: videoCallSettings
+      }
     },
     { 
       id: 'groups', 
@@ -333,14 +537,22 @@ export default function CreateTenant() {
       label: 'Secciones', 
       component: SectionsViewCustomizer, 
       handler: handleSectionsChange,
-      settings: sectionsSettings 
+      settings: sectionsSettings,
+      // Props adicionales específicos para VideoCall
+      extraProps: {
+        sectionsSettings: sectionsSettings
+      }
     },
     { 
       id: 'faq', 
       label: 'Preguntas Frecuentes', 
       component: FAQViewCustomizer, 
       handler: handleFaqChange,
-      settings: faqSettings 
+      settings: faqSettings,
+      // Props adicionales específicos para FAQ
+      extraProps: {
+        faqSettings: faqSettings
+      }
     },
   ];
 
@@ -385,6 +597,11 @@ export default function CreateTenant() {
     timezone: 'America/Bogota',
     language: 'es',
     currency: 'USD',
+
+    termsEs: '',
+    termsEn: '',
+    privacyEs: '',
+    privacyEn: ''
   });
 
   const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false);
@@ -488,8 +705,8 @@ export default function CreateTenant() {
   const languages = [
     { code: 'es', name: 'Español' },
     { code: 'en', name: 'English' },
-    { code: 'pt', name: 'Português' },
-    { code: 'fr', name: 'Français' },
+    // { code: 'pt', name: 'Português' },
+    // { code: 'fr', name: 'Français' },
   ];
 
   // Lista de monedas
@@ -673,7 +890,7 @@ export default function CreateTenant() {
             </div>
 
             {/* Emails adicionales y fecha de expiración */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Input
                 type="email"
                 id="billingEmail"
@@ -696,9 +913,120 @@ export default function CreateTenant() {
                 value={formData.expiresAt}
                 onChange={(e) => handleChange('expiresAt', e.target.value)}
               />
+            </div> */}
+
+            {/* Configuración regional */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label htmlFor="language" className="block text-sm font-medium text-gray-700 mb-2">
+                  Idioma (Idioma por defecto en la zona)
+                </label>
+                <select
+                  id="language"
+                  name="language"
+                  disabled={isSubmitting}
+                  value={formData.language}
+                  onChange={(e) => handleChange('language', e.target.value)}
+                  className="w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  {languages.map(lang => (
+                    <option key={lang.code} value={lang.code}>{lang.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="currency" className="block text-sm font-medium text-gray-700 mb-2">
+                  Moneda
+                </label>
+                <select
+                  id="currency"
+                  name="currency"
+                  disabled={isSubmitting}
+                  value={formData.currency}
+                  onChange={(e) => handleChange('currency', e.target.value)}
+                  className="w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  {currencies.map(curr => (
+                    <option key={curr.code} value={curr.code}>{curr.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <Input
+                type="text"
+                id="timezone"
+                name="timezone"
+                label="Zona Horaria"
+                disabled={isSubmitting}
+                placeholder="America/Bogota"
+                value={formData.timezone}
+                onChange={(e) => handleChange('timezone', e.target.value)}
+              />
             </div>
           </div>
         </div>
+
+        <div className="bg-white shadow rounded-lg">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center space-x-3">
+              <User className="h-5 w-5 text-blue-600" />
+              <h2 className="text-lg font-medium text-gray-900">Configuración de Registro y Notificaciones</h2>
+            </div>
+          </div>
+
+          {/* Tabs para configuración */}
+          <div className="border-b border-gray-200">
+            <div className="flex overflow-x-auto px-6">
+              {configTabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setConfigActiveTab(tab.id)}
+                  className={`whitespace-nowrap py-3 px-4 text-sm font-medium border-b-2 transition-colors ${
+                    configActiveTab === tab.id
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Contenido del tab activo */}
+          <div className="p-0">
+            {CurrentConfigComponent && currentConfigTab && (
+              <CurrentConfigComponent
+                onChange={currentConfigTab.handler}
+                isSubmitting={isSubmitting}
+                errors={allErrors}
+                settings={currentConfigTab.settings}
+              />
+            )}
+          </div>
+        </div>
+
+        {/* Configuracion de terminos y condiciones */}
+        <div className='bg-white shadow rounded-lg'>
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center space-x-3">
+              <User className="h-5 w-5 text-blue-600" />
+              <h2 className="text-lg font-medium text-gray-900">Configuracion de terminos y condiciones, politica de privacidad</h2>
+            </div>
+          </div>
+          
+          <div className="px-6 py-6 space-y-6">
+            <TermsPrivacyConfig
+              formData={formData}
+              handleChange={handleChange}
+              getErrorByField={getErrorByField}
+              isSubmitting={isSubmitting}
+            />
+          </div>
+        </div>
+
 
         {/* Creacion usuario administrador */}
         <div className='bg-white shadow rounded-lg'>
@@ -848,7 +1176,7 @@ export default function CreateTenant() {
         </div>
 
         {/* Configuración */}
-        <div className="bg-white shadow rounded-lg">
+        {/* <div className="bg-white shadow rounded-lg">
           <div className="px-6 py-4 border-b border-gray-200">
             <div className="flex items-center space-x-3">
               <Palette className="h-5 w-5 text-blue-600" />
@@ -857,7 +1185,6 @@ export default function CreateTenant() {
           </div>
           
           <div className="px-6 py-6 space-y-6">
-            {/* Colores */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Input
                 type="color"
@@ -881,58 +1208,8 @@ export default function CreateTenant() {
                 onChange={(e) => handleChange('secondaryColor', e.target.value)}
               />
             </div>
-
-            {/* Configuración regional */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label htmlFor="language" className="block text-sm font-medium text-gray-700 mb-2">
-                  Idioma
-                </label>
-                <select
-                  id="language"
-                  name="language"
-                  disabled={isSubmitting}
-                  value={formData.language}
-                  onChange={(e) => handleChange('language', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  {languages.map(lang => (
-                    <option key={lang.code} value={lang.code}>{lang.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="currency" className="block text-sm font-medium text-gray-700 mb-2">
-                  Moneda
-                </label>
-                <select
-                  id="currency"
-                  name="currency"
-                  disabled={isSubmitting}
-                  value={formData.currency}
-                  onChange={(e) => handleChange('currency', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  {currencies.map(curr => (
-                    <option key={curr.code} value={curr.code}>{curr.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <Input
-                type="text"
-                id="timezone"
-                name="timezone"
-                label="Zona Horaria"
-                disabled={isSubmitting}
-                placeholder="America/Bogota"
-                value={formData.timezone}
-                onChange={(e) => handleChange('timezone', e.target.value)}
-              />
-            </div>
           </div>
-        </div>
+        </div> */}
 
         <div className="bg-white shadow rounded-lg">
           <div className="px-6 py-4 border-b border-gray-200">
@@ -996,6 +1273,8 @@ export default function CreateTenant() {
                         initialBackgroundType={currentTab.settings.backgroundType}
                         initialBackgroundImage={currentTab.settings.backgroundImage}
                         initialBackgroundColor={currentTab.settings.backgroundColor}
+                        // Props adicionales específicos para cada vista
+                        {...(currentTab.extraProps || {})}
                     />
                 )}
             </div>
@@ -1016,11 +1295,15 @@ export default function CreateTenant() {
         <input type="hidden" name="homeBackgroundImage" value={homeSettings.backgroundImage || ''} />
         <input type="hidden" name="homeBackgroundColor" value={homeSettings.backgroundColor || '#eff4ff'} />
 
+        <input type="hidden" name="homeAdditionalSettings" value={JSON.stringify(homeSettings.additionalSettings)} />
+
         {/* VideoCall Settings */}
         <input type="hidden" name="videoCallCustomBackground" value={videoCallSettings.customBackground ? 'true' : 'false'} />
         <input type="hidden" name="videoCallBackgroundType" value={videoCallSettings.backgroundType || 'color'} />
         <input type="hidden" name="videoCallBackgroundImage" value={videoCallSettings.backgroundImage || ''} />
         <input type="hidden" name="videoCallBackgroundColor" value={videoCallSettings.backgroundColor || '#eff4ff'} />
+
+        <input type="hidden" name="videoCallAdditionalSettings" value={JSON.stringify(videoCallSettings.additionalSettings)} />
 
         {/* Metrics Settings */}
         <input type="hidden" name="metricsCustomBackground" value={metricsSettings.customBackground ? 'true' : 'false'} />
@@ -1029,22 +1312,48 @@ export default function CreateTenant() {
         <input type="hidden" name="metricsBackgroundColor" value={metricsSettings.backgroundColor || '#eff4ff'} />
 
         {/* Groups Settings */}
-        <input type="hidden" name="metricsCustomBackground" value={metricsSettings.customBackground ? 'true' : 'false'} />
-        <input type="hidden" name="metricsBackgroundType" value={metricsSettings.backgroundType || 'color'} />
-        <input type="hidden" name="metricsBackgroundImage" value={metricsSettings.backgroundImage || ''} />
-        <input type="hidden" name="metricsBackgroundColor" value={metricsSettings.backgroundColor || '#eff4ff'} />
+        <input type="hidden" name="groupsCustomBackground" value={groupsSettings.customBackground ? 'true' : 'false'} />
+        <input type="hidden" name="groupsBackgroundType" value={groupsSettings.backgroundType || 'color'} />
+        <input type="hidden" name="groupsBackgroundImage" value={groupsSettings.backgroundImage || ''} />
+        <input type="hidden" name="groupsBackgroundColor" value={groupsSettings.backgroundColor || '#eff4ff'} />
 
         {/* Sections Settings */}
-        <input type="hidden" name="metricsCustomBackground" value={metricsSettings.customBackground ? 'true' : 'false'} />
-        <input type="hidden" name="metricsBackgroundType" value={metricsSettings.backgroundType || 'color'} />
-        <input type="hidden" name="metricsBackgroundImage" value={metricsSettings.backgroundImage || ''} />
-        <input type="hidden" name="metricsBackgroundColor" value={metricsSettings.backgroundColor || '#eff4ff'} />
+        <input type="hidden" name="sectionsCustomBackground" value={sectionsSettings.customBackground ? 'true' : 'false'} />
+        <input type="hidden" name="sectionsBackgroundType" value={sectionsSettings.backgroundType || 'color'} />
+        <input type="hidden" name="sectionsBackgroundImage" value={sectionsSettings.backgroundImage || ''} />
+        <input type="hidden" name="sectionsBackgroundColor" value={sectionsSettings.backgroundColor || '#eff4ff'} />
+
+        <input type="hidden" name="SectionsAdditionalSettings" value={JSON.stringify(sectionsSettings.additionalSettings)} />
 
         {/* FAQ Settings */}
-        <input type="hidden" name="metricsCustomBackground" value={metricsSettings.customBackground ? 'true' : 'false'} />
-        <input type="hidden" name="metricsBackgroundType" value={metricsSettings.backgroundType || 'color'} />
-        <input type="hidden" name="metricsBackgroundImage" value={metricsSettings.backgroundImage || ''} />
-        <input type="hidden" name="metricsBackgroundColor" value={metricsSettings.backgroundColor || '#eff4ff'} />
+        <input type="hidden" name="faqCustomBackground" value={faqSettings.customBackground ? 'true' : 'false'} />
+        <input type="hidden" name="faqBackgroundType" value={faqSettings.backgroundType || 'color'} />
+        <input type="hidden" name="faqBackgroundImage" value={faqSettings.backgroundImage || ''} />
+        <input type="hidden" name="faqBackgroundColor" value={faqSettings.backgroundColor || '#eff4ff'} />
+
+        <input type="hidden" name="faqAdditionalSettings" value={JSON.stringify(faqSettings.additionalSettings)} />
+
+
+        {/* Registration Settings */}
+        <input type="hidden" name="allowSelfRegistration" value={registrationSettings.allowSelfRegistration ? 'true' : 'false'} />
+        <input type="hidden" name="allowGoogleLogin" value={registrationSettings.allowGoogleLogin ? 'true' : 'false'} />
+        <input type="hidden" name="allowFacebookLogin" value={registrationSettings.allowFacebookLogin ? 'true' : 'false'} />
+        <input type="hidden" name="loginMethod" value={registrationSettings.loginMethod} />
+        <input type="hidden" name="allowValidationStatusUsers" value={registrationSettings.allowValidationStatusUsers ? 'true' : 'false'} />
+        
+        {/* Campos requeridos en registro */}
+        <input type="hidden" name="requireLastName" value={registrationSettings.requireLastName ? 'true' : 'false'} />
+        <input type="hidden" name="requirePhone" value={registrationSettings.requirePhone ? 'true' : 'false'} />
+        <input type="hidden" name="requireDocumentType" value={registrationSettings.requireDocumentType ? 'true' : 'false'} />
+        <input type="hidden" name="requireDocument" value={registrationSettings.requireDocument ? 'true' : 'false'} />
+        <input type="hidden" name="requireOrganization" value={registrationSettings.requireOrganization ? 'true' : 'false'} />
+        <input type="hidden" name="requirePosition" value={registrationSettings.requirePosition ? 'true' : 'false'} />
+        <input type="hidden" name="requireGender" value={registrationSettings.requireGender ? 'true' : 'false'} />
+        <input type="hidden" name="requireCity" value={registrationSettings.requireCity ? 'true' : 'false'} />
+        <input type="hidden" name="requireAddress" value={registrationSettings.requireAddress ? 'true' : 'false'} />
+
+        {/* Notification Settings */}
+        <input type="hidden" name="enableEmailNotifications" value={notificationSettings.enableEmailNotifications ? 'true' : 'false'} />
 
         {/* Botones de acción */}
         <div className="flex items-center justify-end space-x-4 pt-6">

@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { Form } from '@remix-run/react';
 import { 
   Save, X, AlertCircle, Layers3, Hash, FileText, 
-  Image, Palette, Settings, Eye, Upload, Globe 
+  Image, Palette, Settings, Eye, Upload, Globe, 
+  BookOpen
 } from 'lucide-react';
 import Input from '~/components/ui/Input';
 import Checkbox from '~/components/ui/Checkbox';
@@ -18,6 +19,7 @@ interface SectionFormData {
   order: number;
   allowBanner: boolean;
   bannerPath: string;
+  courseIds: string[];
 }
 
 interface SectionFormProps {
@@ -29,6 +31,7 @@ interface SectionFormProps {
   title?: string;
   subtitle?: string;
   showSteps?: boolean;
+  availableCourses?: Array<{ id: string; title: string; slug: string; isActive: boolean }>;
 }
 
 interface FormStep {
@@ -62,6 +65,7 @@ export default function SectionForm({
     order: 1,
     allowBanner: false,
     bannerPath: '',
+    courseIds: [],
     ...initialData
   });
   
@@ -167,13 +171,19 @@ export default function SectionForm({
       description: 'Orden, banner y configuraciones avanzadas'
     },
     { 
-      id: 3, 
+    id: 3, 
+      name: 'Cursos', // NUEVO PASO
+      icon: BookOpen,
+      description: 'Seleccionar cursos para esta sección'
+    },
+    { 
+      id: 4, 
       name: 'Imágenes', 
       icon: Image,
       description: 'Imagen principal y banner de la sección'
     },
     { 
-      id: 4, 
+      id: 5, 
       name: 'Revisión', 
       icon: Eye,
       description: 'Revisa todos los datos antes de guardar'
@@ -187,8 +197,10 @@ export default function SectionForm({
       case 2:
         return formData.order > 0;
       case 3:
-        return true; // Las imágenes son opcionales
+        return true;
       case 4:
+        return true; // Las imágenes son opcionales
+      case 5:
         return true;
       default:
         return false;
@@ -345,8 +357,80 @@ export default function SectionForm({
             </div>
           </div>
         );
+      case 3: // NUEVO PASO - Selección de cursos
+        return (
+          <div className="space-y-6">
+            <div className="bg-gray-50 rounded-lg p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                <div className="flex items-center space-x-2">
+                  <BookOpen className="h-5 w-5" />
+                  <span>Cursos de la Sección</span>
+                </div>
+              </h3>
+              
+              <p className="text-sm text-gray-600 mb-4">
+                Selecciona los cursos que pertenecerán a esta sección. Los usuarios podrán ver estos cursos al navegar por la sección.
+              </p>
 
-      case 3:
+              {availableCourses && availableCourses.length > 0 ? (
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {availableCourses.map((course) => (
+                    <label
+                      key={course.id}
+                      className={`flex items-center space-x-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+                        formData.courseIds.includes(course.id)
+                          ? 'border-purple-300 bg-purple-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      } ${!course.isActive ? 'opacity-60' : ''}`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={formData.courseIds.includes(course.id)}
+                        onChange={(e) => {
+                          const isChecked = e.target.checked;
+                          const updatedCourseIds = isChecked
+                            ? [...formData.courseIds, course.id]
+                            : formData.courseIds.filter(id => id !== course.id);
+                          updateField('courseIds', updatedCourseIds);
+                        }}
+                        className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2">
+                          <span className="font-medium text-gray-900">{course.title}</span>
+                          {!course.isActive && (
+                            <span className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">
+                              Inactivo
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-500">/{course.slug}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                  <p className="text-gray-500">No hay cursos disponibles</p>
+                  <p className="text-sm text-gray-400 mt-1">
+                    Crea algunos cursos primero para poder asociarlos a esta sección
+                  </p>
+                </div>
+              )}
+
+              {formData.courseIds.length > 0 && (
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    <span className="font-medium">{formData.courseIds.length}</span> curso(s) seleccionado(s)
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+
+      case 4:
         return (
           <div className="space-y-6">
             {/* Imagen thumbnail */}
@@ -509,7 +593,7 @@ export default function SectionForm({
           </div>
         );
 
-      case 4:
+      case 5:
         return (
           <div className="space-y-6">
             <div className="bg-white border border-gray-200 rounded-lg p-6">
@@ -558,6 +642,25 @@ export default function SectionForm({
                       </p>
                     </div>
                   </div>
+                </div>
+
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-3">Cursos Asociados</h4>
+                  {formData.courseIds.length > 0 ? (
+                    <div className="space-y-2">
+                      {formData.courseIds.map(courseId => {
+                        const course = availableCourses?.find(c => c.id === courseId);
+                        return course ? (
+                          <div key={courseId} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                            <span className="text-sm text-gray-900">{course.title}</span>
+                            <span className="text-xs text-gray-500">/{course.slug}</span>
+                          </div>
+                        ) : null;
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 italic">No hay cursos seleccionados</p>
+                  )}
                 </div>
 
                 {/* Imágenes */}
@@ -703,6 +806,7 @@ export default function SectionForm({
         <input type="hidden" name="order" value={formData.order} />
         <input type="hidden" name="allowBanner" value={formData.allowBanner ? 'on' : ''} />
         <input type="hidden" name="bannerPath" value={formData.bannerPath} />
+        <input type="hidden" name="courseIds" value={JSON.stringify(formData.courseIds)} />
 
         {/* Contenido del paso actual */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-6">

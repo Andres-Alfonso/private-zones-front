@@ -1,5 +1,6 @@
 // app/api/endpoints/courses.ts
 
+import { AxiosInstance } from 'axios';
 import apiClient from '../client';
 import { API_CONFIG } from '../config';
 import { 
@@ -7,18 +8,37 @@ import {
   CreateCourseRequest, 
   UpdateCourseRequest, 
   CourseListResponse,
-  CourseFilters 
+  CourseFilters, 
+  CourseBasic
 } from '../types/course.types';
 
 // Primero actualiza tu API_CONFIG para incluir los endpoints de courses
 const COURSES_ENDPOINTS = {
   BASE: '/v1/courses',
   BY_ID: (id: string) => `/v1/courses/${id}`,
+  BY_TENANT: '/v1/courses/tenant',
   CATEGORIES: '/v1/courses/categories',
   INSTRUCTORS: '/v1/courses/instructors',
 };
 
 export const CoursesAPI = {
+  // Método para obtener cursos de un tenant
+  async getByTenant(client?: AxiosInstance): Promise<CourseBasic[] | { error: string }> {
+    try {
+      const apiClientToUse = client || apiClient;
+      const params = new URLSearchParams();
+      const queryString = params.toString();
+
+      const url = `${COURSES_ENDPOINTS.BY_TENANT}`;
+    
+      const response = await apiClientToUse.get(url);
+
+      return await response.data;
+    } catch (error) {
+      console.error('Error al obtener cursos del tenant:', error);
+      return { error: 'Error de conexión' };
+    }
+  },
   // Obtener todos los cursos con filtros
   getAll: async (filters?: CourseFilters): Promise<CourseListResponse> => {
     const params = new URLSearchParams();

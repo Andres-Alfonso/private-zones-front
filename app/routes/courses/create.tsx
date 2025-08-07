@@ -371,8 +371,8 @@ function CreateCourseContent() {
     { id: 2, name: 'Configuración Académica', icon: Tag },
     { id: 3, name: 'Fechas y Inscripciones', icon: Calendar },
     { id: 4, name: 'Imágenes y Diseño', icon: Image },
-    { id: 5, name: 'Traducciones', icon: Globe },
-    { id: 6, name: 'Configuración de Vistas', icon: Eye }
+    // { id: 5, name: 'Traducciones', icon: Globe },
+    { id: 5, name: 'Configuración de Vistas', icon: Eye }
   ];
 
   return (
@@ -574,7 +574,7 @@ function CreateCourseContent() {
           )}
 
           {/* Paso 5: Traducciones */}
-          {currentStep === 5 && (
+          {/* {currentStep === 5 && (
             <CourseFormSection
               title="Traducciones"
               description="Proporciona traducciones para hacer tu curso accesible globalmente"
@@ -587,10 +587,10 @@ function CreateCourseContent() {
                 onChange={handleChange}
               />
             </CourseFormSection>
-          )}
+          )} */}
 
           {/* Paso 6: Configuración de Vistas */}
-          {currentStep === 6 && (
+          {currentStep === 5 && (
             <CourseFormSection
               title="Configuración de Vistas"
               description="Personaliza cómo se verán las diferentes secciones del curso"

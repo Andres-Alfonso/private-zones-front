@@ -799,7 +799,7 @@ export default function EditTenant() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Input
                   type="email"
                   id="billingEmail"
@@ -822,7 +822,7 @@ export default function EditTenant() {
                   value={formData.expiresAt || ''}
                   onChange={(e) => handleChange('expiresAt', e.target.value)}
                 />
-              </div>
+              </div> */}
             </div>
           </div>
 

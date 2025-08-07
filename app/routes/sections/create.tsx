@@ -1,11 +1,12 @@
 // app/routes/sections/create.tsx
 
-import { json, redirect, ActionFunction } from '@remix-run/node';
-import { useActionData, Form, useNavigation, useNavigate } from '@remix-run/react';
+import { json, redirect, ActionFunction, LoaderFunction } from '@remix-run/node';
+import { useActionData, Form, useNavigation, useNavigate, useLoaderData } from '@remix-run/react';
 import { useState, useEffect } from 'react';
 import { 
   Save, X, AlertCircle, Layers3, Hash, FileText, 
-  Image, Palette, Settings, Eye, Upload, Globe 
+  Image, Palette, Settings, Eye, Upload, Globe, 
+  BookOpen
 } from 'lucide-react';
 import Input from '~/components/ui/Input';
 import Checkbox from '~/components/ui/Checkbox';
@@ -13,6 +14,13 @@ import { validateSectionForm, getErrorByField } from '~/utils/sectionValidation'
 import { SectionApi } from '~/api/endpoints/sections';
 import { SectionErrorResponse } from '~/api/types/section.types';
 import { useTenant } from '~/context/TenantContext';
+import { CoursesAPI } from '~/api/endpoints/courses';
+import { createApiClientFromRequest } from '~/api/client';
+import { CourseBasic, CourseFromAPI } from '~/api/types/course.types';
+
+interface LoaderData {
+  availableCourses: CourseBasic[];
+}
 
 interface ActionData {
   errors?: Array<{ field: string; message: string }>;
@@ -30,6 +38,53 @@ interface SectionFormData {
   allowBanner: boolean;
   bannerPath: string;
   tenantId: string;
+  courseIds: string[];
+}
+
+
+// Función para procesar las traducciones
+function processCourseTranslations(
+  courses: CourseFromAPI[], 
+  preferredLanguage: string = 'es'
+): CourseBasic[] {
+  return courses.map(course => {
+    // Buscar traducción en el idioma preferido
+    let selectedTranslation = course.translations.find(
+      t => t.languageCode === preferredLanguage
+    );
+    
+    // Si no existe en el idioma preferido, usar la primera disponible
+    if (!selectedTranslation && course.translations.length > 0) {
+      selectedTranslation = course.translations[0];
+    }
+    
+    // Si no hay traducciones, crear valores por defecto
+    if (!selectedTranslation) {
+      selectedTranslation = {
+        id: '',
+        courseId: course.id,
+        languageCode: preferredLanguage,
+        title: 'Sin título',
+        description: 'Sin descripción',
+        metadata: {},
+        createdAt: course.created_at,
+        updatedAt: course.updated_at
+      };
+    }
+
+    return {
+      id: course.id,
+      slug: course.slug,
+      title: selectedTranslation.title,
+      description: selectedTranslation.description,
+      isActive: course.isActive,
+      tenantId: course.tenantId,
+      created_at: course.created_at,
+      updated_at: course.updated_at,
+      languageCode: selectedTranslation.languageCode,
+      allTranslations: course.translations
+    };
+  });
 }
 
 // Función helper para obtener mensajes específicos
@@ -60,6 +115,54 @@ function getFieldErrors(error: SectionErrorResponse): Array<{ field: string; mes
   return [{ field: error.field, message }];
 }
 
+export const loader: LoaderFunction = async ({ request }) => {
+  try {
+    const url = new URL(request.url);
+    const urlParams = new URLSearchParams(url.search);
+    const preferredLanguage = urlParams.get('lang') || 'es';
+
+    const cookieHeader = request.headers.get("cookie");
+    // const { state: tenantState } = useTenant();
+    // const { tenant } = tenantState;
+
+    // if (!tenant || !tenant.id) {
+    //   return json<LoaderData>({
+    //     availableCourses: [],
+    //   }, { status: 400 });
+    // }
+
+    // const coursesResult = await CoursesAPI.getByTenant();
+
+    const requestApiClient = createApiClientFromRequest(request);
+    const coursesResult = await CoursesAPI.getByTenant(requestApiClient);
+    
+    // CAMBIO: verificar si es un error o es el array directamente
+    if ('error' in coursesResult) {
+      console.error('Courses API Error:', coursesResult.error);
+      return json<LoaderData>({
+        availableCourses: [],
+      }, { status: 500 });
+    }
+
+    // Procesar las traducciones
+    const processedCourses = processCourseTranslations(
+      coursesResult as CourseFromAPI[], 
+      preferredLanguage
+    );
+    
+    // coursesResult ES el array directamente
+    console.log('Available coursessssss:', coursesResult);
+    return json<LoaderData>({
+      availableCourses: processedCourses || [],
+    });
+  } catch (error: any) {
+    console.error('Unexpected error loading courses:', error);
+    return json<LoaderData>({
+      availableCourses: [],
+    }, { status: 500 });
+  }
+};
+
 export const action: ActionFunction = async ({ request }) => {
   const formData = await request.formData();
 
@@ -85,7 +188,9 @@ export const action: ActionFunction = async ({ request }) => {
       tenantId: formData.get('tenantId') as string
     };
 
-    const sectionResult = await SectionApi.create(sectionData);
+    const tenantDomain = request.headers.get('host');
+
+    const sectionResult = await SectionApi.create(sectionData, tenantDomain);
 
     if ('error' in sectionResult) {
       const fieldErrors = getFieldErrors(sectionResult);
@@ -115,6 +220,7 @@ export const action: ActionFunction = async ({ request }) => {
 };
 
 export default function CreateSection() {
+  const { availableCourses } = useLoaderData<LoaderData>();
   const actionData = useActionData<ActionData>();
   const { state: tenantState } = useTenant();
   const { tenant } = tenantState;
@@ -133,7 +239,8 @@ export default function CreateSection() {
     order: 1,
     allowBanner: false,
     bannerPath: '',
-    tenantId: tenant?.id || ''
+    tenantId: tenant?.id || '',
+    courseIds: [],
   });
   
   const [currentStep, setCurrentStep] = useState(1);
@@ -144,15 +251,18 @@ export default function CreateSection() {
   const isSubmitting = navigation.state === 'submitting';
   const errors = actionData?.errors || [];
 
-  // Generar slug automáticamente desde el nombre
-  useEffect(() => {
-    if (formData.name && !slugManuallyEdited) {
-      const generatedSlug = generateSlug(formData.name);
-      setFormData(prev => ({ ...prev, slug: generatedSlug }));
+  const checkSlugExists = async (slug: string): Promise<boolean> => {
+    try {
+      // Llamada al API para verificar si el slug existe
+      const response = await SectionApi.checkSlugExists(slug);
+      return response.exists;
+    } catch (error) {
+      console.error('Error checking slug existence:', error);
+      return false; // En caso de error, asumimos que no existe para no bloquear
     }
-  }, [formData.name, slugManuallyEdited]);
+  };
 
-  const generateSlug = (name: string): string => {
+  const generateBaseSlug = (name: string): string => {
     return name
       .toLowerCase()
       .trim()
@@ -163,6 +273,41 @@ export default function CreateSection() {
       .replace(/-+/g, '-')
       .replace(/^-+|-+$/g, '');
   };
+
+  const generateUniqueSlug = async (name: string): Promise<string> => {
+    const baseSlug = generateBaseSlug(name);
+    let finalSlug = baseSlug;
+    let counter = 1;
+    
+    // Verificar si el slug base ya existe
+    while (await checkSlugExists(finalSlug)) {
+      finalSlug = `${baseSlug}-${counter}`;
+      counter++;
+    }
+    
+    return finalSlug;
+  };
+
+  // Generar slug automáticamente desde el nombre
+  useEffect(() => {
+    if (formData.name && !slugManuallyEdited) {
+      // Usar un debounce para evitar múltiples llamadas
+      const timeoutId = setTimeout(async () => {
+        try {
+          const uniqueSlug = await generateUniqueSlug(formData.name);
+          setFormData(prev => ({ ...prev, slug: uniqueSlug }));
+        } catch (error) {
+          console.error('Error generating unique slug:', error);
+          // Fallback al slug básico sin verificación
+          const fallbackSlug = generateBaseSlug(formData.name);
+          setFormData(prev => ({ ...prev, slug: fallbackSlug }));
+        }
+      }, 500); // Debounce de 500ms
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [formData.name, slugManuallyEdited]);
+
 
   const updateField = (field: keyof SectionFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -200,8 +345,9 @@ export default function CreateSection() {
   const steps = [
     { id: 1, name: 'Información Básica', icon: Layers3 },
     { id: 2, name: 'Configuración', icon: Settings },
-    { id: 3, name: 'Imágenes', icon: Image },
-    { id: 4, name: 'Revisión', icon: Eye }
+    { id: 3, name: 'Cursos', icon: BookOpen },
+    { id: 4, name: 'Imágenes', icon: Image },
+    { id: 5, name: 'Revisión', icon: Eye }
   ];
 
   const renderStepContent = () => {
@@ -334,6 +480,79 @@ export default function CreateSection() {
       case 3:
         return (
           <div className="space-y-6">
+            <div className="bg-gray-50 rounded-lg p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                <div className="flex items-center space-x-2">
+                  <BookOpen className="h-5 w-5" />
+                  <span>Cursos de la Sección</span>
+                </div>
+              </h3>
+              
+              <p className="text-sm text-gray-600 mb-4">
+                Selecciona los cursos que pertenecerán a esta sección. Los usuarios podrán ver estos cursos al navegar por la sección.
+              </p>
+
+              {availableCourses && availableCourses.length > 0 ? (
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {availableCourses.map((course) => (
+                    <label
+                      key={course.id}
+                      className={`flex items-center space-x-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+                        formData.courseIds.includes(course.id)
+                          ? 'border-purple-300 bg-purple-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      } ${!course.isActive ? 'opacity-60' : ''}`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={formData.courseIds.includes(course.id)}
+                        onChange={(e) => {
+                          const isChecked = e.target.checked;
+                          const updatedCourseIds = isChecked
+                            ? [...formData.courseIds, course.id]
+                            : formData.courseIds.filter(id => id !== course.id);
+                          updateField('courseIds', updatedCourseIds);
+                        }}
+                        className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2">
+                          <span className="font-medium text-gray-900">{course.title}</span>
+                          {!course.isActive && (
+                            <span className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">
+                              Inactivo
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-500">/{course.slug}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                  <p className="text-gray-500">No hay cursos disponibles</p>
+                  <p className="text-sm text-gray-400 mt-1">
+                    Crea algunos cursos primero para poder asociarlos a esta sección
+                  </p>
+                </div>
+              )}
+
+              {formData.courseIds.length > 0 && (
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    <span className="font-medium">{formData.courseIds.length}</span> curso(s) seleccionado(s)
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+
+      case 4:
+        return (
+          <div className="space-y-6">
             {/* Imagen thumbnail */}
             <div className="bg-gray-50 rounded-lg p-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Imagen de la Sección</h3>
@@ -431,7 +650,7 @@ export default function CreateSection() {
           </div>
         );
 
-      case 4:
+      case 5:
         return (
           <div className="space-y-6">
             <div className="bg-white border border-gray-200 rounded-lg p-6">
@@ -578,6 +797,7 @@ export default function CreateSection() {
           <input type="hidden" name="allowBanner" value={formData.allowBanner ? 'on' : ''} />
           <input type="hidden" name="bannerPath" value={formData.bannerPath} />
           <input type="hidden" name="tenantId" value={formData.tenantId} />
+          <input type="hidden" name="courseIds" value={JSON.stringify(formData.courseIds)} />
 
           {/* Contenido del paso actual */}
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-6">

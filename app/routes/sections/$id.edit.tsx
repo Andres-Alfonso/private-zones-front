@@ -6,7 +6,8 @@ import { useState, useEffect } from 'react';
 import { 
   Save, X, AlertCircle, Layers3, Hash, FileText, 
   Image, Palette, Settings, Eye, Upload, Globe,
-  Trash2, Archive
+  Trash2, Archive,
+  BookOpen
 } from 'lucide-react';
 import Input from '~/components/ui/Input';
 import Checkbox from '~/components/ui/Checkbox';
@@ -32,6 +33,8 @@ interface Section {
 interface LoaderData {
   section: Section | null;
   error: string | null;
+  availableCourses: Array<{ id: string; title: string; slug: string; isActive: boolean }>;
+  sectionCourses: string[]; // IDs de cursos ya asociados
 }
 
 interface ActionData {
@@ -48,6 +51,7 @@ interface SectionFormData {
   order: number;
   allowBanner: boolean;
   bannerPath: string;
+  courseIds: string[];
 }
 
 
@@ -68,9 +72,18 @@ export const loader: LoaderFunction = async ({ params }) => {
     if (isSectinoErrorResponse(result)) {
       return json<LoaderData>({ 
         section: null, 
-        error: result.message 
+        error: result.message,
+        availableCourses: [],
+        sectionCourses: []
       });
     }
+
+    // Cargar cursos disponibles del tenant
+    const coursesResult = await CourseApi.getByTenant(result.tenantId);
+    const availableCourses = coursesResult.data || [];
+
+    // Obtener IDs de cursos ya asociados a la sección
+    const sectionCourses = result.courses?.map(course => course.id) || [];
     
     // Datos mock - en una aplicación real, estos vendrían de la base de datos
     const mockSection: Section = {
@@ -90,13 +103,17 @@ export const loader: LoaderFunction = async ({ params }) => {
 
     return json<LoaderData>({ 
       section: result, 
-      error: null 
+      error: null,
+      availableCourses,
+      sectionCourses
     });
   } catch (error: any) {
     console.error('Error loading section for edit:', error);
     return json<LoaderData>({ 
       section: null, 
-      error: error.message || 'Error al cargar la sección'
+      error: error.message || 'Error al cargar la sección',
+      availableCourses: [],
+      sectionCourses: []
     });
   }
 };
@@ -126,10 +143,17 @@ export const action: ActionFunction = async ({ request, params }) => {
           order: parseInt(formData.get('order') as string) || null,
           allowBanner: formData.get('allowBanner') === 'on',
           bannerPath: formData.get('bannerPath') as string,
+          courseIds: JSON.parse(formData.get('courseIds') as string || '[]'),
         };
 
-        // Aquí se llamaría al API para actualizar la sección
-        console.log('Actualizar sección:', sectionId, updateData);
+        // Llamar al API para actualizar la sección incluyendo cursos
+        const updateResult = await SectionApi.updateWithCourses(sectionId, updateData);
+
+        if ('error' in updateResult) {
+          return json<ActionData>({ 
+            generalError: updateResult.message 
+          }, { status: 400 });
+        }
         
         return json<ActionData>({ success: true });
 
@@ -155,7 +179,7 @@ export const action: ActionFunction = async ({ request, params }) => {
 };
 
 export default function EditSection() {
-  const { section, error } = useLoaderData<LoaderData>();
+  const { section, error, availableCourses, sectionCourses } = useLoaderData<LoaderData>();
   const actionData = useActionData<ActionData>();
   const navigation = useNavigation();
   const navigate = useNavigate();
@@ -168,6 +192,7 @@ export default function EditSection() {
     order: 1,
     allowBanner: false,
     bannerPath: '',
+    courseIds: [],
   });
   
   const [currentStep, setCurrentStep] = useState(1);
@@ -190,11 +215,12 @@ export default function EditSection() {
         order: section.order || 1,
         allowBanner: section.allowBanner,
         bannerPath: section.bannerPath || '',
+        courseIds: sectionCourses, // NUEVO: cargar cursos asociados
       });
       setPreviewImage(section.thumbnailImagePath);
       setPreviewBanner(section.bannerPath);
     }
-  }, [section]);
+  }, [section, sectionCourses]);
 
   // Mostrar mensaje de éxito
   useEffect(() => {
@@ -273,8 +299,9 @@ export default function EditSection() {
   const steps = [
     { id: 1, name: 'Información Básica', icon: Layers3 },
     { id: 2, name: 'Configuración', icon: Settings },
-    { id: 3, name: 'Imágenes', icon: Image },
-    { id: 4, name: 'Revisión', icon: Eye }
+    { id: 3, name: 'Cursos', icon: BookOpen },
+    { id: 4, name: 'Imágenes', icon: Image },
+    { id: 5, name: 'Revisión', icon: Eye }
   ];
 
   const renderStepContent = () => {
@@ -719,6 +746,7 @@ export default function EditSection() {
           <input type="hidden" name="order" value={formData.order} />
           <input type="hidden" name="allowBanner" value={formData.allowBanner ? 'on' : ''} />
           <input type="hidden" name="bannerPath" value={formData.bannerPath} />
+          <input type="hidden" name="courseIds" value={JSON.stringify(formData.courseIds)} />
 
           {/* Contenido del paso actual */}
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-6">

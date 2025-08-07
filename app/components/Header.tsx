@@ -98,7 +98,17 @@ export default function Header() {
                       Inicio
                     </NavLink>
 
-                    <RoleGuard requiredRole="admin">
+                    <RoleGuard requiredRoles={['superadmin', 'admin']}>
+                      <NavLink 
+                        to={`/tenants/manage/${tenant?.id}`} 
+                        icon={<Building2 className="h-4 w-4" />}
+                        textColor={navbarConfig?.textColor || '#ffffff'}
+                      >
+                        Cliente
+                      </NavLink>
+                    </RoleGuard>
+
+                    <RoleGuard requiredRole="superadmin">
                       <NavLink 
                         to="/tenants" 
                         icon={<Building2 className="h-4 w-4" />}

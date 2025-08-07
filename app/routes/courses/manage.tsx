@@ -6,7 +6,8 @@ import { useState } from "react";
 import { 
   Plus, Search, Filter, Edit, Trash2, Eye, EyeOff, 
   Users, DollarSign, TrendingUp, AlertCircle, MoreHorizontal,
-  Download, Upload, BarChart3
+  Download, Upload, BarChart3, BookOpen, Calendar, Star,
+  ChevronLeft, ChevronRight
 } from "lucide-react";
 import { Course, CourseLevel } from "~/api/types/course.types";
 // import { CoursesAPI } from "~/api/endpoints/courses";
@@ -203,7 +204,6 @@ function ManageCoursesContent() {
   const [filterCategory, setFilterCategory] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
-  const [showBulkActions, setShowBulkActions] = useState(false);
 
   const isSubmitting = navigation.state === 'submitting';
 
@@ -238,26 +238,28 @@ function ManageCoursesContent() {
 
   if (error) {
     return (
-      <div className="text-center py-12">
-        <AlertCircle className="mx-auto h-12 w-12 text-red-400 mb-4" />
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Error</h1>
-        <p className="text-gray-600">{error}</p>
+      <div className="text-center py-16">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-8 max-w-md mx-auto">
+          <AlertCircle className="mx-auto h-16 w-16 text-red-400 mb-4" />
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Error</h1>
+          <p className="text-gray-600">{error}</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Mensajes de estado */}
       {actionData?.error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-center">
+        <div className="bg-red-50/80 backdrop-blur-sm border border-red-200/50 text-red-700 px-6 py-4 rounded-xl flex items-center shadow-lg">
           <AlertCircle className="h-5 w-5 mr-2" />
           {actionData.error}
         </div>
       )}
 
       {actionData?.success && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md">
+        <div className="bg-green-50/80 backdrop-blur-sm border border-green-200/50 text-green-700 px-6 py-4 rounded-xl shadow-lg">
           {actionData.action === 'toggle-active' && 'Estado del curso actualizado exitosamente'}
           {actionData.action === 'delete' && 'Curso eliminado exitosamente'}
           {actionData.action === 'bulk-delete' && 'Cursos eliminados exitosamente'}
@@ -265,70 +267,70 @@ function ManageCoursesContent() {
       )}
 
       {/* Panel de estadísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-gray-200/50 hover:shadow-xl transition-all duration-200 transform hover:scale-105">
           <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <BarChart3 className="h-8 w-8 text-blue-600" />
+            <div className="flex-shrink-0 p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg">
+              <BarChart3 className="h-6 w-6 text-white" />
             </div>
-            <div className="ml-3">
-              <p className="text-sm text-gray-600">Total Cursos</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.totalCourses}</p>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Total Cursos</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.totalCourses}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
+        <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-gray-200/50 hover:shadow-xl transition-all duration-200 transform hover:scale-105">
           <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <Eye className="h-8 w-8 text-green-600" />
+            <div className="flex-shrink-0 p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg">
+              <Eye className="h-6 w-6 text-white" />
             </div>
-            <div className="ml-3">
-              <p className="text-sm text-gray-600">Cursos Activos</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.activeCourses}</p>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Cursos Activos</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.activeCourses}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
+        <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-gray-200/50 hover:shadow-xl transition-all duration-200 transform hover:scale-105">
           <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <Users className="h-8 w-8 text-purple-600" />
+            <div className="flex-shrink-0 p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg">
+              <Users className="h-6 w-6 text-white" />
             </div>
-            <div className="ml-3">
-              <p className="text-sm text-gray-600">Total Estudiantes</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.totalStudents}</p>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Total Estudiantes</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.totalStudents}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
+        {/* <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-gray-200/50 hover:shadow-xl transition-all duration-200 transform hover:scale-105">
           <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <DollarSign className="h-8 w-8 text-yellow-600" />
+            <div className="flex-shrink-0 p-3 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl shadow-lg">
+              <DollarSign className="h-6 w-6 text-white" />
             </div>
-            <div className="ml-3">
-              <p className="text-sm text-gray-600">Ingresos Totales</p>
-              <p className="text-2xl font-semibold text-gray-900">${stats.totalRevenue.toFixed(2)}</p>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Ingresos Totales</p>
+              <p className="text-2xl font-bold text-gray-900">${stats.totalRevenue.toFixed(2)}</p>
             </div>
           </div>
-        </div>
+        </div> */}
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
+        {/* <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-gray-200/50 hover:shadow-xl transition-all duration-200 transform hover:scale-105">
           <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <TrendingUp className="h-8 w-8 text-indigo-600" />
+            <div className="flex-shrink-0 p-3 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-lg">
+              <TrendingUp className="h-6 w-6 text-white" />
             </div>
-            <div className="ml-3">
-              <p className="text-sm text-gray-600">Rating Promedio</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.averageRating.toFixed(1)}</p>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Rating Promedio</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.averageRating.toFixed(1)}</p>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Controles y filtros */}
-      <div className="bg-white rounded-lg shadow-sm border p-6">
+      <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
           {/* Búsqueda y filtros */}
           <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
@@ -339,14 +341,14 @@ function ManageCoursesContent() {
                 placeholder="Buscar cursos..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="pl-10 pr-4 py-2 border border-gray-300/50 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/60 backdrop-blur-sm transition-all duration-200"
               />
             </div>
 
             <select
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
-              className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="border border-gray-300/50 rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/60 backdrop-blur-sm transition-all duration-200"
             >
               <option value="">Todas las categorías</option>
               {categories.map(category => (
@@ -357,7 +359,7 @@ function ManageCoursesContent() {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="border border-gray-300/50 rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/60 backdrop-blur-sm transition-all duration-200"
             >
               <option value="">Todos los estados</option>
               <option value="active">Activos</option>
@@ -376,7 +378,7 @@ function ManageCoursesContent() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+                  className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 disabled:opacity-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
                 >
                   <Trash2 className="h-4 w-4" />
                   <span>Eliminar ({selectedCourses.length})</span>
@@ -384,14 +386,14 @@ function ManageCoursesContent() {
               </Form>
             )}
 
-            <button className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50">
+            <button className="flex items-center space-x-2 px-4 py-2 border border-gray-300/50 rounded-xl hover:bg-white/80 hover:shadow-md transition-all duration-200 bg-white/60 backdrop-blur-sm transform hover:scale-105">
               <Download className="h-4 w-4" />
               <span>Exportar</span>
             </button>
 
             <Link
               to="/courses/create"
-              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
             >
               <Plus className="h-4 w-4" />
               <span>Nuevo Curso</span>
@@ -401,43 +403,43 @@ function ManageCoursesContent() {
       </div>
 
       {/* Tabla de cursos */}
-      <div className="bg-white shadow-sm border rounded-lg overflow-hidden">
+      <div className="bg-white/80 backdrop-blur-sm shadow-lg border border-gray-200/50 rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-gray-200/50">
+            <thead className="bg-gray-50/80 backdrop-blur-sm">
               <tr>
-                <th className="px-6 py-3 text-left">
+                <th className="px-6 py-4 text-left">
                   <input
                     type="checkbox"
                     checked={selectedCourses.length === filteredCourses.length && filteredCourses.length > 0}
                     onChange={handleSelectAll}
-                    className="h-4 w-4 text-blue-600 rounded border-gray-300"
+                    className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                   />
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                   Curso
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                {/* <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                   Instructor
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                </th> */}
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                   Estado
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                   Estudiantes
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                {/* <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                   Ingresos
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                </th> */}
+                {/* <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                   Rating
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                </th> */}
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                   Acciones
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white/60 backdrop-blur-sm divide-y divide-gray-200/50">
               {filteredCourses.map((course) => (
                 <CourseManagementRow
                   key={course.id}
@@ -452,15 +454,24 @@ function ManageCoursesContent() {
         </div>
 
         {filteredCourses.length === 0 && (
-          <div className="text-center py-12">
-            <BarChart3 className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No se encontraron cursos</h3>
-            <p className="text-gray-600">
-              {searchTerm || filterCategory || filterStatus
-                ? 'Intenta ajustar los filtros de búsqueda'
-                : 'Aún no hay cursos creados'
-              }
-            </p>
+          <div className="text-center py-16">
+            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-8 max-w-md mx-auto">
+              <BookOpen className="mx-auto h-16 w-16 text-gray-400 mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No se encontraron cursos</h3>
+              <p className="text-gray-600 mb-6">
+                {searchTerm || filterCategory || filterStatus
+                  ? 'Intenta ajustar los filtros de búsqueda'
+                  : 'Aún no hay cursos creados'
+                }
+              </p>
+              <Link
+                to="/courses/create"
+                className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Crear primer curso
+              </Link>
+            </div>
           </div>
         )}
       </div>
@@ -480,8 +491,6 @@ function CourseManagementRow({
   onSelect: () => void,
   isSubmitting: boolean 
 }) {
-  const [showActions, setShowActions] = useState(false);
-
   const getLevelColor = (level: CourseLevel) => {
     switch (level) {
       case CourseLevel.BEGINNER:
@@ -508,14 +517,22 @@ function CourseManagementRow({
     }
   };
 
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
   return (
-    <tr className={isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'}>
+    <tr className={`transition-all duration-200 ${isSelected ? 'bg-blue-50/80' : 'hover:bg-gray-50/80'}`}>
       <td className="px-6 py-4">
         <input
           type="checkbox"
           checked={isSelected}
           onChange={onSelect}
-          className="h-4 w-4 text-blue-600 rounded border-gray-300"
+          className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
         />
       </td>
 
@@ -524,17 +541,17 @@ function CourseManagementRow({
           {course.thumbnail && (
             <div className="flex-shrink-0 h-12 w-12 mr-4">
               <img 
-                className="h-12 w-12 rounded-lg object-cover" 
+                className="h-12 w-12 rounded-xl object-cover shadow-md" 
                 src={course.thumbnail} 
                 alt={course.title}
               />
             </div>
           )}
           <div>
-            <div className="text-sm font-medium text-gray-900">
+            <div className="text-sm font-semibold text-gray-900">
               <Link 
                 to={`/courses/${course.id}`}
-                className="hover:text-blue-600"
+                className="hover:text-blue-600 transition-colors"
               >
                 {course.title}
               </Link>
@@ -545,16 +562,21 @@ function CourseManagementRow({
               </span>
               <span className="text-xs text-gray-500">{course.category}</span>
             </div>
+            <div className="flex items-center text-xs text-gray-400 mt-1">
+              <Calendar className="h-3 w-3 mr-1" />
+              {course.duration}h
+            </div>
           </div>
         </div>
       </td>
 
-      <td className="px-6 py-4 text-sm text-gray-900">
-        {course.instructor}
-      </td>
+      {/* <td className="px-6 py-4">
+        <div className="text-sm font-medium text-gray-900">{course.instructor}</div>
+        <div className="text-xs text-gray-500">Creado: {formatDate(course.createdAt)}</div>
+      </td> */}
 
       <td className="px-6 py-4">
-        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+        <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
           course.isActive 
             ? 'bg-green-100 text-green-800' 
             : 'bg-red-100 text-red-800'
@@ -563,38 +585,52 @@ function CourseManagementRow({
         </span>
       </td>
 
-      <td className="px-6 py-4 text-sm text-gray-900">
+      <td className="px-6 py-4">
         <div>
-          <div className="font-medium">{course.enrollments}</div>
-          <div className="text-gray-500">{course.completionRate}% completado</div>
-        </div>
-      </td>
-
-      <td className="px-6 py-4 text-sm text-gray-900">
-        <div className="font-medium">${course.revenue.toFixed(2)}</div>
-      </td>
-
-      <td className="px-6 py-4 text-sm text-gray-900">
-        <div className="flex items-center">
-          <div className="flex text-yellow-400 mr-1">
-            {'★'.repeat(Math.floor(course.averageRating))}
+          <div className="text-sm font-semibold text-gray-900">{course.enrollments}/{course.maxStudents}</div>
+          <div className="text-xs text-gray-500">{course.completionRate}% completado</div>
+          <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+            <div 
+              className="bg-blue-600 h-1.5 rounded-full transition-all duration-200" 
+              style={{ width: `${(course.enrollments / course.maxStudents) * 100}%` }}
+            ></div>
           </div>
-          <span>{course.averageRating.toFixed(1)}</span>
         </div>
       </td>
 
-      <td className="px-6 py-4 text-sm font-medium relative">
+      {/* <td className="px-6 py-4">
+        <div className="text-sm font-semibold text-gray-900">${course.revenue.toFixed(2)}</div>
+        <div className="text-xs text-gray-500">${course.price}/estudiante</div>
+      </td> */}
+
+      {/* <td className="px-6 py-4">
+        <div className="flex items-center space-x-1">
+          <div className="flex text-yellow-400">
+            {Array.from({ length: 5 }, (_, i) => (
+              <Star 
+                key={i} 
+                className={`h-3 w-3 ${i < Math.floor(course.averageRating) ? 'fill-current' : ''}`} 
+              />
+            ))}
+          </div>
+          <span className="text-sm font-medium text-gray-900 ml-1">{course.averageRating.toFixed(1)}</span>
+        </div>
+      </td> */}
+
+      <td className="px-6 py-4 text-sm font-medium">
         <div className="flex items-center space-x-2">
           <Link
             to={`/courses/${course.id}`}
-            className="text-blue-600 hover:text-blue-900"
+            className="text-blue-600 hover:text-blue-900 transition-colors p-1 rounded-lg hover:bg-blue-50"
+            title="Ver detalles"
           >
             <Eye className="h-4 w-4" />
           </Link>
           
           <Link
             to={`/courses/${course.id}/edit`}
-            className="text-gray-600 hover:text-gray-900"
+            className="text-gray-600 hover:text-gray-900 transition-colors p-1 rounded-lg hover:bg-gray-50"
+            title="Editar curso"
           >
             <Edit className="h-4 w-4" />
           </Link>
@@ -605,7 +641,12 @@ function CourseManagementRow({
             <button
               type="submit"
               disabled={isSubmitting}
-              className={`${course.isActive ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'} disabled:opacity-50`}
+              className={`p-1 rounded-lg transition-all duration-200 disabled:opacity-50 ${
+                course.isActive 
+                  ? 'text-red-600 hover:text-red-900 hover:bg-red-50' 
+                  : 'text-green-600 hover:text-green-900 hover:bg-green-50'
+              }`}
+              title={course.isActive ? 'Desactivar curso' : 'Activar curso'}
             >
               {course.isActive ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
@@ -615,7 +656,7 @@ function CourseManagementRow({
             method="post" 
             className="inline"
             onSubmit={(e) => {
-              if (!confirm('¿Estás seguro de que quieres eliminar este curso?')) {
+              if (!confirm('¿Estás seguro de que quieres eliminar este curso? Esta acción no se puede deshacer.')) {
                 e.preventDefault();
               }
             }}
@@ -625,7 +666,8 @@ function CourseManagementRow({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="text-red-600 hover:text-red-900 disabled:opacity-50"
+              className="text-red-600 hover:text-red-900 disabled:opacity-50 transition-all duration-200 p-1 rounded-lg hover:bg-red-50"
+              title="Eliminar curso"
             >
               <Trash2 className="h-4 w-4" />
             </button>

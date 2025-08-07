@@ -3,7 +3,7 @@
 import { json, LoaderFunction } from "@remix-run/node";
 import { useLoaderData, useSearchParams } from "@remix-run/react";
 import { useState } from "react";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { Course, CourseLevel, CourseFilters } from "~/api/types/course.types";
 import { useCurrentUser } from "~/context/AuthContext";
 
@@ -240,36 +240,89 @@ export default function CoursesIndex() {
       />
 
       {/* Filtros y búsqueda */}
-      <CourseFiltersComponent
-        searchTerm={localSearch}
-        onSearchChange={setLocalSearch}
-        onSearchSubmit={handleSearch}
-        showFilters={showFilters}
-        onToggleFilters={() => setShowFilters(!showFilters)}
-        filterCategory={searchParams.get('category') || ''}
-        onCategoryChange={(value) => handleFilterChange('category', value)}
-        filterLevel={searchParams.get('level') || ''}
-        onLevelChange={(value) => handleFilterChange('level', value)}
-        categories={categories}
-        totalResults={courses.total}
-        onClearFilters={handleClearFilters}
-      />
+      <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-6">
+        <CourseFiltersComponent
+          searchTerm={localSearch}
+          onSearchChange={setLocalSearch}
+          onSearchSubmit={handleSearch}
+          showFilters={showFilters}
+          onToggleFilters={() => setShowFilters(!showFilters)}
+          filterCategory={searchParams.get('category') || ''}
+          onCategoryChange={(value) => handleFilterChange('category', value)}
+          filterLevel={searchParams.get('level') || ''}
+          onLevelChange={(value) => handleFilterChange('level', value)}
+          categories={categories}
+          totalResults={courses.total}
+          onClearFilters={handleClearFilters}
+        />
+      </div>
 
       {/* Grid de cursos */}
-      <div id="courses-grid">
-        <CourseGrid 
-          courses={courses.data} 
-          hasAdminRole={hasRole('admin') || hasRole('instructor')}
-        />
+      <div id="courses-grid" className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-6">
+        {courses.data.length > 0 ? (
+          <CourseGrid 
+            courses={courses.data} 
+            hasAdminRole={hasRole('admin') || hasRole('instructor')}
+          />
+        ) : (
+          <div className="text-center py-16">
+            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-8 max-w-md mx-auto">
+              <AlertCircle className="mx-auto h-16 w-16 text-gray-400 mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No se encontraron cursos</h3>
+              <p className="text-gray-600 mb-6">
+                {searchParams.toString() 
+                  ? 'Intenta ajustar los filtros de búsqueda'
+                  : 'Aún no hay cursos disponibles'
+                }
+              </p>
+              {(hasRole('admin') || hasRole('instructor')) && (
+                <a
+                  href="/courses/create"
+                  className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+                >
+                  Crear primer curso
+                </a>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Paginación */}
       {courses.total > courses.limit && (
-        <Pagination
-          currentPage={courses.page}
-          totalPages={Math.ceil(courses.total / courses.limit)}
-          onPageChange={handlePageChange}
-        />
+        <div className="flex justify-center">
+          <nav className="flex items-center space-x-2 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-3">
+            <button
+              disabled={courses.page <= 1}
+              onClick={() => handlePageChange(courses.page - 1)}
+              className="p-2 text-sm border border-gray-300/50 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50/80 transition-all duration-200 backdrop-blur-sm"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            
+            {Array.from({ length: Math.ceil(courses.total / courses.limit) }, (_, i) => i + 1).map(page => (
+              <button
+                key={page}
+                onClick={() => handlePageChange(page)}
+                className={`px-4 py-2 text-sm rounded-xl transition-all duration-200 ${
+                  page === courses.page
+                    ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg transform scale-105'
+                    : 'border border-gray-300/50 hover:bg-gray-50/80 backdrop-blur-sm hover:shadow-md hover:scale-105'
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+            
+            <button
+              disabled={courses.page >= Math.ceil(courses.total / courses.limit)}
+              onClick={() => handlePageChange(courses.page + 1)}
+              className="p-2 text-sm border border-gray-300/50 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50/80 transition-all duration-200 backdrop-blur-sm"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </nav>
+        </div>
       )}
     </div>
   );

@@ -48,6 +48,8 @@ export const loader: LoaderFunction = async ({ request }) => {
   const sortOrder = (url.searchParams.get('sortOrder') as 'asc' | 'desc') || 'asc';
   const limit = 20;
 
+  const tenantDomain = request.headers.get('host');
+
   try {
 
     const filters: SectionFilters = {
@@ -57,7 +59,7 @@ export const loader: LoaderFunction = async ({ request }) => {
       limit: parseInt(url.searchParams.get('limit') || '20'),
     };
 
-    const sections = await SectionApi.getAll(filters);
+    const sections = await SectionApi.getAll(filters, tenantDomain);
 
     console.log('Sections loaded:', sections);
     const { data, total, page, limit } = sections;

@@ -5,7 +5,7 @@ import { create } from "node_modules/axios/index.cjs";
 import { createApiClient } from "../client";
 import { API_CONFIG } from '../config';
 
-import { CreateTenantRequest, Section, SectionError, SectionErrorResponse, SectionFilters, SectionListResponse } from "../types/section.types";
+import { CreateTenantRequest, Section, SectionError, SectionErrorResponse, SectionFilters, SectionListResponse, UpdateSectionData } from "../types/section.types";
 
 // Primero actualiza tu API_CONFIG para incluir los endpoints de courses
 const SECTIONS_ENDPOINTS = {
@@ -32,7 +32,7 @@ function getCurrentDomain(): string {
 
 
 export const SectionApi = {
-    getAll: async (filters?: SectionFilters): Promise<SectionListResponse> => {
+    getAll: async (filters?: SectionFilters, tenant: any): Promise<SectionListResponse> => {
         try {
             const params = new URLSearchParams();
             
@@ -49,7 +49,11 @@ export const SectionApi = {
 
             const apiClient = createApiClient(getCurrentDomain());
             
-            const response = await apiClient.get(url);
+            const response = await apiClient.get(url, {
+              headers: {
+                'X-Tenant-Host': tenant
+              }
+            });
 
             return response.data;
 
@@ -58,7 +62,24 @@ export const SectionApi = {
             throw error;
         }
     },
+    checkSlugExists: async (slug: string): Promise<{ exists: boolean }> => {
+      try {
 
+        const apiClient = createApiClient(getCurrentDomain());
+        const response = await apiClient.get(
+          `${API_CONFIG.ENDPOINTS.SECTIONS.BASE}/check-slug/${encodeURIComponent(slug)}`
+        );
+
+        if( !response.data || typeof response.data.exists !== 'boolean') {
+          throw new Error('Invalid response from server');
+        }
+
+        return response.data;
+      } catch (error) {
+        console.error('Error in checkSlugExists:', error);
+        throw error;
+      }
+    },
     getById: async (sectionId: string): Promise<Section | SectionErrorResponse> => {
         try {
           const apiClient = createApiClient(getCurrentDomain());
@@ -111,7 +132,52 @@ export const SectionApi = {
         }
     },
 
-    create: async (sectionData: CreateTenantRequest): Promise<CreateTenantRequest | SectionErrorResponse> => {
+    create: async (sectionData: CreateTenantRequest, tenant: any): Promise<CreateTenantRequest | SectionErrorResponse> => {
+        try {
+            const apiClient = createApiClient(getCurrentDomain());
+
+            const response = await apiClient.post(API_CONFIG.ENDPOINTS.SECTIONS.CREATE, sectionData, {
+              headers: {
+                'X-Tenant-Host': tenant
+              }
+            });
+            return response.data;
+        } catch (error: any) {
+            console.error('Error al crear la sección:', error);
+            if (error.response) {
+                const status = error.response.status;
+                const errorData = error.response.data;
+                switch (status) {
+                    case 400:
+                        return {
+                            error: SectionError.VALIDATION_ERROR,
+                            message: errorData?.message || 'Error de validación',
+                        };
+                    case 403:
+                        return {
+                            error: SectionError.FORBIDDEN,
+                            message: 'Acceso denegado',
+                        };
+                    case 500:
+                        return {
+                            error: SectionError.NETWORK_ERROR,
+                            message: 'Error interno del servidor',
+                        };
+                    default:
+                        return {
+                            error: SectionError.NETWORK_ERROR,
+                            message: errorData?.message || 'Error del servidor',
+                        };
+                }
+            }
+            return {
+                error: SectionError.NETWORK_ERROR,
+                message: 'Error de conexión al crear la sección',
+            };
+        }
+    },
+
+    udpate: async (sectionData: UpdateSectionData): Promise<Section | SectionErrorResponse> => {
         try {
             const apiClient = createApiClient(getCurrentDomain());
             const response = await apiClient.post(API_CONFIG.ENDPOINTS.SECTIONS.CREATE, sectionData);

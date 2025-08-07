@@ -17,6 +17,7 @@ export interface ViewCustomizerProps {
         backgroundType?: 'imagen' | 'color';
         backgroundImage?: string;
         backgroundColor?: string;
+        allowCoursesHome?: boolean; // Solo para Home
     };
 }
 

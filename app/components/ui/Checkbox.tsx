@@ -2,31 +2,49 @@
 
 import { forwardRef } from 'react';
 
-interface CheckboxProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface CheckboxProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
   label: string;
   error?: string | null;
+  helperText?: string;
+  onChange?: (checked: boolean) => void;
 }
 
 const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
-  ({ label, error, className = '', ...props }, ref) => {
+  ({ label, error, helperText, className = '', onChange, ...props }, ref) => {
+    
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (onChange) {
+        onChange(e.target.checked);
+      }
+    };
+
     return (
       <div className="space-y-1">
-        <div className="flex items-center">
+        <div className="flex items-start">
           <input
             ref={ref}
             type="checkbox"
-            className={`h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded ${
+            className={`h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-0.5 ${
               error ? 'border-red-300' : ''
             } ${className}`}
+            onChange={handleChange}
             {...props}
           />
-          <label 
-            htmlFor={props.id} 
-            className="ml-2 block text-sm text-gray-700"
-          >
-            {label}
-            {props.required && <span className="text-red-500 ml-1">*</span>}
-          </label>
+          <div className="ml-2 flex-1">
+            <label 
+              htmlFor={props.id} 
+              className="block text-sm text-gray-700 cursor-pointer"
+            >
+              {label}
+              {props.required && <span className="text-red-500 ml-1">*</span>}
+            </label>
+            
+            {helperText && (
+              <p className="mt-1 text-xs text-gray-500">
+                {helperText}
+              </p>
+            )}
+          </div>
         </div>
         
         {error && (

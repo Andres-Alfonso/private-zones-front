@@ -1,5 +1,7 @@
 // app/types/tenant.types.ts
 
+import { HomeAdditionalSettings } from "~/components/tenant/viewCustomizers/types";
+
 export interface Tenant {
   id: string;
   name: string;
@@ -295,6 +297,28 @@ export interface CreateTenantRequest {
   groupsSettings?: ViewConfiguration;
   sectionsSettings?: ViewConfiguration;
   faqSettings?: ViewConfiguration;
+
+  allowSelfRegistration: boolean;
+  allowGoogleLogin: boolean;
+  allowFacebookLogin: boolean;
+  loginMethod: LoginMethod;
+  allowValidationStatusUsers: boolean;
+  
+  // Campos requeridos en registro
+  requireLastName: boolean;
+  requirePhone: boolean;
+  requireDocumentType: boolean;
+  requireDocument: boolean;
+  requireOrganization: boolean;
+  requirePosition: boolean;
+  requireGender: boolean;
+  requireCity: boolean;
+  requireAddress: boolean;
+
+  enableEmailNotifications: boolean;
+
+  // registrationSettings: RegistrationSettings;
+  // notificationSettings: NotificationSettings;
 }
 
 export interface TenantListResponse {
@@ -377,6 +401,40 @@ export interface TenantFormData {
   billingEmail?: string;
   expiresAt?: string;
   features?: string[];
+
+  termsEs?: string;
+  termsEn?: string;
+  privacyEs?: string;
+  privacyEn?: string;
+}
+
+export enum LoginMethod {
+  EMAIL = 'email',
+  DOCUMENT = 'document',
+  BOTH = 'both',
+}
+
+export interface RegistrationSettings {
+  allowSelfRegistration: boolean;
+  allowGoogleLogin: boolean;
+  allowFacebookLogin: boolean;
+  loginMethod: LoginMethod;
+  allowValidationStatusUsers: boolean;
+  
+  // Campos requeridos en registro
+  requireLastName: boolean;
+  requirePhone: boolean;
+  requireDocumentType: boolean;
+  requireDocument: boolean;
+  requireOrganization: boolean;
+  requirePosition: boolean;
+  requireGender: boolean;
+  requireCity: boolean;
+  requireAddress: boolean;
+}
+
+export interface NotificationSettings {
+  enableEmailNotifications: boolean;
 }
 
 export interface ViewConfiguration {
@@ -385,6 +443,7 @@ export interface ViewConfiguration {
   backgroundType: 'imagen' | 'color';
   backgroundImage: string;
   backgroundColor: string;
+  additionalSettings?: HomeAdditionalSettings;
 }
 
 export interface TenantValidationError {

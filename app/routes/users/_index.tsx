@@ -11,7 +11,7 @@ import {
   Clock, MapPin, Briefcase, Building2, FileText, Globe,
   Star, ChevronLeft, ChevronRight
 } from "lucide-react";
-import { UsersAPI } from "~/api/endpoints/users";
+import { USERS_ENDPOINTS, UsersAPI } from "~/api/endpoints/users";
 import { formatUserName, getUserStatus, formatUserRoles } from "~/utils/userValidation";
 import Alert from "~/components/ui/Alert";
 
@@ -91,6 +91,10 @@ interface LoaderData {
   tenants: Array<{ id: string; name: string }>;
   roles: Array<{ id: string; name: string; description: string }>;
   error: string | null;
+  flashMessage?: {    // Esta línea ya existe
+    type: 'success' | 'error';
+    message: string;
+  };
 }
 
 interface ActionData {
@@ -193,7 +197,8 @@ export const loader: LoaderFunction = async ({ request }) => {
       },
       tenants: [],
       roles: [],
-      error: errorMessage 
+      error: errorMessage,
+      flashMessage,  // ← AGREGAR esta línea
     });
   }
 };

@@ -3,7 +3,7 @@
 import type { MetaFunction, LoaderFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { Outlet, useLoaderData, Link, useParams, useLocation } from "@remix-run/react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
     BookOpen, Play, FileText, MessageSquare, ClipboardCheck,
     BarChart3, Users, Calendar, Clock, Star, ChevronRight, ChevronDown, ChevronUp,
@@ -12,88 +12,9 @@ import {
 } from "lucide-react";
 import AuthGuard from '~/components/AuthGuard';
 import { useCurrentUser } from '~/context/AuthContext';
-
-// Tipos para el layout de curso
-interface CourseLayoutData {
-    id: string;
-    slug: string;
-    isActive: boolean;
-    configuration: {
-        coverImage: string;
-        menuImage: string;
-        thumbnailImage: string;
-        colorTitle: string;
-        visibility: 'public' | 'private' | 'restricted';
-        status: 'draft' | 'published' | 'archived' | 'suspended';
-        category: string;
-        estimatedHours: number;
-        intensity: number;
-        startDate: string;
-        endDate: string;
-    };
-    translations: Array<{
-        languageCode: string;
-        title: string;
-        description: string;
-    }>;
-    modules: CourseModuleLayoutData[];
-    viewsConfig: Array<{
-        viewType: string;
-        backgroundType: 'color' | 'image';
-        backgroundColor: string;
-        backgroundImagePath: string;
-        customTitleEs: string;
-        titleColor: string;
-        coverTypeHeader: 'image' | 'video';
-        coverImageHeader: string;
-        coverTitleHeader: string;
-        coverDescriptionHeader: string;
-        layoutConfig: {
-            allowCoverHeader: boolean;
-            showTitle: boolean;
-            showDescription: boolean;
-        };
-    }>;
-    enrollmentInfo: {
-        isEnrolled: boolean;
-        enrollmentDate: string;
-        progress: number;
-        completedModules: number;
-        totalModules: number;
-    };
-    instructor: {
-        id: string;
-        name: string;
-        avatar?: string;
-        title?: string;
-    };
-}
-
-interface CourseModuleLayoutData {
-    id: string;
-    title: string;
-    description: string;
-    thumbnailImagePath: string;
-    items: ModuleItemLayoutData[];
-    stats?: {
-        totalItems: number;
-        completedItems: number;
-        totalDuration: number;
-    };
-}
-
-interface ModuleItemLayoutData {
-    id: string;
-    type: 'content' | 'forum' | 'task' | 'quiz' | 'survey' | 'activity';
-    referenceId: string;
-    order: number;
-    title: string;
-    description?: string;
-    duration?: number;
-    isCompleted?: boolean;
-    isLocked?: boolean;
-    isActive?: boolean;
-}
+import { CoursesAPI } from '~/api/endpoints/courses';
+import { CourseLayoutData, CourseModuleLayoutData } from "~/api/types/course.types";
+import { createApiClientFromRequest } from "~/api/client";
 
 interface LoaderLayoutData {
     course: CourseLayoutData;
@@ -132,14 +53,27 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     const currentPath = url.pathname;
 
     try {
+
+        if( !courseId){
+            throw new Error('Course ID is required');
+        }
+
+        // 1. Crear cliente autenticado
+        const authenticatedApiClient = createApiClientFromRequest(request);
+
+        // 2. Pasar como último parámetro
+        const course = await CoursesAPI.getById(courseId, authenticatedApiClient);
+        
         // 🔄 API CALLS - Reemplazar con llamadas reales
-        // const course = await CourseAPI.getById(courseId, { 
-        //   includeModules: true, 
-        //   includeConfig: true,
-        //   includeViewsConfig: true,
-        //   includeTranslations: true,
-        //   includeInstructor: true
-        // });
+        // const course = await CoursesAPI.getById(courseId, 
+        //     // { 
+        //     // includeModules: true, 
+        //     // includeConfig: true,
+        //     // includeViewsConfig: true,
+        //     // includeTranslations: true,
+        //     // includeInstructor: true
+        //     // }
+        // );
         // const userProgress = await CourseAPI.getUserProgress(courseId, userId);
         // const stats = await CourseAPI.getStats(courseId);
 
@@ -259,7 +193,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
         };
 
         return json<LoaderLayoutData>({
-            course: mockCourse,
+            course: course,
             currentPath,
             userProgress: mockUserProgress,
             stats: mockStats,
@@ -290,6 +224,7 @@ function CourseMakeLayoutContent() {
     const location = useLocation();
     const params = useParams();
     const { user } = useCurrentUser();
+    const mainContentRef = useRef(null);
 
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [expandedModules, setExpandedModules] = useState<string[]>(['1']);
@@ -318,7 +253,7 @@ function CourseMakeLayoutContent() {
     const courseTitle = course.translations[0]?.title || course.slug;
     const courseDescription = course.translations[0]?.description || '';
     const currentViewConfig = course.viewsConfig[0];
-    const titleColor = currentViewConfig?.titleColor || course.configuration.colorTitle || '#2563eb';
+    const titleColor = currentViewConfig?.titleColor || course.configuration?.colorTitle || '#2563eb';
 
     // Determinar si estamos en la vista principal del curso
     const isMainCourseView = location.pathname === `/make/courses/${course.id}`;
@@ -372,6 +307,35 @@ function CourseMakeLayoutContent() {
         }
     };
 
+    // Efecto para manejar el scroll al hash
+    useEffect(() => {
+        const hash = location.hash;
+        
+        if (hash === '#main-content') {
+        // Intento 1: Scroll inmediato si el elemento existe
+        scrollToMainContent();
+        
+        // Intento 2: Scroll después de un breve delay (por si el contenido se carga asíncronamente)
+        const timer = setTimeout(scrollToMainContent, 300);
+        
+        return () => clearTimeout(timer);
+        }
+    }, [location]);
+
+    // Función reutilizable para el scroll
+    const scrollToMainContent = () => {
+        if (mainContentRef.current) {
+        // Cierra la sidebar en móviles para ver el contenido
+        setSidebarOpen(false);
+        
+        // Scroll suave al elemento
+        mainContentRef.current.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+        });
+        }
+    };
+
     return (
         <div className="min-h-screen" style={backgroundStyle}>
 
@@ -381,7 +345,7 @@ function CourseMakeLayoutContent() {
                 <div
                     className="absolute inset-0 bg-cover bg-center bg-no-repeat"
                     style={{
-                        backgroundImage: `url(${course.configuration.coverImage || course.configuration.menuImage || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&h=400&fit=crop'})`
+                        backgroundImage: `url(${course.configuration?.coverImage || course.configuration?.menuImage || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&h=400&fit=crop'})`
                     }}
                 >
                     <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/30"></div>
@@ -444,7 +408,7 @@ function CourseMakeLayoutContent() {
                             {/* Card de imagen del curso */}
                             <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-3 shadow-2xl border border-white/20 flex-shrink-0">
                                 <img
-                                    src={course.configuration.thumbnailImage || course.configuration.menuImage || course.configuration.coverImage}
+                                    src={course.configuration?.thumbnailImage || course.configuration?.menuImage || course.configuration?.coverImage}
                                     alt={courseTitle}
                                     className="w-26 h-26 lg:w-30 lg:h-30 rounded-xl object-cover shadow-lg"
                                 />
@@ -466,19 +430,19 @@ function CourseMakeLayoutContent() {
                             <div className="flex-1 min-w-0">
                                 {/* Categoría y código */}
                                 <div className="flex flex-wrap items-center gap-3 mb-3">
-                                    {course.configuration.category && (
+                                    {course.configuration?.category && (
                                         <span className="px-3 py-1 bg-blue-500/20 text-blue-100 text-sm font-semibold rounded-full backdrop-blur-sm border border-blue-300/30">
-                                            {course.configuration.category}
+                                            {course.configuration?.category}
                                         </span>
                                     )}
-                                    {course.configuration.code && (
+                                    {course.configuration?.code && (
                                         <span className="px-3 py-1 bg-purple-500/20 text-purple-100 text-sm font-mono rounded-full backdrop-blur-sm border border-purple-300/30">
-                                            {course.configuration.code}
+                                            {course.configuration?.code}
                                         </span>
                                     )}
-                                    {course.configuration.acronym && (
+                                    {course.configuration?.acronym && (
                                         <span className="px-3 py-1 bg-indigo-500/20 text-indigo-100 text-sm font-bold rounded-full backdrop-blur-sm border border-indigo-300/30">
-                                            {course.configuration.acronym}
+                                            {course.configuration?.acronym}
                                         </span>
                                     )}
                                 </div>
@@ -508,7 +472,7 @@ function CourseMakeLayoutContent() {
                                     {/* Duración */}
                                     <div className="flex items-center space-x-1 bg-white/10 backdrop-blur-sm rounded-full px-3 py-2 border border-white/20">
                                         <Clock className="h-4 w-4 text-white/80" />
-                                        <span className="text-white/90">{course.configuration.estimatedHours}h total</span>
+                                        <span className="text-white/90">{course.configuration?.estimatedHours}h total</span>
                                     </div>
 
                                     {/* Rating y estudiantes */}
@@ -616,10 +580,10 @@ function CourseMakeLayoutContent() {
                                 <Award className="h-4 w-4 mr-1" />
                                 {stats.completionRate}% tasa de finalización
                             </span>
-                            {course.configuration.maxEnrollments && (
+                            {course.configuration?.maxEnrollments && (
                                 <span className="flex items-center">
                                     <Target className="h-4 w-4 mr-1" />
-                                    {course.configuration.maxEnrollments} plazas máximo
+                                    {course.configuration?.maxEnrollments} plazas máximo
                                 </span>
                             )}
                         </div>
@@ -640,7 +604,7 @@ function CourseMakeLayoutContent() {
             </div>
 
             <div className="container mx-auto px-4">
-                <div className="flex">
+                <div className="flex" id="main-content" ref={mainContentRef}>
                     {/* Sidebar - Module Navigation */}
                     <div className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 fixed lg:static inset-y-0 left-0 top-0 z-40 w-80 bg-white/90 backdrop-blur-sm shadow-xl border-r border-gray-200/50 transition-transform duration-300 ease-in-out overflow-y-auto lg:mt-0 mt-32`}>
                         {/* Mobile sidebar header */}
@@ -738,19 +702,17 @@ function CourseMakeLayoutContent() {
                                         {/* Module items (expandable) */}
                                         {isExpanded && !isLocked && module.items.length > 0 && (
                                             <div className="ml-4 mt-3 space-y-2 animate-fadeIn">
-                                                {module.items.map((item) => (
-                                                    <Link
-                                                        key={item.id}
-                                                        to={`/make/courses/${course.id}/${item.type}/${item.referenceId}`}
-                                                        className={`block p-3 rounded-lg border transition-all duration-200 ${item.isLocked
-                                                            ? 'border-gray-200/50 bg-gray-50/60 cursor-not-allowed'
-                                                            : item.isCompleted
-                                                                ? 'border-green-200/50 bg-green-50/60 hover:bg-green-50/80'
-                                                                : item.isActive
-                                                                    ? 'border-blue-300 bg-blue-50/80 shadow-md ring-2 ring-blue-200/50'
-                                                                    : 'border-gray-200/50 bg-white/60 hover:border-blue-200 hover:bg-blue-50/30 hover:shadow-md'
-                                                            }`}
-                                                    >
+                                                {module.items.map((item) => {
+                                                    const itemClasses = `block p-3 rounded-lg border transition-all duration-200 ${item.isLocked
+                                                        ? 'border-gray-200/50 bg-gray-50/60 cursor-not-allowed'
+                                                        : item.isCompleted
+                                                            ? 'border-green-200/50 bg-green-50/60 hover:bg-green-50/80'
+                                                            : item.isActive
+                                                                ? 'border-blue-300 bg-blue-50/80 shadow-md ring-2 ring-blue-200/50'
+                                                                : 'border-gray-200/50 bg-white/60 hover:border-blue-200 hover:bg-blue-50/30 hover:shadow-md'
+                                                        }`;
+
+                                                    const itemContent = (
                                                         <div className="flex items-center space-x-3">
                                                             <div className="flex-shrink-0">
                                                                 {getItemIcon(item.type, item.isCompleted || false, item.isLocked || false)}
@@ -767,6 +729,11 @@ function CourseMakeLayoutContent() {
                                                                             Actual
                                                                         </span>
                                                                     )}
+                                                                    {item.isLocked && (
+                                                                        <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded-full font-medium">
+                                                                            Bloqueado
+                                                                        </span>
+                                                                    )}
                                                                 </div>
                                                                 {item.duration && (
                                                                     <div className="flex items-center mt-1">
@@ -776,10 +743,34 @@ function CourseMakeLayoutContent() {
                                                                 )}
                                                             </div>
 
-                                                            <ChevronRight className="h-4 w-4 text-gray-400" />
+                                                            {!item.isLocked && <ChevronRight className="h-4 w-4 text-gray-400" />}
+                                                            {item.isLocked && <Lock className="h-4 w-4 text-gray-400" />}
                                                         </div>
-                                                    </Link>
-                                                ))}
+                                                    );
+
+                                                    // Renderizado condicional: Link solo si no está bloqueado
+                                                    return (
+                                                        <div key={item.id}>
+                                                            {item.isLocked ? (
+                                                                // Item bloqueado - solo div, sin navegación
+                                                                <div 
+                                                                    className={itemClasses}
+                                                                    title="Debes completar los elementos anteriores para acceder a este contenido"
+                                                                >
+                                                                    {itemContent}
+                                                                </div>
+                                                            ) : (
+                                                                // Item desbloqueado - con Link para navegación
+                                                                <Link
+                                                                    to={`/make/courses/${course.id}/${item.type}/${item.referenceId}#main-content`}
+                                                                    className={itemClasses}
+                                                                >
+                                                                    {itemContent}
+                                                                </Link>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
                                             </div>
                                         )}
                                     </div>

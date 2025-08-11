@@ -2,6 +2,7 @@
 
 import axios, { AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 import { API_CONFIG } from '../config';
+import { cookieHelpers } from '~/utils/cookieHelpers';
 
 // Referencia al contexto de auth (se asignará desde el AuthProvider)
 let authContextRef: any = null;
@@ -13,22 +14,20 @@ export const setAuthContext = (authContext: any) => {
 
 // Utilidades para el manejo de tokens
 const getStoredTokens = () => {
-  if (typeof window === 'undefined') return null;
+  if (typeof document === 'undefined') return null;
   try {
-    const stored = localStorage.getItem('auth_tokens');
-    return stored ? JSON.parse(stored) : null;
+    return cookieHelpers.getJSON('auth_tokens');
   } catch {
     return null;
   }
 };
 
 const clearStoredAuth = () => {
-  if (typeof window === 'undefined') return;
+  if (typeof document === 'undefined') return;
   try {
-    localStorage.removeItem('auth_tokens');
-    localStorage.removeItem('auth_user');
+    cookieHelpers.clearAuth();
   } catch (error) {
-    console.error('Error clearing auth storage:', error);
+    console.error('Error clearing auth cookies:', error);
   }
 };
 
@@ -113,14 +112,22 @@ export const setupAuthInterceptors = (axiosInstance: typeof axios) => {
 
           const { accessToken, refreshToken: newRefreshToken, user } = refreshResponse.data;
 
-          // Actualizar tokens en storage
-          localStorage.setItem('auth_tokens', JSON.stringify({
+          // Actualizar tokens en cookies
+          cookieHelpers.setJSON('auth_tokens', {
             accessToken,
             refreshToken: newRefreshToken,
             timestamp: Date.now(),
-          }));
+          }, {
+            maxAge: 30 * 24 * 60 * 60, // 30 días
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax'
+          });
           
-          localStorage.setItem('auth_user', JSON.stringify(user));
+          cookieHelpers.setJSON('auth_user', user, {
+            maxAge: 30 * 24 * 60 * 60, // 30 días
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax'
+          });
 
           // Actualizar el contexto de auth si está disponible
           if (authContextRef?.refreshTokens) {

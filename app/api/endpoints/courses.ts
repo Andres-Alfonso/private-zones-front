@@ -9,7 +9,8 @@ import {
   UpdateCourseRequest, 
   CourseListResponse,
   CourseFilters, 
-  CourseBasic
+  CourseBasic,
+  CourseLayoutData
 } from '../types/course.types';
 
 // Primero actualiza tu API_CONFIG para incluir los endpoints de courses
@@ -39,8 +40,10 @@ export const CoursesAPI = {
       return { error: 'Error de conexión' };
     }
   },
+
   // Obtener todos los cursos con filtros
-  getAll: async (filters?: CourseFilters): Promise<CourseListResponse> => {
+  getAll: async (filters?: CourseFilters, client?: AxiosInstance): Promise<CourseListResponse> => {
+    const apiClientToUse = client || apiClient;
     const params = new URLSearchParams();
     
     if (filters) {
@@ -54,61 +57,70 @@ export const CoursesAPI = {
     const queryString = params.toString();
     const url = `${COURSES_ENDPOINTS.BASE}${queryString ? `?${queryString}` : ''}`;
     
-    const response = await apiClient.get(url);
+    const response = await apiClientToUse.get(url);
     return response.data;
   },
 
   // Obtener curso por ID
-  getById: async (id: string): Promise<Course> => {
-    const response = await apiClient.get(COURSES_ENDPOINTS.BY_ID(id));
+  getById: async (id: string, client?: AxiosInstance): Promise<CourseLayoutData> => {
+    const apiClientToUse = client || apiClient;
+    const response = await apiClientToUse.get(COURSES_ENDPOINTS.BY_ID(id));
     return response.data;
   },
 
   // Crear nuevo curso
-  create: async (courseData: CreateCourseRequest): Promise<Course> => {
-    const response = await apiClient.post(COURSES_ENDPOINTS.BASE, courseData);
+  create: async (courseData: CreateCourseRequest, client?: AxiosInstance): Promise<Course> => {
+    const apiClientToUse = client || apiClient;
+    const response = await apiClientToUse.post(COURSES_ENDPOINTS.BASE, courseData);
     return response.data;
   },
 
   // Actualizar curso
-  update: async (id: string, courseData: UpdateCourseRequest): Promise<Course> => {
-    const response = await apiClient.put(COURSES_ENDPOINTS.BY_ID(id), courseData);
+  update: async (id: string, courseData: UpdateCourseRequest, client?: AxiosInstance): Promise<Course> => {
+    const apiClientToUse = client || apiClient;
+    const response = await apiClientToUse.put(COURSES_ENDPOINTS.BY_ID(id), courseData);
     return response.data;
   },
 
   // Eliminar curso
-  delete: async (id: string): Promise<{ success: boolean; message: string }> => {
-    const response = await apiClient.delete(COURSES_ENDPOINTS.BY_ID(id));
+  delete: async (id: string, client?: AxiosInstance): Promise<{ success: boolean; message: string }> => {
+    const apiClientToUse = client || apiClient;
+    const response = await apiClientToUse.delete(COURSES_ENDPOINTS.BY_ID(id));
     return response.data;
   },
 
   // Activar/Desactivar curso
-  toggleActive: async (id: string): Promise<Course> => {
-    const response = await apiClient.patch(`${COURSES_ENDPOINTS.BY_ID(id)}/toggle-active`);
+  toggleActive: async (id: string, client?: AxiosInstance): Promise<Course> => {
+    const apiClientToUse = client || apiClient;
+    const response = await apiClientToUse.patch(`${COURSES_ENDPOINTS.BY_ID(id)}/toggle-active`);
     return response.data;
   },
 
   // Obtener categorías disponibles
-  getCategories: async (): Promise<string[]> => {
-    const response = await apiClient.get(COURSES_ENDPOINTS.CATEGORIES);
+  getCategories: async (client?: AxiosInstance): Promise<string[]> => {
+    const apiClientToUse = client || apiClient;
+    const response = await apiClientToUse.get(COURSES_ENDPOINTS.CATEGORIES);
     return response.data;
   },
 
   // Obtener instructores disponibles
-  getInstructors: async (): Promise<Array<{ id: string; name: string; email: string }>> => {
-    const response = await apiClient.get(COURSES_ENDPOINTS.INSTRUCTORS);
+  getInstructors: async (client?: AxiosInstance): Promise<Array<{ id: string; name: string; email: string }>> => {
+    const apiClientToUse = client || apiClient;
+    const response = await apiClientToUse.get(COURSES_ENDPOINTS.INSTRUCTORS);
     return response.data;
   },
 
   // Inscribir estudiante en curso
-  enrollStudent: async (courseId: string): Promise<{ success: boolean; message: string }> => {
-    const response = await apiClient.post(`${COURSES_ENDPOINTS.BY_ID(courseId)}/enroll`);
+  enrollStudent: async (courseId: string, client?: AxiosInstance): Promise<{ success: boolean; message: string }> => {
+    const apiClientToUse = client || apiClient;
+    const response = await apiClientToUse.post(`${COURSES_ENDPOINTS.BY_ID(courseId)}/enroll`);
     return response.data;
   },
 
   // Desinscribir estudiante de curso
-  unenrollStudent: async (courseId: string): Promise<{ success: boolean; message: string }> => {
-    const response = await apiClient.delete(`${COURSES_ENDPOINTS.BY_ID(courseId)}/enroll`);
+  unenrollStudent: async (courseId: string, client?: AxiosInstance): Promise<{ success: boolean; message: string }> => {
+    const apiClientToUse = client || apiClient;
+    const response = await apiClientToUse.delete(`${COURSES_ENDPOINTS.BY_ID(courseId)}/enroll`);
     return response.data;
   }
 };

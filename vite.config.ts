@@ -17,6 +17,8 @@ export default defineConfig({
           route("auth", "routes/auth/_layout.tsx", () => {
             route("register", "routes/auth/register.tsx");
             route("login", "routes/auth/login.tsx");
+            route("forgot-password", "routes/auth/forgot-password.tsx");
+            route("reset-password", "routes/auth/reset-password.tsx");
           });
 
           route("home", "routes/home/_layout.tsx", () => {

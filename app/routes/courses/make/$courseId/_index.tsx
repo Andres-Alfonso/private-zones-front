@@ -262,7 +262,7 @@ export default function CourseIndex() {
                   </p>
                   
                   <Link
-                    to={`/make/courses/${data.courseId}/${data.userProgress.nextRecommendedItem.type}/${data.userProgress.nextRecommendedItem.referenceId}`}
+                    to={`/make/courses/${data.courseId}/${data.userProgress.nextRecommendedItem.type}/${data.userProgress.nextRecommendedItem.referenceId}#main-content`}
                     className="inline-flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-xl hover:bg-white/30 transition-all duration-200 transform hover:scale-105"
                   >
                     <Play className="h-5 w-5" />
@@ -442,7 +442,7 @@ export default function CourseIndex() {
                     {/* Action Button */}
                     {!isLocked && nextItem && (
                       <Link
-                        to={`/make/courses/${data.courseId}/${nextItem.type}/${nextItem.referenceId}`}
+                        to={`/make/courses/${data.courseId}/${nextItem.type}/${nextItem.referenceId}#main-content`}
                         className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
                       >
                         <Play className="h-5 w-5" />

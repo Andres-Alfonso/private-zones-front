@@ -14,7 +14,7 @@ import {
   BackendUser
 } from '../types/user.types';
 
-const USERS_ENDPOINTS = {
+export const USERS_ENDPOINTS = {
   BASE: '/v1/users',
   BY_ID: (id: string) => `/v1/users/${id}`,
   PROFILE: (id: string) => `/v1/users/${id}/profile`,

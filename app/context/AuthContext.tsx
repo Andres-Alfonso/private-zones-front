@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
 import { AuthState, AuthAction, LoginRequest, RegisterRequest, AuthContextType } from '~/api/types/auth.types';
 import { AuthAPI } from '~/api/endpoints/auth';
+import { cookieHelpers } from '~/utils/cookieHelpers';
 
 // Estado inicial
 const initialState: AuthState = {
@@ -77,58 +78,63 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
   }
 }
 
-// Utilidades para el manejo de tokens
-const TOKEN_STORAGE_KEY = 'auth_tokens';
-const USER_STORAGE_KEY = 'auth_user';
+// Utilidades para el manejo de tokens con cookies
+const TOKEN_COOKIE_NAME = 'auth_tokens';
+const USER_COOKIE_NAME = 'auth_user';
 
 const storage = {
   getTokens: () => {
-    if (typeof window === 'undefined') return null;
+    if (typeof document === 'undefined') return null;
     try {
-      const stored = localStorage.getItem(TOKEN_STORAGE_KEY);
-      return stored ? JSON.parse(stored) : null;
+      return cookieHelpers.getJSON(TOKEN_COOKIE_NAME);
     } catch {
       return null;
     }
   },
 
   setTokens: (accessToken: string, refreshToken: string) => {
-    if (typeof window === 'undefined') return;
+    if (typeof document === 'undefined') return;
     try {
-      localStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify({
+      cookieHelpers.setJSON(TOKEN_COOKIE_NAME, {
         accessToken,
         refreshToken,
         timestamp: Date.now(),
-      }));
+      }, {
+        maxAge: 30 * 24 * 60 * 60, // 30 días
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax'
+      });
     } catch (error) {
       console.error('Error saving tokens:', error);
     }
   },
 
   getUser: () => {
-    if (typeof window === 'undefined') return null;
+    if (typeof document === 'undefined') return null;
     try {
-      const stored = localStorage.getItem(USER_STORAGE_KEY);
-      return stored ? JSON.parse(stored) : null;
+      return cookieHelpers.getJSON(USER_COOKIE_NAME);
     } catch {
       return null;
     }
   },
 
   setUser: (user: any) => {
-    if (typeof window === 'undefined') return;
+    if (typeof document === 'undefined') return;
     try {
-      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+      cookieHelpers.setJSON(USER_COOKIE_NAME, user, {
+        maxAge: 30 * 24 * 60 * 60, // 30 días
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax'
+      });
     } catch (error) {
       console.error('Error saving user:', error);
     }
   },
 
   clear: () => {
-    if (typeof window === 'undefined') return;
+    if (typeof document === 'undefined') return;
     try {
-      localStorage.removeItem(TOKEN_STORAGE_KEY);
-      localStorage.removeItem(USER_STORAGE_KEY);
+      cookieHelpers.clearAuth();
     } catch (error) {
       console.error('Error clearing storage:', error);
     }

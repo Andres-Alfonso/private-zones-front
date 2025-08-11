@@ -3,6 +3,7 @@
 import type { ActionFunction, LoaderFunction, MetaFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useActionData, useLoaderData, useParams } from "@remix-run/react";
+import { AlertCircle } from "lucide-react";
 import { UsersAPI } from "~/api/endpoints/users";
 import { BackendUser, EditLoaderData, userToFormData } from "~/api/types/user.types";
 import UserForm from "~/components/users/UserForm";
@@ -61,7 +62,13 @@ export const loader: LoaderFunction = async ({ request, params }) => {
       }
     }
     
-    throw new Response(errorMessage, { status: error.response?.status || 500 });
+    //throw new Response(errorMessage, { status: error.response?.status || 500 });
+    return json<EditLoaderData>({
+      user: null,
+      tenants: [],
+      roles: [],
+      error: errorMessage
+    }, { status: error.response?.status || 500 });
   }
 };
 
@@ -182,9 +189,21 @@ export const action: ActionFunction = async ({ request, params }) => {
 };
 
 export default function EditUser() {
-  const { user, tenants, roles } = useLoaderData<EditLoaderData>();
+  const { user, tenants, roles, error } = useLoaderData<EditLoaderData>();
   const actionData = useActionData<ActionData>();
   const params = useParams();
+
+  if (error) {
+    return (
+      <div className="text-center py-16">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-8 max-w-md mx-auto">
+          <AlertCircle className="mx-auto h-16 w-16 text-red-400 mb-4" />
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Error</h1>
+          <p className="text-gray-600">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <UserForm

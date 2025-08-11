@@ -461,7 +461,7 @@ function ContentViewContent() {
               </Form>
             )} */}
 
-                        <Form method="post" className="inline">
+                        {/* <Form method="post" className="inline">
                             <input type="hidden" name="_action" value="bookmark" />
                             <button
                                 type="submit"
@@ -473,11 +473,11 @@ function ContentViewContent() {
                             >
                                 <Bookmark className="h-5 w-5" />
                             </button>
-                        </Form>
+                        </Form> */}
 
-                        <button className="p-3 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-50 transition-all duration-200 transform hover:scale-105">
+                        {/* <button className="p-3 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-50 transition-all duration-200 transform hover:scale-105">
                             <Share2 className="h-5 w-5" />
-                        </button>
+                        </button> */}
                     </div>
                 </div>
             </div>
@@ -645,7 +645,7 @@ function ContentViewContent() {
                                         {content.navigation.previousItem ? (
                                             <div className="flex-1">
                                                 <Link
-                                                    to={`/make/courses/${content.course.id}/${content.navigation.previousItem.type}/${content.navigation.previousItem.referenceId}`}
+                                                    to={`/make/courses/${content.course.id}/${content.navigation.previousItem.type}/${content.navigation.previousItem.referenceId}#main-content`}
                                                     className="flex items-center space-x-3 p-3 rounded-xl border border-gray-200/50 hover:border-blue-200 hover:bg-blue-50/30 transition-all duration-200 group w-full"
                                                 >
                                                     <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-blue-100 transition-colors">
@@ -665,7 +665,7 @@ function ContentViewContent() {
                                         {content.navigation.nextItem ? (
                                             <div className="flex-1 text-right">
                                                 <Link
-                                                    to={`/make/courses/${content.course.id}/${content.navigation.nextItem.type}/${content.navigation.nextItem.referenceId}`}
+                                                    to={`/make/courses/${content.course.id}/${content.navigation.nextItem.type}/${content.navigation.nextItem.referenceId}#main-content`}
                                                     className="flex items-center justify-end space-x-3 p-3 rounded-xl bg-green-50/60 border border-green-200/50 hover:border-green-200 hover:bg-green-50/30 transition-all duration-200 group w-full"
                                                 >
                                                     <div className="flex-1 min-w-0 text-right">

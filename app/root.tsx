@@ -1,4 +1,4 @@
-// app/root.tsx - Versión actualizada con AuthProvider
+// app/root.tsx - Versión actualizada con AuthProvider y cookies
 
 import {
   Links,
@@ -18,6 +18,7 @@ import TenantGuard from "./components/TenantGuard";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import { setAuthContext, setupAutoRefresh } from "./api/interceptors/authInterceptor";
+import { cookieHelpers } from "./utils/cookieHelpers";
 
 // Loader para obtener información del servidor (como el dominio)
 export const loader: LoaderFunction = async ({ request }) => {
@@ -139,9 +140,9 @@ export function ErrorBoundary({ error }: { error: Error }) {
                 
                 <button
                   onClick={() => {
-                    // Limpiar storage y redirigir al inicio
+                    // Limpiar cookies y redirigir al inicio
                     if (typeof window !== 'undefined') {
-                      localStorage.clear();
+                      cookieHelpers.clearAuth();
                       window.location.href = '/';
                     }
                   }}

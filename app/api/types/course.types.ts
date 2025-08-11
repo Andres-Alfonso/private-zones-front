@@ -13,6 +13,91 @@ export interface Course {
   viewsConfig: CourseViewConfig[];
 }
 
+export interface CourseModuleLayoutData {
+    id: string;
+    title: string;
+    description: string;
+    thumbnailImagePath: string;
+    items: ModuleItemLayoutData[];
+    stats?: {
+        totalItems: number;
+        completedItems: number;
+        totalDuration: number;
+    };
+}
+
+interface ModuleItemLayoutData {
+    id: string;
+    type: 'content' | 'forum' | 'task' | 'quiz' | 'survey' | 'activity';
+    referenceId: string;
+    order: number;
+    title: string;
+    description?: string;
+    duration?: number;
+    isCompleted?: boolean;
+    isLocked?: boolean;
+    isActive?: boolean;
+}
+
+// Tipos para el layout de curso
+export interface CourseLayoutData {
+    id: string;
+    slug: string;
+    isActive: boolean;
+    configuration: {
+      code: string;
+      acronym: string;
+        coverImage: string;
+        menuImage: string;
+        thumbnailImage: string;
+        colorTitle: string;
+        visibility: 'public' | 'private' | 'restricted';
+        status: 'draft' | 'published' | 'archived' | 'suspended';
+        category: string;
+        estimatedHours: number;
+        intensity: number;
+        startDate: string;
+        endDate: string;
+        maxEnrollments: number;
+    };
+    translations: Array<{
+        languageCode: string;
+        title: string;
+        description: string;
+    }>;
+    modules: CourseModuleLayoutData[];
+    viewsConfig: Array<{
+        viewType: string;
+        backgroundType: 'color' | 'image';
+        backgroundColor: string;
+        backgroundImagePath: string;
+        customTitleEs: string;
+        titleColor: string;
+        coverTypeHeader: 'image' | 'video';
+        coverImageHeader: string;
+        coverTitleHeader: string;
+        coverDescriptionHeader: string;
+        layoutConfig: {
+            allowCoverHeader: boolean;
+            showTitle: boolean;
+            showDescription: boolean;
+        };
+    }>;
+    enrollmentInfo: {
+        isEnrolled: boolean;
+        enrollmentDate: string;
+        progress: number;
+        completedModules: number;
+        totalModules: number;
+    };
+    instructor: {
+        id: string;
+        name: string;
+        avatar?: string;
+        title?: string;
+    };
+}
+
 export interface CourseConfiguration {
   id: string;
   courseId: string;
@@ -338,6 +423,7 @@ export interface CourseFormData {
 export interface CreateCourseRequest {
   // Información básica
   title: string;
+  tenantId: string;
   description: string;
   instructor: string;
   category: string;

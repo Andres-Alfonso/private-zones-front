@@ -23,6 +23,8 @@ import { CourseTranslationFields } from '~/components/courses/CourseTranslationF
 import { CourseViewConfigFields } from '~/components/courses/CourseViewConfigFields';
 import { CourseFormActions } from '~/components/courses/CourseFormActions';
 import { generateAcronym } from '~/utils/acronymGenerator';
+import { CoursesAPI } from '~/api/endpoints/courses';
+import { useTenant } from '~/context/TenantContext';
 
 interface ActionData {
   errors?: Array<{ field: string; message: string }>;
@@ -116,6 +118,8 @@ export const action: ActionFunction = async ({ request }) => {
     const courseData: CreateCourseRequest = {
       // Información básica
       title: formData.get('title') as string,
+      slug: formData.get('slug') as string,
+      tenantId: formData.get('tenantId') as string,
       description: formData.get('description') as string,
       // instructor: formData.get('instructor') as string,
       // category: formData.get('category') as string,
@@ -190,14 +194,14 @@ export const action: ActionFunction = async ({ request }) => {
     };
 
     // En producción, aquí llamarías al API
-    // const course = await CoursesAPI.create(courseData);
+    const course = await CoursesAPI.create(courseData);
     
     // Simulamos una respuesta exitosa
     const mockCourse = { id: 'new-course-id', ...courseData };
     
     return json<ActionData>({ 
       success: true,
-      courseId: mockCourse.id
+      courseId: course.id
     });
     
   } catch (error: any) {
@@ -223,10 +227,15 @@ function CreateCourseContent() {
   const navigation = useNavigation();
   const navigate = useNavigate();
 
+  const { state: tenantState } = useTenant();
+  const { tenant } = tenantState;
+
   const [formData, setFormData] = useState<Partial<any>>({
     // Básicos
     title: '',
     description: '',
+    slug: '',
+    tenantId: tenant?.id || '',
     // instructor: '',
     // category: '',
     subcategory: '',
@@ -641,6 +650,7 @@ function CreateCourseContent() {
           </div>
 
           <input type="hidden" name="title" value={formData.title || ''} />
+          <input type="hidden" name="slug" value={formData.slug || ''} />
           <input type="hidden" name="description" value={formData.description || ''} />
           <input type="hidden" name="subcategory" value={formData.subcategory || ''} />
           <input type="hidden" name="acronym" value={formData.acronym || ''} />
@@ -676,6 +686,7 @@ function CreateCourseContent() {
           <input type="hidden" name="forumsBackgroundType" value={formData.forumsBackgroundType || ''} />
           <input type="hidden" name="forumsBackgroundColor" value={formData.forumsBackgroundColor || ''} />
           <input type="hidden" name="forumsCustomTitle" value={formData.forumsCustomTitle || ''} />
+          <input type="hidden" name="tenantId" value={formData.tenantId || ''} />
 
           {/* Campos ocultos para archivos */}
           {Object.entries(imageFiles).map(([key, file]) => (

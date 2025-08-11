@@ -475,6 +475,8 @@ export interface EditLoaderData {
   user: UserFormData;
   tenants: Array<{ id: string; name: string }>;
   roles: Array<{ id: string; name: string; description?: string }>;
+  error?: string;
+  flashMessage?: string; // Mensaje de éxito o error
 }
 
 export interface UserValidationError {

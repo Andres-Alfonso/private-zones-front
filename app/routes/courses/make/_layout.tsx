@@ -13,20 +13,13 @@ import {
 import AuthGuard from '~/components/AuthGuard';
 import { useCurrentUser } from '~/context/AuthContext';
 import { CoursesAPI } from '~/api/endpoints/courses';
-import { CourseLayoutData, CourseModuleLayoutData } from "~/api/types/course.types";
+import { CourseLayoutData, CourseModuleLayoutData, CourseUserProgress } from "~/api/types/course.types";
 import { createApiClientFromRequest } from "~/api/client";
 
 interface LoaderLayoutData {
     course: CourseLayoutData;
     currentPath: string;
-    userProgress: {
-        overallProgress: number;
-        completedItems: string[];
-        lastAccessDate: string;
-        timeSpent: number;
-        currentModuleId?: string;
-        currentItemId?: string;
-    };
+    userProgress: CourseUserProgress;
     stats: {
         totalStudents: number;
         completionRate: number;
@@ -74,7 +67,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
         //     // includeInstructor: true
         //     // }
         // );
-        // const userProgress = await CourseAPI.getUserProgress(courseId, userId);
+        const userProgress = await CoursesAPI.getUserProgress(courseId, authenticatedApiClient);
         // const stats = await CourseAPI.getStats(courseId);
 
         // Datos mockeados para el layout
@@ -195,7 +188,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
         return json<LoaderLayoutData>({
             course: course,
             currentPath,
-            userProgress: mockUserProgress,
+            userProgress: userProgress,
             stats: mockStats,
             error: null
         });
@@ -571,7 +564,7 @@ function CourseMakeLayoutContent() {
 
                     {/* Información adicional en la parte inferior */}
                     <div className="mt-8 flex flex-wrap items-center justify-between text-sm">
-                        <div className="flex flex-wrap items-center gap-4 text-white/80">
+                        {/* <div className="flex flex-wrap items-center gap-4 text-white/80">
                             <span className="flex items-center">
                                 <Users className="h-4 w-4 mr-1" />
                                 {stats.totalStudents} estudiantes activos
@@ -586,7 +579,7 @@ function CourseMakeLayoutContent() {
                                     {course.configuration?.maxEnrollments} plazas máximo
                                 </span>
                             )}
-                        </div>
+                        </div> */}
 
                         {/* <div className="flex items-center space-x-2 mt-4 lg:mt-0">
                             <button className="p-2 bg-white/10 backdrop-blur-sm rounded-xl text-white/80 hover:text-white hover:bg-white/20 transition-all duration-200 border border-white/20">

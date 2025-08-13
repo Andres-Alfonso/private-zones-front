@@ -9,24 +9,25 @@ import {
     ChevronLeft, ChevronRight, CheckCircle, Clock, FileText,
     Download, Bookmark, Share2, MessageSquare, ThumbsUp, Eye,
     RotateCcw, Settings, PauseCircle, PlayCircle, SkipForward,
-    SkipBack, User, Calendar, Award, Target, ArrowLeft, ArrowRight
+    SkipBack, User, Calendar, Award, Target, ArrowLeft, ArrowRight, Check, ZoomOut, ZoomIn, ExternalLink,
+    Image, Package
 } from "lucide-react";
 import AuthGuard from '~/components/AuthGuard';
 import { useCurrentUser } from '~/context/AuthContext';
+import { ContentAPI } from "~/api/endpoints/contents";
+import { createApiClientFromRequest } from "~/api/client";
 
 interface ContentData {
     id: string;
     title: string;
     description: string;
     content: {
-        type: 'video' | 'text' | 'html' | 'pdf' | 'interactive';
-        videoUrl?: string;
-        videoThumbnail?: string;
-        videoDuration?: number;
-        textContent?: string;
-        htmlContent?: string;
-        pdfUrl?: string;
-        interactiveUrl?: string;
+        type: 'video' | 'image' | 'document' | 'embed' | 'scorm';
+        contentUrl?: string;
+        metadata?: {
+            videoDuration: number;
+            thumbnail: string;
+        };
     };
     module: {
         id: string;
@@ -91,14 +92,20 @@ export const meta: MetaFunction = ({ data }: { data: LoaderData }) => {
 export const loader: LoaderFunction = async ({ request, params }) => {
     const { courseId, contentId } = params;
 
+    if( !contentId){
+        throw new Error('Content ID is required');
+    }
+
     try {
+
+        const authenticatedApiClient = createApiClientFromRequest(request);
+
         // 🔄 API CALLS - Reemplazar con llamadas reales
-        // const content = await ContentAPI.getById(contentId, {
-        //   includeCourse: true,
-        //   includeModule: true,
-        //   includeNavigation: true,
-        //   userId: userId
-        // });
+        const content = await ContentAPI.getById(contentId, {
+            includeCourse: true,
+            includeModule: true,
+            includeNavigation: true,
+        }, authenticatedApiClient);
 
         // Datos mockeados para demostración
         const mockContent: ContentData = {
@@ -111,64 +118,10 @@ export const loader: LoaderFunction = async ({ request, params }) => {
                 videoThumbnail: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=800&h=450&fit=crop',
                 videoDuration: 1440, // 24 minutes in seconds
                 textContent: `
-# Formularios HTML: Elementos Interactivos
+                # Formularios HTML: Elementos Interactivos
 
-Los formularios son uno de los elementos más importantes en el desarrollo web, ya que permiten la interacción entre los usuarios y nuestras aplicaciones.
-
-## Elementos básicos de formularios
-
-### Input Types
-- **text**: Para texto simple
-- **email**: Para direcciones de correo
-- **password**: Para contraseñas
-- **number**: Para números
-- **date**: Para fechas
-
-### Ejemplo práctico
-
-\`\`\`html
-<form action="/submit" method="POST">
-  <div>
-    <label for="name">Nombre:</label>
-    <input type="text" id="name" name="name" required>
-  </div>
-  
-  <div>
-    <label for="email">Email:</label>
-    <input type="email" id="email" name="email" required>
-  </div>
-  
-  <div>
-    <label for="password">Contraseña:</label>
-    <input type="password" id="password" name="password" required>
-  </div>
-  
-  <button type="submit">Enviar</button>
-</form>
-\`\`\`
-
-## Validación de formularios
-
-La validación es crucial para garantizar que los datos enviados sean correctos y seguros.
-
-### Validación HTML5
-HTML5 proporciona atributos de validación integrados:
-- \`required\`: Campo obligatorio
-- \`pattern\`: Expresión regular
-- \`min/max\`: Valores mínimos y máximos
-- \`minlength/maxlength\`: Longitud de texto
-
-### Mejores prácticas
-1. Siempre validar en el servidor
-2. Proporcionar feedback visual claro
-3. Usar labels descriptivos
-4. Agrupar campos relacionados
-5. Implementar validación progresiva
-
-## Ejemplos interactivos
-
-A continuación veremos diferentes tipos de formularios y cómo implementarlos correctamente.
-        `
+                A continuación veremos diferentes tipos de formularios y cómo implementarlos correctamente.
+                `
             },
             module: {
                 id: '1',
@@ -209,7 +162,7 @@ A continuación veremos diferentes tipos de formularios y cómo implementarlos c
         };
 
         return json<LoaderData>({
-            content: mockContent,
+            content: content,
             error: null
         });
     } catch (error: any) {
@@ -343,6 +296,139 @@ function ContentViewContent() {
             </div>
         );
     }
+
+    const [currentPage, setCurrentPage] = useState(1);
+    const [zoomLevel, setZoomLevel] = useState(1);
+    const [isDocumentFullscreen, setIsDocumentFullscreen] = useState(false);
+    const [isImageFullscreen, setIsImageFullscreen] = useState(false);
+
+    // Handler para descargar archivos
+    const handleDownload = async () => {
+        try {
+            if (!content.content.contentUrl) return;
+            
+            const response = await fetch(content.content.contentUrl);
+            const blob = await response.blob();
+            
+            // Crear un enlace temporal para descargar
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            
+            // Determinar el nombre del archivo
+            const fileName = content.title || 'download';
+            const extension = content.content.contentUrl.split('.').pop() || '';
+            link.download = `${fileName}.${extension}`;
+            
+            // Ejecutar descarga
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Limpiar URL temporal
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Error downloading file:', error);
+            // Fallback: abrir en nueva ventana
+            window.open(content.content.contentUrl, '_blank');
+        }
+    };
+
+    // Handler para pantalla completa de documentos
+    const toggleDocumentFullscreen = () => {
+        setIsDocumentFullscreen(!isDocumentFullscreen);
+        
+        if (!isDocumentFullscreen) {
+            // Entrar en pantalla completa
+            const element = document.querySelector('.document-container') as any;
+            if (element) {
+                if (element.requestFullscreen) {
+                    element.requestFullscreen();
+                } else if (element.webkitRequestFullscreen) {
+                    element.webkitRequestFullscreen();
+                } else if (element.mozRequestFullScreen) {
+                    element.mozRequestFullScreen();
+                } else if (element.msRequestFullscreen) {
+                    element.msRequestFullscreen();
+                }
+            }
+        } else {
+            // Salir de pantalla completa
+            const doc = document as any;
+            if (doc.exitFullscreen) {
+                doc.exitFullscreen();
+            } else if (doc.webkitExitFullscreen) {
+                doc.webkitExitFullscreen();
+            } else if (doc.mozCancelFullScreen) {
+                doc.mozCancelFullScreen();
+            } else if (doc.msExitFullscreen) {
+                doc.msExitFullscreen();
+            }
+        }
+    };
+
+    // Handler para pantalla completa de imágenes
+    const toggleImageFullscreen = () => {
+        setIsImageFullscreen(!isImageFullscreen);
+        
+        if (!isImageFullscreen) {
+            // Entrar en pantalla completa
+            const element = document.querySelector('.image-container') as any;
+            if (element) {
+                if (element.requestFullscreen) {
+                    element.requestFullscreen();
+                } else if (element.webkitRequestFullscreen) {
+                    element.webkitRequestFullscreen();
+                } else if (element.mozRequestFullScreen) {
+                    element.mozRequestFullScreen();
+                } else if (element.msRequestFullscreen) {
+                    element.msRequestFullscreen();
+                }
+            }
+        } else {
+            // Salir de pantalla completa
+            const doc = document as any;
+            if (doc.exitFullscreen) {
+                doc.exitFullscreen();
+            } else if (doc.webkitExitFullscreen) {
+                doc.webkitExitFullscreen();
+            } else if (doc.mozCancelFullScreen) {
+                doc.mozCancelFullScreen();
+            } else if (doc.msExitFullscreen) {
+                doc.msExitFullscreen();
+            }
+        }
+    };
+
+    // Listener para detectar cambios de pantalla completa
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            const doc = document as any;
+            const isCurrentlyFullscreen = !!(
+                doc.fullscreenElement ||
+                doc.webkitFullscreenElement ||
+                doc.mozFullScreenElement ||
+                doc.msFullscreenElement
+            );
+            
+            if (!isCurrentlyFullscreen) {
+                setIsDocumentFullscreen(false);
+                setIsImageFullscreen(false);
+            }
+        };
+        
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+        document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+        
+        return () => {
+            document.removeEventListener('fullscreenchange', handleFullscreenChange);
+            document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+            document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+            document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+        };
+    }, []);
 
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
@@ -494,10 +580,19 @@ function ContentViewContent() {
                                         <video
                                             ref={videoRef}
                                             className="w-full aspect-video"
-                                            poster={content.content.videoThumbnail}
+                                            poster={content.content.metadata?.thumbnail}
                                             controls={false}
+                                            onLoadedMetadata={() => {
+                                                if (videoRef.current) {
+                                                    setDuration(content.content.metadata?.videoDuration || videoRef.current.duration);
+                                                    // Restore last position if available
+                                                    if (content.userProgress.lastPosition) {
+                                                        videoRef.current.currentTime = content.userProgress.lastPosition;
+                                                    }
+                                                }
+                                            }}
                                         >
-                                            <source src={content.content.videoUrl} type="video/mp4" />
+                                            <source src={content.content.contentUrl} type="video/mp4" />
                                             Tu navegador no soporta el elemento video.
                                         </video>
 
@@ -614,7 +709,318 @@ function ContentViewContent() {
                                                 </button>
                                             </div>
                                         )}
+
+                                        {/* Video Progress Indicator */}
+                                        {content.userProgress.isCompleted && (
+                                            <div className="absolute top-4 right-4 bg-green-500 rounded-full p-2">
+                                                <Check className="h-4 w-4 text-white" />
+                                            </div>
+                                        )}
                                     </>
+                                )}
+
+                                {content.content.type === 'image' && (
+                                    <>
+                                        <div className="w-full aspect-video bg-gray-900 flex items-center justify-center relative">
+                                            <img
+                                                src={content.content.contentUrl}
+                                                alt={content.title}
+                                                className="max-w-full max-h-full object-contain"
+                                                style={{ transform: `scale(${zoomLevel})` }}
+                                            />
+                                        </div>
+
+                                        {/* Image Controls */}
+                                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4 transition-opacity duration-200 group-hover:opacity-100 opacity-0">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center space-x-3">
+                                                    <button
+                                                        onClick={() => setZoomLevel(Math.max(0.25, zoomLevel - 0.25))}
+                                                        className="text-white hover:text-blue-400 transition-colors p-1"
+                                                        title="Zoom Out"
+                                                    >
+                                                        <ZoomOut className="h-5 w-5" />
+                                                    </button>
+
+                                                    <span className="text-white text-sm min-w-[60px] text-center">
+                                                        {Math.round(zoomLevel * 100)}%
+                                                    </span>
+
+                                                    <button
+                                                        onClick={() => setZoomLevel(Math.min(4, zoomLevel + 0.25))}
+                                                        className="text-white hover:text-blue-400 transition-colors p-1"
+                                                        title="Zoom In"
+                                                    >
+                                                        <ZoomIn className="h-5 w-5" />
+                                                    </button>
+
+                                                    <button
+                                                        onClick={() => setZoomLevel(1)}
+                                                        className="text-white hover:text-blue-400 transition-colors px-2 py-1 text-sm"
+                                                        title="Reset Zoom"
+                                                    >
+                                                        Reset
+                                                    </button>
+                                                </div>
+
+                                                <div className="flex items-center space-x-3">
+                                                    <button
+                                                        onClick={handleDownload}
+                                                        className="bg-white/20 backdrop-blur-sm rounded-full p-2 text-white hover:bg-white/30 transition-all duration-200 transform hover:scale-110"
+                                                        title="Descargar imagen"
+                                                    >
+                                                        <Download className="h-5 w-5" />
+                                                    </button>
+
+                                                    <button
+                                                        onClick={toggleImageFullscreen}
+                                                        className="text-white hover:text-blue-400 transition-colors p-1"
+                                                    >
+                                                        {isImageFullscreen ?
+                                                            <Minimize className="h-5 w-5" /> :
+                                                            <Maximize className="h-5 w-5" />
+                                                        }
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Completion Indicator */}
+                                        {content.userProgress.isCompleted && (
+                                            <div className="absolute top-4 right-4 bg-green-500 rounded-full p-2">
+                                                <Check className="h-4 w-4 text-white" />
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+
+                                {content.content.type === 'document' && (
+                                    <>
+                                        <div className="w-full aspect-[4/3] bg-gray-900 flex items-center justify-center relative">
+                                            {content.content.contentUrl?.toLowerCase().endsWith('.pdf') ? (
+                                                <iframe
+                                                    src={`${content.content.contentUrl}#page=${currentPage}&zoom=${Math.round(zoomLevel * 100)}`}
+                                                    className="w-full h-full"
+                                                    title={content.title}
+                                                />
+                                            ) : (
+                                                <div className="text-center text-white p-8">
+                                                    <FileText className="h-20 w-20 mx-auto mb-4 text-gray-400" />
+                                                    <h3 className="text-lg font-semibold mb-2">{content.title}</h3>
+                                                    <p className="text-sm text-gray-400 mb-4">
+                                                        {content.content.contentUrl?.split('.').pop()?.toUpperCase()} Document
+                                                    </p>
+                                                    <a
+                                                        href={content.content.contentUrl}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+                                                    >
+                                                        Abrir documento
+                                                    </a>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Document Controls */}
+                                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4 transition-opacity duration-200 group-hover:opacity-100 opacity-0">
+                                            {/* Page Navigation (for PDFs) */}
+                                            {content.content.contentUrl?.toLowerCase().endsWith('.pdf') && (
+                                                <div className="mb-4">
+                                                    <div className="flex items-center justify-center space-x-4">
+                                                        <button
+                                                            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                                                            disabled={currentPage <= 1}
+                                                            className="text-white hover:text-blue-400 transition-colors p-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        >
+                                                            <ChevronLeft className="h-5 w-5" />
+                                                        </button>
+                                                        
+                                                        <span className="text-white text-sm">
+                                                            Página {currentPage}
+                                                        </span>
+                                                        
+                                                        <button
+                                                            onClick={() => setCurrentPage(currentPage + 1)}
+                                                            className="text-white hover:text-blue-400 transition-colors p-1"
+                                                        >
+                                                            <ChevronRight className="h-5 w-5" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Controls */}
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center space-x-3">
+                                                    {content.content.contentUrl?.toLowerCase().endsWith('.pdf') && (
+                                                        <>
+                                                            <button
+                                                                onClick={() => setZoomLevel(Math.max(0.5, zoomLevel - 0.25))}
+                                                                className="text-white hover:text-blue-400 transition-colors p-1"
+                                                                title="Zoom Out"
+                                                            >
+                                                                <ZoomOut className="h-5 w-5" />
+                                                            </button>
+
+                                                            <span className="text-white text-sm min-w-[60px] text-center">
+                                                                {Math.round(zoomLevel * 100)}%
+                                                            </span>
+
+                                                            <button
+                                                                onClick={() => setZoomLevel(Math.min(3, zoomLevel + 0.25))}
+                                                                className="text-white hover:text-blue-400 transition-colors p-1"
+                                                                title="Zoom In"
+                                                            >
+                                                                <ZoomIn className="h-5 w-5" />
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                </div>
+
+                                                <div className="flex items-center space-x-3">
+                                                    <button
+                                                        onClick={handleDownload}
+                                                        className="bg-white/20 backdrop-blur-sm rounded-full p-2 text-white hover:bg-white/30 transition-all duration-200 transform hover:scale-110"
+                                                        title="Descargar documento"
+                                                    >
+                                                        <Download className="h-5 w-5" />
+                                                    </button>
+
+                                                    {content.content.contentUrl?.toLowerCase().endsWith('.pdf') && (
+                                                        <button
+                                                            onClick={toggleDocumentFullscreen}
+                                                            className="text-white hover:text-blue-400 transition-colors p-1"
+                                                        >
+                                                            {isDocumentFullscreen ?
+                                                                <Minimize className="h-5 w-5" /> :
+                                                                <Maximize className="h-5 w-5" />
+                                                            }
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Completion Indicator */}
+                                        {content.userProgress.isCompleted && (
+                                            <div className="absolute top-4 right-4 bg-green-500 rounded-full p-2">
+                                                <Check className="h-4 w-4 text-white" />
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+
+                                {content.content.type === 'embed' && (
+                                    <>
+                                        <div className="w-full aspect-video bg-gray-900 relative">
+                                            <iframe
+                                                src={content.content.contentUrl}
+                                                className="w-full h-full"
+                                                title={content.title}
+                                                allowFullScreen
+                                                frameBorder="0"
+                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                            />
+                                        </div>
+
+                                        {/* Embed Controls */}
+                                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4 transition-opacity duration-200 group-hover:opacity-100 opacity-0">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center space-x-3">
+                                                    <span className="text-white text-sm">Contenido externo</span>
+                                                </div>
+
+                                                <div className="flex items-center space-x-3">
+                                                    <a
+                                                        href={content.content.contentUrl}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="bg-white/20 backdrop-blur-sm rounded-full p-2 text-white hover:bg-white/30 transition-all duration-200 transform hover:scale-110"
+                                                        title="Abrir en nueva ventana"
+                                                    >
+                                                        <ExternalLink className="h-5 w-5" />
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Completion Indicator */}
+                                        {content.userProgress.isCompleted && (
+                                            <div className="absolute top-4 right-4 bg-green-500 rounded-full p-2">
+                                                <Check className="h-4 w-4 text-white" />
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+
+                                {content.content.type === 'scorm' && (
+                                    <>
+                                        <div className="w-full aspect-video bg-gray-900 relative">
+                                            <iframe
+                                                src={content.content.contentUrl}
+                                                className="w-full h-full"
+                                                title={content.title}
+                                                allowFullScreen
+                                                frameBorder="0"
+                                            />
+                                        </div>
+
+                                        {/* SCORM Controls */}
+                                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4 transition-opacity duration-200 group-hover:opacity-100 opacity-0">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center space-x-3">
+                                                    <span className="text-white text-sm">SCORM Package</span>
+                                                    {content.userProgress.timeSpent > 0 && (
+                                                        <span className="text-gray-300 text-sm">
+                                                            Tiempo: {formatTime(content.userProgress.timeSpent)}
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                {/* <div className="flex items-center space-x-3">
+                                                    <button
+                                                        onClick={handleResetProgress}
+                                                        className="bg-white/20 backdrop-blur-sm rounded px-3 py-1 text-white hover:bg-white/30 transition-all duration-200 text-sm"
+                                                        title="Reiniciar progreso"
+                                                    >
+                                                        Reiniciar
+                                                    </button>
+                                                </div> */}
+                                            </div>
+                                        </div>
+
+                                        {/* Completion Indicator */}
+                                        {content.userProgress.isCompleted && (
+                                            <div className="absolute top-4 right-4 bg-green-500 rounded-full p-2">
+                                                <Check className="h-4 w-4 text-white" />
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+
+                                {/* Content Info Overlay */}
+                                <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-sm rounded-lg px-3 py-2 text-white text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                    <div className="flex items-center space-x-2">
+                                        {content.content.type === 'video' && <Play className="h-4 w-4" />}
+                                        {content.content.type === 'image' && <Image className="h-4 w-4" />}
+                                        {content.content.type === 'document' && <FileText className="h-4 w-4" />}
+                                        {content.content.type === 'embed' && <ExternalLink className="h-4 w-4" />}
+                                        {content.content.type === 'scorm' && <Package className="h-4 w-4" />}
+                                        <span>{content.title}</span>
+                                    </div>
+                                    {content.metadata.duration > 0 && (
+                                        <div className="text-xs text-gray-300 mt-1">
+                                            Duración: {formatTime(content.metadata.duration)}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Bookmark Indicator */}
+                                {content.userProgress.bookmarked && (
+                                    <div className="absolute top-4 right-16 bg-yellow-500 rounded-full p-2">
+                                        <Bookmark className="h-4 w-4 text-white" />
+                                    </div>
                                 )}
                             </div>
 

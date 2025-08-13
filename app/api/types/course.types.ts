@@ -39,6 +39,15 @@ interface ModuleItemLayoutData {
     isActive?: boolean;
 }
 
+export interface CourseUserProgress{
+  overallProgress: number;
+  completedItems: string[];
+  lastAccessDate: string;
+  timeSpent: number;
+  currentModuleId?: string;
+  currentItemId?: string;
+}
+
 // Tipos para el layout de curso
 export interface CourseLayoutData {
     id: string;

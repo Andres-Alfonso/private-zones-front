@@ -10,7 +10,8 @@ import {
   CourseListResponse,
   CourseFilters, 
   CourseBasic,
-  CourseLayoutData
+  CourseLayoutData,
+  CourseUserProgress
 } from '../types/course.types';
 
 // Primero actualiza tu API_CONFIG para incluir los endpoints de courses
@@ -20,6 +21,7 @@ const COURSES_ENDPOINTS = {
   BY_TENANT: '/v1/courses/tenant',
   CATEGORIES: '/v1/courses/categories',
   INSTRUCTORS: '/v1/courses/instructors',
+  PROGRESS_USER: (id: string) => `/v1/courses/${id}/progress`,
 };
 
 export const CoursesAPI = {
@@ -65,6 +67,12 @@ export const CoursesAPI = {
   getById: async (id: string, client?: AxiosInstance): Promise<CourseLayoutData> => {
     const apiClientToUse = client || apiClient;
     const response = await apiClientToUse.get(COURSES_ENDPOINTS.BY_ID(id));
+    return response.data;
+  },
+
+  getUserProgress: async (id: string, client?: AxiosInstance): Promise<CourseUserProgress> => {
+    const apiClientToUse = client || apiClient;
+    const response = await apiClientToUse.get(COURSES_ENDPOINTS.PROGRESS_USER(id));
     return response.data;
   },
 

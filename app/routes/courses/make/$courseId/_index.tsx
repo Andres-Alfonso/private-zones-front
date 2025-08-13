@@ -9,6 +9,8 @@ import {
   PlayCircle, CheckCircle, Lock, Trophy, Target, Award,
   TrendingUp, Zap
 } from "lucide-react";
+import { createApiClientFromRequest } from "~/api/client";
+import { CoursesAPI } from "~/api/endpoints/courses";
 
 interface CourseModuleCard {
   id: string;
@@ -74,11 +76,19 @@ export const meta: MetaFunction = ({ data }: { data: LoaderData }) => {
 
 export const loader: LoaderFunction = async ({ request, params }) => {
   const { courseId } = params;
+
+  if( !courseId){
+    throw new Error('Course ID is required');
+  }
   
   try {
+
+    // 1. Crear cliente autenticado
+    const authenticatedApiClient = createApiClientFromRequest(request);
+
     // 🔄 API CALLS - Reemplazar con llamadas reales
-    // const courseData = await CourseAPI.getCourseIndex(courseId, userId);
-    // const userProgress = await CourseAPI.getUserProgress(courseId, userId);
+    const courseData = await CoursesAPI.getById(courseId, authenticatedApiClient);
+    const userProgress = await CoursesAPI.getUserProgress(courseId, authenticatedApiClient);
     // const achievements = await CourseAPI.getUserAchievements(courseId, userId);
     
     // Datos mockeados

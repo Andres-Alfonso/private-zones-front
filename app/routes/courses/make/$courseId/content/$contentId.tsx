@@ -178,20 +178,31 @@ export const action: ActionFunction = async ({ request, params }) => {
     const formData = await request.formData();
     const action = formData.get('_action') as string;
     const { courseId, contentId } = params;
+    
+    const authenticatedApiClient = createApiClientFromRequest(request);
+
+    if (!contentId) {
+        throw new Error('Course ID is required');
+    }
 
     try {
         switch (action) {
             case 'complete':
-                // 🔄 API CALL: await ContentAPI.markComplete(contentId, userId);
+                await ContentAPI.markComplete(contentId, authenticatedApiClient);
                 return json<ActionData>({ success: true, action: 'complete' });
 
-            case 'bookmark':
-                // 🔄 API CALL: await ContentAPI.toggleBookmark(contentId, userId);
-                return json<ActionData>({ success: true, action: 'bookmark' });
-
             case 'update-progress':
-                const position = parseInt(formData.get('position') as string);
-                // 🔄 API CALL: await ContentAPI.updateVideoProgress(contentId, userId, position);
+                const timeSpent = parseInt(formData.get('timeSpent') as string) || 10;
+                const progressPercentageStr = formData.get('progressPercentage') as string;
+                const progressPercentage = progressPercentageStr ? parseFloat(progressPercentageStr) : undefined;
+                
+                // 🟢 Pasar progressPercentage si está disponible
+                const progressData: any = { timeSpent };
+                if (progressPercentage !== undefined) {
+                    progressData.progressPercentage = progressPercentage;
+                }
+                
+                await ContentAPI.updateVideoProgress(contentId, progressData, authenticatedApiClient);
                 return json<ActionData>({ success: true, action: 'update-progress' });
 
             default:
@@ -263,18 +274,53 @@ function ContentViewContent() {
 
     // Auto-save progress every 10 seconds
     useEffect(() => {
+        let secondsCounter = 0;
+        
         const interval = setInterval(() => {
-            if (currentTime > 0 && Math.floor(currentTime) % 10 === 0) {
-                // Save progress silently
-                const formData = new FormData();
-                formData.append('_action', 'update-progress');
-                formData.append('position', Math.floor(currentTime).toString());
-                fetch('', { method: 'POST', body: formData });
+            console.log('inicio proceso de progreso', { secondsCounter, isPlaying });
+            
+            // Solo contar si el contenido se está "consumiendo"
+            const isContentActive = content.content.type === 'video' ? isPlaying : true;
+            
+            if (isContentActive) {
+                secondsCounter++;
+                console.log('incrementando contador:', secondsCounter);
+                
+                // Guardar progreso cada 10 segundos
+                if (secondsCounter >= 10) {
+                    console.log('guardamos progreso');
+                    
+                    // 🟢 VOLVER A FormData para compatibilidad con Remix
+                    const formData = new FormData();
+                    formData.append('_action', 'update-progress');
+                    formData.append('timeSpent', '10');
+                    
+                    if (content.content.type === 'video') {
+                        const video = videoRef.current;
+                        
+                        if (video && video.duration > 0 && video.currentTime > 0) {
+                            const progressPercentage = (video.currentTime / video.duration) * 100;
+                            formData.append('progressPercentage', progressPercentage.toString());
+                            console.log('enviando progreso video:', { timeSpent: 10, progressPercentage });
+                        }
+                    } else {
+                        formData.append('progressPercentage', '100');
+                        console.log('enviando progreso no-video:', { timeSpent: 10, progressPercentage: 100 });
+                    }
+                    
+                    fetch('', { 
+                        method: 'POST', 
+                        body: formData  // Sin Content-Type, el browser lo pone automáticamente
+                    });
+                    
+                    // Reset counter
+                    secondsCounter = 0;
+                }
             }
         }, 1000);
 
         return () => clearInterval(interval);
-    }, [currentTime]);
+    }, [content.content.type, isPlaying]);
 
     if (error || !content) {
         return (
@@ -533,19 +579,19 @@ function ContentViewContent() {
                             </div>
                         )}
 
-                        {/* {!content.userProgress.isCompleted && (
-              <Form method="post" className="inline">
-                <input type="hidden" name="_action" value="complete" />
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 disabled:opacity-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
-                >
-                  <CheckCircle className="h-4 w-4" />
-                  <span>Marcar como completado</span>
-                </button>
-              </Form>
-            )} */}
+                        {!content.userProgress.isCompleted && (
+                        <Form method="post" className="inline">
+                            <input type="hidden" name="_action" value="complete" />
+                            <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 disabled:opacity-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+                            >
+                            <CheckCircle className="h-4 w-4" />
+                            <span>Marcar como completado</span>
+                            </button>
+                        </Form>
+                        )}
 
                         {/* <Form method="post" className="inline">
                             <input type="hidden" name="_action" value="bookmark" />
@@ -584,7 +630,7 @@ function ContentViewContent() {
                                             controls={false}
                                             onLoadedMetadata={() => {
                                                 if (videoRef.current) {
-                                                    setDuration(content.content.metadata?.videoDuration || videoRef.current.duration);
+                                                    setDuration(videoRef.current.duration);
                                                     // Restore last position if available
                                                     if (content.userProgress.lastPosition) {
                                                         videoRef.current.currentTime = content.userProgress.lastPosition;
@@ -977,16 +1023,6 @@ function ContentViewContent() {
                                                         </span>
                                                     )}
                                                 </div>
-
-                                                {/* <div className="flex items-center space-x-3">
-                                                    <button
-                                                        onClick={handleResetProgress}
-                                                        className="bg-white/20 backdrop-blur-sm rounded px-3 py-1 text-white hover:bg-white/30 transition-all duration-200 text-sm"
-                                                        title="Reiniciar progreso"
-                                                    >
-                                                        Reiniciar
-                                                    </button>
-                                                </div> */}
                                             </div>
                                         </div>
 
@@ -1088,61 +1124,57 @@ function ContentViewContent() {
                                         )}
                                     </div>
                                 </div>
-
-
-                                {/* Text Content */}
-                                {/* {content.content.textContent && (
-                                    <div className="mt-6 prose max-w-none">
-                                        <div
-                                            className="text-gray-700 leading-relaxed"
-                                            dangerouslySetInnerHTML={{
-                                                __html: content.content.textContent
-                                                    .replace(/\n/g, '<br/>')
-                                                    .replace(/```html([\s\S]*?)```/g, '<pre class="bg-gray-100 p-4 rounded-lg overflow-x-auto"><code>$1</code></pre>')
-                                                    .replace(/`([^`]+)`/g, '<code class="bg-gray-100 px-1 py-0.5 rounded">$1</code>')
-                                                    .replace(/### (.*)/g, '<h3 class="text-lg font-semibold mt-6 mb-3">$1</h3>')
-                                                    .replace(/## (.*)/g, '<h2 class="text-xl font-bold mt-8 mb-4">$1</h2>')
-                                                    .replace(/# (.*)/g, '<h1 class="text-2xl font-bold mt-10 mb-6">$1</h1>')
-                                            }}
-                                        />
-                                    </div>
-                                )} */}
                             </div>
                         </div>
 
                         {/* Sidebar */}
-                        {/* <div className="lg:col-span-1"> */}
-                            {/* <div className="sticky top-6 space-y-6"> */}
+                        <div className="lg:col-span-1">
+                            <div className="sticky top-6 space-y-6">
                                 {/* Progress Card */}
-                                {/* <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-6">
+                                <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-6">
                                     <h3 className="font-semibold text-gray-900 mb-4">Tu Progreso</h3>
 
                                     <div className="space-y-4">
-                                        <div>
-                                            <div className="flex justify-between text-sm mb-2">
-                                                <span>Video completado</span>
-                                                <span className="font-semibold">{Math.round(progress)}%</span>
+                                        {/* Solo mostrar barra de progreso para videos */}
+                                        {content.content.type === 'video' && (
+                                            <div>
+                                                <div className="flex justify-between text-sm mb-2">
+                                                    <span>Video completado</span>
+                                                    <span className="font-semibold">{Math.round(progress)}%</span>
+                                                </div>
+                                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                                    <div
+                                                        className="h-2 rounded-full transition-all duration-500"
+                                                        style={{
+                                                            width: `${progress}%`,
+                                                            background: `linear-gradient(to right, ${progressColor}, ${progressColor})`
+                                                        }}
+                                                    ></div>
+                                                </div>
                                             </div>
-                                            <div className="w-full bg-gray-200 rounded-full h-2">
-                                                <div
-                                                    className="h-2 rounded-full transition-all duration-500"
-                                                    style={{
-                                                        width: `${progress}%`,
-                                                        background: `linear-gradient(to right, ${progressColor}, ${progressColor})`
-                                                    }}
-                                                ></div>
-                                            </div>
-                                        </div>
+                                        )}
 
                                         <div className="grid grid-cols-2 gap-3 text-sm">
                                             <div className="text-center p-3 bg-blue-50/60 rounded-xl">
                                                 <div className="font-semibold text-blue-900">{formatTime(content.userProgress.timeSpent)}</div>
                                                 <div className="text-blue-600">Tiempo invertido</div>
                                             </div>
-                                            <div className="text-center p-3 bg-green-50/60 rounded-xl">
-                                                <div className="font-semibold text-green-900">{formatTime(duration)}</div>
-                                                <div className="text-green-600">Duración total</div>
-                                            </div>
+                                            {content.content.type === 'video' ? (
+                                                <div className="text-center p-3 bg-green-50/60 rounded-xl">
+                                                    <div className="font-semibold text-green-900">{formatTime(duration)}</div>
+                                                    <div className="text-green-600">Duración total</div>
+                                                </div>
+                                            ) : (
+                                                <div className="text-center p-3 bg-gray-50/60 rounded-xl">
+                                                    <div className="font-semibold text-gray-900">
+                                                        {content.content.type === 'image' && 'Imagen'}
+                                                        {content.content.type === 'document' && 'Documento'}
+                                                        {content.content.type === 'embed' && 'Contenido'}
+                                                        {content.content.type === 'scorm' && 'SCORM'}
+                                                    </div>
+                                                    <div className="text-gray-600">Tipo contenido</div>
+                                                </div>
+                                            )}
                                         </div>
 
                                         {content.userProgress.isCompleted && (
@@ -1157,78 +1189,9 @@ function ContentViewContent() {
                                             </div>
                                         )}
                                     </div>
-                                </div> */}
-
-                                {/* Module Navigation */}
-                                {/* <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-6 mt-6">
-                                    <h3 className="font-semibold text-gray-900 mb-4">Navegación</h3>
-
-                                    <div className="space-y-3">
-                                        {content.navigation.previousItem && (
-                                            <Link
-                                                to={`/make/courses/${content.course.id}/${content.navigation.previousItem.type}/${content.navigation.previousItem.referenceId}`}
-                                                className="flex items-center space-x-3 p-3 rounded-xl border border-gray-200/50 hover:border-blue-200 hover:bg-blue-50/30 transition-all duration-200 group"
-                                            >
-                                                <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-blue-100 transition-colors">
-                                                    <ArrowLeft className="h-4 w-4 text-gray-600 group-hover:text-blue-600" />
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="text-xs text-gray-500 uppercase tracking-wide">Anterior</div>
-                                                    <div className="font-medium text-gray-900 text-sm truncate">{content.navigation.previousItem.title}</div>
-                                                </div>
-                                            </Link>
-                                        )}
-
-                                        {content.navigation.nextItem && (
-                                            <Link
-                                                to={`/make/courses/${content.course.id}/${content.navigation.nextItem.type}/${content.navigation.nextItem.referenceId}`}
-                                                className="flex items-center space-x-3 p-3 rounded-xl bg-green-50/60 border border-green-200/50 hover:border-green-200 hover:bg-green-50/30 transition-all duration-200 group"
-                                            >
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="text-xs text-green-500 uppercase tracking-wide">Siguiente</div>
-                                                    <div className="font-medium text-green-900 text-sm truncate">{content.navigation.nextItem.title}</div>
-                                                </div>
-                                                <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-green-100 transition-colors">
-                                                    <ArrowRight className="h-4 w-4 text-green-600 group-hover:text-green-600" />
-                                                </div>
-                                            </Link>
-                                        )}
-                                    </div>
-                                </div> */}
-
-                                {/* Content Metadata */}
-                                {/* <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-6">
-                                    <h3 className="font-semibold text-gray-900 mb-4">Información</h3>
-                                    
-                                    <div className="space-y-3 text-sm">
-                                        <div className="flex justify-between">
-                                        <span className="text-gray-600">Dificultad:</span>
-                                        <span className={`font-medium px-2 py-1 rounded-full text-xs ${
-                                            content.metadata.difficulty === 'beginner' ? 'bg-green-100 text-green-800' :
-                                            content.metadata.difficulty === 'intermediate' ? 'bg-yellow-100 text-yellow-800' :
-                                            'bg-red-100 text-red-800'
-                                        }`}>
-                                            {content.metadata.difficulty === 'beginner' ? 'Principiante' :
-                                            content.metadata.difficulty === 'intermediate' ? 'Intermedio' :
-                                            'Avanzado'}
-                                        </span>
-                                        </div>
-                                        
-                                        <div className="flex justify-between">
-                                        <span className="text-gray-600">Duración:</span>
-                                        <span className="font-medium">{formatTime(content.metadata.duration)}</span>
-                                        </div>
-                                        
-                                        <div className="flex justify-between">
-                                        <span className="text-gray-600">Actualizado:</span>
-                                        <span className="font-medium">
-                                            {new Date(content.metadata.updatedAt).toLocaleDateString()}
-                                        </span>
-                                        </div>
-                                    </div>
-                                </div> */}
-                            {/* </div> */}
-                        {/* </div> */}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

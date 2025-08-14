@@ -53,13 +53,13 @@ interface CourseIndexData {
       moduleTitle: string;
     };
   };
-  achievements: Array<{
-    id: string;
-    title: string;
-    description: string;
-    icon: string;
-    unlockedAt?: string;
-  }>;
+  // achievements: Array<{
+  //   id: string;
+  //   title: string;
+  //   description: string;
+  //   icon: string;
+  //   unlockedAt?: string;
+  // }>;
 }
 
 interface LoaderData {
@@ -90,6 +90,11 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     const courseData = await CoursesAPI.getById(courseId, authenticatedApiClient);
     const userProgress = await CoursesAPI.getUserProgress(courseId, authenticatedApiClient);
     // const achievements = await CourseAPI.getUserAchievements(courseId, userId);
+
+    const combined: CourseIndexData = {
+      ...courseData,
+      userProgress
+    };
     
     // Datos mockeados
     const mockData: CourseIndexData = {
@@ -167,33 +172,11 @@ export const loader: LoaderFunction = async ({ request, params }) => {
           title: 'Evaluación HTML Básico',
           moduleTitle: 'Fundamentos de HTML'
         }
-      },
-      achievements: [
-        {
-          id: '1',
-          title: 'Primer Paso',
-          description: 'Completaste tu primer contenido',
-          icon: '🎯',
-          unlockedAt: '2024-03-10T10:00:00Z'
-        },
-        {
-          id: '2',
-          title: 'HTML Master',
-          description: 'Dominaste los fundamentos de HTML',
-          icon: '📝',
-          unlockedAt: '2024-03-12T15:30:00Z'
-        },
-        {
-          id: '3',
-          title: 'Constancia',
-          description: 'Completa un módulo completo',
-          icon: '⭐',
-        }
-      ]
+      }
     };
 
     return json<LoaderData>({ 
-      data: mockData,
+      data: combined,
       error: null 
     });
   } catch (error: any) {
@@ -253,8 +236,9 @@ export default function CourseIndex() {
         {/* Quick Actions & Progress */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           {/* Continue Learning */}
-          {data.userProgress.nextRecommendedItem && (
-            <div className="lg:col-span-2">
+          <div className="lg:col-span-2">
+            {data.userProgress.nextRecommendedItem ? (
+              // Contenido cuando hay siguiente ítem recomendado
               <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-xl p-6 text-white relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
                 <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full -ml-12 -mb-12"></div>
@@ -280,8 +264,32 @@ export default function CourseIndex() {
                   </Link>
                 </div>
               </div>
-            </div>
-          )}
+            ) : (
+              // Mensaje de completación cuando no hay siguiente ítem
+              <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl shadow-xl p-6 text-white relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
+                <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full -ml-12 -mb-12"></div>
+                
+                <div className="relative text-center">
+                  <div className="flex justify-center mb-4">
+                    <div className="bg-white/20 rounded-full p-3">
+                      <Trophy className="h-8 w-8" />
+                    </div>
+                  </div>
+                  <h3 className="text-2xl font-bold mb-2">
+                    ¡Felicitaciones!
+                  </h3>
+                  <p className="text-green-100 mb-4">
+                    Has completado el curso exitosamente
+                  </p>
+                  <div className="inline-flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-xl">
+                    <CheckCircle className="h-5 w-5" />
+                    <span>Curso Completado</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Progress Summary */}
           <div className="space-y-4">

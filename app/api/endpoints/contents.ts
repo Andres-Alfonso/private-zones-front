@@ -4,6 +4,8 @@ import { AxiosInstance } from 'axios';
 const CONTENTS_ENDPOINTS = {
   BASE: '/v1/contents',
   BY_ID: (id: string) => `/v1/contents/${id}`,
+  COMPLETE: (id: string) => `/v1/contents/${id}/complete`,
+  PROGRESS: (id: string) => `/v1/contents/${id}/progress`,
 };
 
 // Tipos para las opciones y respuesta
@@ -11,6 +13,16 @@ export interface GetContentOptions {
   includeCourse?: boolean;
   includeModule?: boolean;
   includeNavigation?: boolean;
+}
+
+export interface ProgressUpdateData {
+  timeSpent?: number;
+  progressPercentage?: number;
+}
+
+export interface ProgressResponse {
+  success: boolean;
+  message?: string;
 }
 
 export interface ContentResponse {
@@ -87,6 +99,28 @@ export const ContentAPI = {
     const url = `${CONTENTS_ENDPOINTS.BY_ID(contentId)}${params.toString() ? `?${params.toString()}` : ''}`;
     
     const response = await authenticatedApiClient.get<ContentResponse>(url);
+    return response.data;
+  },
+
+  async markComplete(
+    contentId: string,
+    authenticatedApiClient: AxiosInstance
+  ): Promise<ProgressResponse> {
+    const response = await authenticatedApiClient.post<ProgressResponse>(
+      CONTENTS_ENDPOINTS.COMPLETE(contentId)
+    );
+    return response.data;
+  },
+
+  async updateVideoProgress(
+    contentId: string,
+    progressData: ProgressUpdateData,
+    authenticatedApiClient: AxiosInstance
+  ): Promise<ProgressResponse> {
+    const response = await authenticatedApiClient.post<ProgressResponse>(
+      CONTENTS_ENDPOINTS.PROGRESS(contentId),
+      progressData
+    );
     return response.data;
   }
 };

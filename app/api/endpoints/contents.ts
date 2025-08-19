@@ -1,36 +1,37 @@
 // app/api/endpoints/contents.ts
-import { AxiosInstance } from 'axios';
+import { AxiosInstance } from "axios";
+import apiClient from "../client";
 
 const CONTENTS_ENDPOINTS = {
-  BASE: '/v1/contents',
-  BY_ID: (id: string) => `/v1/contents/${id}`,
-  COMPLETE: (id: string) => `/v1/contents/${id}/complete`,
-  PROGRESS: (id: string) => `/v1/contents/${id}/progress`,
+    BASE: '/v1/contents',
+    BY_ID: (id: string) => `/v1/contents/${id}`,
+    COMPLETE: (id: string) => `/v1/contents/${id}/complete`,
+    PROGRESS: (id: string) => `/v1/contents/${id}/progress`,
 };
 
 // Tipos para las opciones y respuesta
 export interface GetContentOptions {
-  includeCourse?: boolean;
-  includeModule?: boolean;
-  includeNavigation?: boolean;
+    includeCourse?: boolean;
+    includeModule?: boolean;
+    includeNavigation?: boolean;
 }
 
 export interface ProgressUpdateData {
-  timeSpent?: number;
-  progressPercentage?: number;
+    timeSpent?: number;
+    progressPercentage?: number;
 }
 
 export interface ProgressResponse {
-  success: boolean;
-  message?: string;
+    success: boolean;
+    message?: string;
 }
 
 export interface ContentResponse {
-  id: string;
+    id: string;
     title: string;
     description: string;
     content: {
-        type: 'video' | 'image' | 'document' | 'embed';
+        type: "video" | "image" | "document" | "embed";
         videoUrl?: string;
         videoThumbnail?: string;
         videoDuration?: number;
@@ -71,7 +72,7 @@ export interface ContentResponse {
     };
     metadata: {
         duration: number;
-        difficulty: 'beginner' | 'intermediate' | 'advanced';
+        difficulty: "beginner" | "intermediate" | "advanced";
         tags: string[];
         createdAt: string;
         updatedAt: string;
@@ -79,48 +80,54 @@ export interface ContentResponse {
 }
 
 export const ContentAPI = {
-  async getById(
-    contentId: string,
-    options: GetContentOptions,
-    authenticatedApiClient: AxiosInstance
-  ): Promise<ContentResponse> {
-    const params = new URLSearchParams();
-    
-    if (options.includeCourse) {
-      params.append('includeCourse', 'true');
-    }
-    if (options.includeModule) {
-      params.append('includeModule', 'true');
-    }
-    if (options.includeNavigation) {
-      params.append('includeNavigation', 'true');
-    }
+    async getById(
+        contentId: string,
+        options: GetContentOptions,
+        client?: AxiosInstance
+    ): Promise<ContentResponse> {
+        const apiClientToUse = client || apiClient;
+        console.log('CLIENTE EN CONTENTS API:', apiClientToUse);
 
-    const url = `${CONTENTS_ENDPOINTS.BY_ID(contentId)}${params.toString() ? `?${params.toString()}` : ''}`;
-    
-    const response = await authenticatedApiClient.get<ContentResponse>(url);
-    return response.data;
-  },
+        const params = new URLSearchParams();
 
-  async markComplete(
-    contentId: string,
-    authenticatedApiClient: AxiosInstance
-  ): Promise<ProgressResponse> {
-    const response = await authenticatedApiClient.post<ProgressResponse>(
-      CONTENTS_ENDPOINTS.COMPLETE(contentId)
-    );
-    return response.data;
-  },
+        if (options.includeCourse) {
+            params.append("includeCourse", "true");
+        }
+        if (options.includeModule) {
+            params.append("includeModule", "true");
+        }
+        if (options.includeNavigation) {
+            params.append("includeNavigation", "true");
+        }
 
-  async updateVideoProgress(
-    contentId: string,
-    progressData: ProgressUpdateData,
-    authenticatedApiClient: AxiosInstance
-  ): Promise<ProgressResponse> {
-    const response = await authenticatedApiClient.post<ProgressResponse>(
-      CONTENTS_ENDPOINTS.PROGRESS(contentId),
-      progressData
-    );
-    return response.data;
-  }
+        const url = `${CONTENTS_ENDPOINTS.BY_ID(contentId)}${params.toString() ? `?${params.toString()}` : ""
+            }`;
+
+        const response = await apiClientToUse.get<ContentResponse>(url);
+        return response.data;
+    },
+
+    async markComplete(
+        contentId: string,
+        client?: AxiosInstance
+    ): Promise<ProgressResponse> {
+        const apiClientToUse = client || apiClient;
+        const response = await apiClientToUse.post<ProgressResponse>(
+            CONTENTS_ENDPOINTS.COMPLETE(contentId)
+        );
+        return response.data;
+    },
+
+    async updateVideoProgress(
+        contentId: string,
+        progressData: ProgressUpdateData,
+        client?: AxiosInstance
+    ): Promise<ProgressResponse> {
+        const apiClientToUse = client || apiClient;
+        const response = await apiClientToUse.post<ProgressResponse>(
+            CONTENTS_ENDPOINTS.PROGRESS(contentId),
+            progressData
+        );
+        return response.data;
+    },
 };

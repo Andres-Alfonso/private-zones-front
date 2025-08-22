@@ -57,7 +57,7 @@ export function CourseDetailSidebar({ course, isEnrolled, isSubmitting }: Course
         </div>
 
         {/* Botones de acción */}
-        <div className="space-y-3 mb-6">
+        <div className="space-y-3 mb-6 select-none">
           {isEnrolled ? (
             <div className="space-y-3">
               <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-xl text-center text-sm font-bold flex items-center justify-center space-x-2">

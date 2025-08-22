@@ -239,7 +239,7 @@ export default function CourseIndex() {
         </div>
 
         {/* Quick Actions & Progress */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 select-none">
           {/* Continue Learning */}
           <div className="lg:col-span-2">
             {data.userProgress.nextRecommendedItem ? (

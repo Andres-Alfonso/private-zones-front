@@ -1,7 +1,7 @@
 // app/routes/contents/$courseId._index.tsx
 
 import { json, LoaderFunction } from "@remix-run/node";
-import { useLoaderData, useSearchParams, useParams } from "@remix-run/react";
+import { useLoaderData, useSearchParams, useParams, NavLink } from "@remix-run/react";
 import { useState } from "react";
 import { AlertCircle, ChevronLeft, ChevronRight, Filter, Search, Grid, List, Video, FileText, Image, Globe, Package, Eye, Edit, Trash2, Plus, Calendar, Clock } from "lucide-react";
 import { useCurrentUser } from "~/context/AuthContext";
@@ -313,10 +313,13 @@ export default function CourseContentsIndex() {
           </div>
 
           <RoleGuard requiredRoles={['admin', 'instructor']} requireAll={false}>
-            <button className="group flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 text-sm font-semibold">
-              <Plus className="h-5 w-5 group-hover:rotate-90 transition-transform duration-200" />
-              <span>Agregar Contenido</span>
-            </button>
+            <NavLink
+              to="/contents/create"
+              className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 text-sm font-semibold"
+            >
+              <Plus className="h-5 w-5" />
+              <span>Crear Contenido</span>
+            </NavLink>
           </RoleGuard>
         </div>
       </div>

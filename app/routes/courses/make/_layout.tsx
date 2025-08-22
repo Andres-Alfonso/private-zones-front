@@ -629,7 +629,7 @@ function CourseMakeLayoutContent() {
                                 return (
                                     <div key={module.id}>
                                         <div
-                                            className={`group cursor-pointer rounded-xl border-2 transition-all duration-200 ${isLocked
+                                            className={`group cursor-pointer rounded-xl border-2 transition-all duration-200 select-none ${isLocked
                                                 ? 'border-gray-200/50 bg-gray-50/60'
                                                 : 'border-gray-200/50 bg-white/60 hover:border-blue-200 hover:bg-blue-50/30 hover:shadow-lg'
                                                 }`}

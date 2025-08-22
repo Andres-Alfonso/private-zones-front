@@ -15,6 +15,7 @@ import { useCurrentUser } from '~/context/AuthContext';
 import { CoursesAPI } from '~/api/endpoints/courses';
 import { CourseLayoutData, CourseModuleLayoutData, CourseUserProgress } from "~/api/types/course.types";
 import { createApiClientFromRequest } from "~/api/client";
+import NavigationMenu from "~/components/courses/NavigationMenu";
 
 interface LoaderLayoutData {
     course: CourseLayoutData;
@@ -564,6 +565,10 @@ function CourseMakeLayoutContent() {
 
                     {/* Información adicional en la parte inferior */}
                     <div className="mt-8 flex flex-wrap items-center justify-between text-sm">
+                        {/* <div className="grid grid-cols-10 gap-4 text-white/90 font-medium pb-4">
+                            <div className="col-span-2">Contenidos</div>
+
+                        </div> */}
                         {/* <div className="flex flex-wrap items-center gap-4 text-white/80">
                             <span className="flex items-center">
                                 <Users className="h-4 w-4 mr-1" />
@@ -594,6 +599,7 @@ function CourseMakeLayoutContent() {
                         </div> */}
                     </div>
                 </div>
+                <NavigationMenu course={course}/>
             </div>
 
             <div className="container mx-auto px-4">

@@ -7,6 +7,9 @@ const CONTENTS_ENDPOINTS = {
     BY_ID: (id: string) => `/v1/contents/${id}`,
     COMPLETE: (id: string) => `/v1/contents/${id}/complete`,
     PROGRESS: (id: string) => `/v1/contents/${id}/progress`,
+    GET_ALL: (courseId: string | null = null) => {
+        return courseId ? `/v1/contents/course/${courseId}` : '/v1/contents';
+    }
 };
 
 // Tipos para las opciones y respuesta
@@ -127,6 +130,20 @@ export const ContentAPI = {
         const response = await apiClientToUse.post<ProgressResponse>(
             CONTENTS_ENDPOINTS.PROGRESS(contentId),
             progressData
+        );
+        return response.data;
+    },
+
+    async getAllContents(
+        courseId: string | null = null,
+        filters: Record<string, any> = {},
+        client?: AxiosInstance
+    ): Promise<ContentResponse[]> {
+        const apiClientToUse = client || apiClient;
+        const params = new URLSearchParams(filters);
+        const response = await apiClientToUse.get<ContentResponse[]>(
+            CONTENTS_ENDPOINTS.GET_ALL(courseId),
+            { params }
         );
         return response.data;
     },

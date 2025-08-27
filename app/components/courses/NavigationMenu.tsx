@@ -7,7 +7,7 @@ const NavigationMenu = ({ course, className = "" }) => {
     { name: 'Tareas', route: `/tasks/course/${course?.id}`, isActive: () => location.pathname.startsWith('/tasks/courses/') },
     { name: 'Evaluaciones', route: `/evaluations/course/${course?.id}`, isActive: () => location.pathname.startsWith('/evaluations/courses/') },
     { name: 'Actividades Didácticas', route: `/activities/course/${course?.id}`, isActive: () => location.pathname.startsWith('/activities/courses/') },
-    { name: 'Módulos', route: `/make/courses/${course?.id || ''}`, isActive: () => location.pathname.startsWith('/make/courses/') },
+    { name: 'Módulos', route: `/make/courses/${course?.id || ''}`, isActive: () => location.pathname.startsWith('/make/courses/') || location.pathname.startsWith('/modules/course/') },
     { name: 'Métricas', route: `/analysis/course/${course?.id}`, isActive: () => location.pathname.startsWith('/analysis/courses/') },
     { name: 'Permisos', route: `/permits/course/${course?.id}`, isActive: () => location.pathname.startsWith('/permits/courses/') }
   ];

@@ -52,9 +52,17 @@ export default defineConfig({
             // Ruta para contenidos de un curso específico
             route("course/:courseId", "routes/contents/$courseId._index.tsx");
             route("create", "routes/contents/create.tsx");
+            route(":id", "routes/contents/$id.tsx");
             // route("create", "routes/contents/create.tsx");
             // route(":id/edit", "routes/contents/$id.edit.tsx");
-            // route(":id", "routes/contents/$id.tsx");
+          });
+
+          // Rutas de gestion de módulos
+          route("modules", "routes/modules/_layout.tsx", () => {
+            route("", "routes/modules/_index.tsx", { index: true });
+            // route("course/:courseId", "routes/modules/create.tsx");
+            route("create", "routes/modules/create.tsx");
+            route("course/:courseId", "routes/modules/$courseId._index.tsx");
           });
 
           // Rutas de gestión de tenants (solo para administradores)

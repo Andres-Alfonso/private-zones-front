@@ -1,7 +1,7 @@
 // app/routes/contents/create.tsx
 
 import { json, LoaderFunction, ActionFunction, redirect } from "@remix-run/node";
-import { useLoaderData, useActionData, Form, useNavigation } from "@remix-run/react";
+import { useLoaderData, useActionData, Form, useNavigation, useNavigate } from "@remix-run/react";
 import { useState } from "react";
 import { AlertCircle } from "lucide-react";
 import { useCurrentUser } from "~/context/AuthContext";
@@ -14,6 +14,11 @@ import { ContentUploader } from "~/components/contents/ContentUploader";
 import { MetadataEditor } from "~/components/contents/MetadataEditor";
 import { ContentPreview } from "~/components/contents/ContentPreview";
 import { FormActions } from "~/components/contents/FormActions";
+import { request } from "node_modules/axios/index.cjs";
+import { createApiClientFromRequest } from "~/api/client";
+import { CoursesAPI } from "~/api/endpoints/courses";
+import { CourseBasic } from "~/api/types/course.types";
+import { ContentAPI } from "~/api/endpoints/contents";
 
 // Tipos para el formulario
 interface ContentFormData {
@@ -43,55 +48,98 @@ interface FormErrors {
 }
 
 // Loader para cargar datos iniciales
-export const loader: LoaderFunction = async ({ request }) => {
-  // Mock data para cursos
-  const mockCourses: Course[] = [
-    {
-      id: 'course-1',
-      title: 'Introducción a React',
-      category: 'Frontend',
-      instructor: 'Juan Pérez'
-    },
-    {
-      id: 'course-2',
-      title: 'Node.js Avanzado',
-      category: 'Backend',
-      instructor: 'María García'
-    },
-    {
-      id: 'course-3',
-      title: 'Diseño UX/UI Moderno',
-      category: 'Diseño',
-      instructor: 'Ana Rodríguez'
-    },
-    {
-      id: 'course-4',
-      title: 'DevOps con Docker',
-      category: 'DevOps',
-      instructor: 'Carlos López'
-    },
-    {
-      id: 'course-5',
-      title: 'Machine Learning con Python',
-      category: 'Data Science',
-      instructor: 'Dr. Elena Martínez'
-    },
-    {
-      id: 'course-6',
-      title: 'Flutter Mobile Development',
-      category: 'Mobile',
-      instructor: 'Miguel Santos'
-    }
-  ];
+// export const loader: LoaderFunction = async ({ request }) => {
+//   // Mock data para cursos
+//   const mockCourses: Course[] = [
+//     {
+//       id: 'course-1',
+//       title: 'Introducción a React',
+//       category: 'Frontend',
+//       instructor: 'Juan Pérez'
+//     },
+//     {
+//       id: 'course-2',
+//       title: 'Node.js Avanzado',
+//       category: 'Backend',
+//       instructor: 'María García'
+//     },
+//     {
+//       id: 'course-3',
+//       title: 'Diseño UX/UI Moderno',
+//       category: 'Diseño',
+//       instructor: 'Ana Rodríguez'
+//     },
+//     {
+//       id: 'course-4',
+//       title: 'DevOps con Docker',
+//       category: 'DevOps',
+//       instructor: 'Carlos López'
+//     },
+//     {
+//       id: 'course-5',
+//       title: 'Machine Learning con Python',
+//       category: 'Data Science',
+//       instructor: 'Dr. Elena Martínez'
+//     },
+//     {
+//       id: 'course-6',
+//       title: 'Flutter Mobile Development',
+//       category: 'Mobile',
+//       instructor: 'Miguel Santos'
+//     }
+//   ];
 
-  return json({ courses: mockCourses });
-};
+//   return json({ courses: mockCourses });
+// };
+
+type LoaderData = {
+  coursesResult: CourseBasic[];
+  course: string | null;
+}
+
+
+export const loader: LoaderFunction = async ({ request, params }) => {
+  try {
+    const url = new URL(request.url);
+    const urlParams = new URLSearchParams(url.search);
+    const preferredLanguage = urlParams.get('lang') || 'es';
+    const courseId = urlParams.get('course');
+
+    const requestApiClient = createApiClientFromRequest(request);
+    const coursesResult = await CoursesAPI.getByTenant(requestApiClient);
+
+    if (!coursesResult) {
+      throw new Response("Cursos no encontrado", { 
+        status: 500,
+        statusText: "Upps! Algo salió mal"
+      });
+    }
+
+    return json<LoaderData>({ coursesResult, course: courseId || null });
+    
+  } catch (error) {
+    if (error instanceof Response) {
+      throw error;
+    }
+    
+    console.error("Error cargando contenido:", error);
+    throw new Response("Error interno del servidor", { 
+      status: 500,
+      statusText: "Internal Server Error"
+    });
+  }
+}
 
 // Action para procesar el formulario
 export const action: ActionFunction = async ({ request }) => {
   const formData = await request.formData();
   
   try {
+
+    const url = new URL(request.url);
+    const urlParams = new URLSearchParams(url.search);
+    const course = urlParams.get('course');
+
     // Obtener datos del formulario
     const title = formData.get('title') as string;
     const description = formData.get('description') as string;
@@ -153,8 +201,34 @@ export const action: ActionFunction = async ({ request }) => {
     // Simular delay de creación
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    // Redirigir después de crear exitosamente
-    return redirect('/contents?created=true');
+    const contentData = {
+      title: title,
+      description,
+      type: contentType,
+      contentUrl: file ? `uploaded-files/${file.name}` : contentUrl,
+      // courseId,
+      metadata
+    };
+
+    const authenticatedApiClient = createApiClientFromRequest(request);
+    const response = await ContentAPI.create(contentData, authenticatedApiClient);
+
+    if (response.success) {
+      // Opción 1: Redireccionar a la lista de contenidos
+      // return redirect(`/courses/${courseId}/contents?created=${response.data.id}`);
+      
+      // Opción 2: Redireccionar al contenido creado
+      return redirect(`/contents/course/${course}`);
+      
+      // Opción 3: Mostrar mensaje de éxito en la misma página
+      // return json({ 
+      //   success: true, 
+      //   message: response.message,
+      //   content: response.data
+      // });
+    } else {
+      throw new Error(response.message || 'Error desconocido');
+    }
 
   } catch (error: any) {
     console.error('Error al crear contenido:', error);
@@ -167,12 +241,15 @@ export const action: ActionFunction = async ({ request }) => {
 
 // Componente principal
 export default function CreateContent() {
-  const { courses } = useLoaderData<{ courses: Course[] }>();
+  // const { courses } = useLoaderData<{ courses: Course[] }>();
+  const { coursesResult, course } = useLoaderData<LoaderData>();
+  
   const actionData = useActionData<{ 
     errors?: FormErrors; 
     fields?: any;
   }>();
   const navigation = useNavigation();
+  const navigate = useNavigate();
   
   const [currentStep, setCurrentStep] = useState(1);
   const [showPreview, setShowPreview] = useState(false);
@@ -253,14 +330,23 @@ export default function CreateContent() {
     }
   };
 
+  // función onBack
+  const handleBack = () => {
+    if (course) {
+      navigate(`/contents/course/${course}`);
+    } else {
+      navigate("/contents");
+    }
+  };
+
   // Encontrar curso seleccionado
-  const selectedCourse = courses.find(course => course.id === formData.courseId);
+  const selectedCourse = coursesResult.find(course => course.id === formData.courseId);
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
       {/* Header */}
       <CreateContentHeader
-        onBack={() => window.history.back()}
+        onBack={handleBack}
         onPreview={() => setShowPreview(true)}
         isValid={!!isValid}
         currentStep={currentStep}
@@ -273,7 +359,7 @@ export default function CreateContent() {
           <BasicInformation
             formData={formData}
             onFormChange={handleFormChange}
-            courses={courses}
+            courses={coursesResult}
             errors={errors}
           />
         </div>

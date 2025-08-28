@@ -1,6 +1,6 @@
 // components/modules/ConfirmDeleteModal.tsx
 import { AlertTriangle, X } from "lucide-react";
-import { ModuleItem } from "../../api/types/modules";
+import { ModuleItem } from "../../api/types/modules.types";
 
 interface ConfirmDeleteModalProps {
   isOpen: boolean;

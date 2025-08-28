@@ -1,6 +1,7 @@
 // app/api/endpoints/modules.ts
 import { AxiosInstance } from "axios";
 import apiClient from "../client";
+import { CourseModule, CreateModuleData, ModuleApiResponse } from "../types/modules.types";
 // import { ContentCreateResponse } from "../types/content.types";
 
 const MODULES_ENDPOINTS = {
@@ -127,6 +128,47 @@ export const ModuleAPI = {
         );
         return response.data;
     },
+
+    /**
+     * Obtener módulos de un curso específico
+     */
+    async getByCourse(courseId: string, apiClient: AxiosInstance): Promise<CourseModule[] | null> {
+        try {
+        const response = await apiClient.get<ModulesListApiResponse>(`/courses/${courseId}/modules`);
+        
+        if (response.data.success) {
+            return response.data.data;
+        }
+        
+        console.error('Error al obtener módulos:', response.data.message);
+        return null;
+        } catch (error) {
+        console.error('Error en getByCourse:', error);
+        return null;
+        }
+    },
+
+    /**
+     * Crear un nuevo módulo
+     */
+    async create(moduleData: CreateModuleData, apiClient: AxiosInstance): Promise<ModuleApiResponse> {
+        try {
+        const response = await apiClient.post<ModuleApiResponse>(MODULES_ENDPOINTS.CREATE, moduleData);
+        return response.data;
+        } catch (error: any) {
+        console.error('Error al crear módulo:', error);
+        
+        if (error.response?.data) {
+            return error.response.data;
+        }
+        
+        return {
+            success: false,
+            message: error.message || 'Error desconocido al crear módulo',
+            data: {} as CourseModule
+        };
+        }
+    }
 
     // async create(
     //     data: Partial<ContentResponse> = {},

@@ -1,13 +1,7 @@
 // app/components/contents/BasicInformation.tsx
 
 import { AlertCircle } from "lucide-react";
-
-interface Course {
-  id: string;
-  title: string;
-  category: string;
-  instructor: string;
-}
+import { Course, CourseBasic } from "~/api/types/course.types";
 
 interface ContentFormData {
   title: string;
@@ -30,7 +24,7 @@ interface FormErrors {
 interface BasicInformationProps {
   formData: ContentFormData;
   onFormChange: (field: string, value: any) => void;
-  courses: Course[];
+  courses: CourseBasic[];
   errors: FormErrors;
 }
 
@@ -105,7 +99,7 @@ export const BasicInformation = ({
           <option value="">Selecciona un curso</option>
           {courses.map((course) => (
             <option key={course.id} value={course.id}>
-              {course.title} - {course.category}
+              {course.translations[0].title}
             </option>
           ))}
         </select>

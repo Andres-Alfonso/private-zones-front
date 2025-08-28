@@ -43,7 +43,7 @@ const ContentCards = ({ contents, hasAdminRole, getContentIcon, getContentTypeCo
         {contents.map((content) => (
           <Link 
             key={content.id}
-            to={`/content/${content.id}`}
+            to={`/contents/${content.id}`}
             className="group block bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200/50 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] hover:border-blue-200"
           >
             {/* Thumbnail */}

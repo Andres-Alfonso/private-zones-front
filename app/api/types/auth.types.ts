@@ -148,6 +148,8 @@ export interface UserProfileResponse {
   email: string;
   name: string;
   role: string[];
+  profileConfig?: any;
+  notificationConfig?: any;
 }
 
 export interface ForgotPasswordRequest {

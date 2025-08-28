@@ -79,3 +79,33 @@ export interface ScormMetadata {
   tags?: string[];
   difficulty?: 'beginner' | 'intermediate' | 'advanced';
 }
+
+export enum ContentType {
+  VIDEO = 'video',
+  IMAGE = 'image',
+  DOCUMENT = 'document',
+  EMBED = 'embed',
+  SCORM = 'scorm'
+}
+
+export interface ContentBase {
+  title: string;
+  description?: string;
+  contentType: ContentType;
+  contentUrl: string;
+  tenantId: string;
+  metadata?: Record<string, any>;
+}
+
+export interface Content extends ContentBase {
+  id: string;
+  createdAt: string; // ISO date string
+  updatedAt: string; // ISO date string
+  deletedAt?: string; // ISO date string, opcional
+}
+
+export interface ContentResponse {
+  success: boolean;
+  message: string;
+  data: Content;
+}

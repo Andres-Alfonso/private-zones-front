@@ -1,6 +1,7 @@
 // app/components/contents/ContentPreview.tsx
 
 import { Video, FileText, Image, Globe, Package, ExternalLink, File } from "lucide-react";
+import { CourseBasic } from "~/api/types/course.types";
 
 interface Course {
   id: string;
@@ -20,7 +21,7 @@ interface ContentFormData {
 
 interface ContentPreviewProps {
   formData: ContentFormData;
-  course: Course | null;
+  course: CourseBasic | null;
   selectedFile?: File | null;
   onClose: () => void;
 }

@@ -1,6 +1,7 @@
 // app/api/endpoints/contents.ts
 import { AxiosInstance } from "axios";
 import apiClient from "../client";
+import { ContentCreateResponse } from "../types/content.types";
 
 const CONTENTS_ENDPOINTS = {
     BASE: '/v1/contents',
@@ -9,7 +10,8 @@ const CONTENTS_ENDPOINTS = {
     PROGRESS: (id: string) => `/v1/contents/${id}/progress`,
     GET_ALL: (courseId: string | null = null) => {
         return courseId ? `/v1/contents/course/${courseId}` : '/v1/contents';
-    }
+    },
+    CREATE: '/v1/contents/create',
 };
 
 // Tipos para las opciones y respuesta
@@ -85,7 +87,7 @@ export interface ContentResponse {
 export const ContentAPI = {
     async getById(
         contentId: string,
-        options: GetContentOptions,
+        options?: GetContentOptions,
         client?: AxiosInstance
     ): Promise<ContentResponse> {
         const apiClientToUse = client || apiClient;
@@ -93,14 +95,18 @@ export const ContentAPI = {
 
         const params = new URLSearchParams();
 
-        if (options.includeCourse) {
-            params.append("includeCourse", "true");
-        }
-        if (options.includeModule) {
-            params.append("includeModule", "true");
-        }
-        if (options.includeNavigation) {
-            params.append("includeNavigation", "true");
+        if(options){
+            if (options.includeCourse) {
+                params.append("includeCourse", "true");
+            }
+
+            if (options.includeModule) {
+                params.append("includeModule", "true");
+            }
+
+            if (options.includeNavigation) {
+                params.append("includeNavigation", "true");
+            }
         }
 
         const url = `${CONTENTS_ENDPOINTS.BY_ID(contentId)}${params.toString() ? `?${params.toString()}` : ""
@@ -147,4 +153,12 @@ export const ContentAPI = {
         );
         return response.data;
     },
+    async create(
+        data: Partial<ContentResponse> = {},
+        client?: AxiosInstance
+    ): Promise<ContentCreateResponse> {
+        const apiClientToUse = client || apiClient;
+        const response = await apiClientToUse.post<ContentResponse>(CONTENTS_ENDPOINTS.CREATE, {...data});
+        return response.data;
+    }
 };

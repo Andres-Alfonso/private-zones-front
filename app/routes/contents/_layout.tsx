@@ -21,7 +21,7 @@ export const meta: MetaFunction = () => {
 
 // export const loader: LoaderFunction = async ({ request, params }) => {
 //   const courseId = params.courseId;
-  
+
 //   // Mock data for course - en producción sería una llamada al API
 //   const mockCourse = courseId ? {
 //     id: courseId,
@@ -50,7 +50,7 @@ export const meta: MetaFunction = () => {
 
 export const loader: LoaderFunction = async ({ request, params }) => {
   const courseId = params.courseId;
-  
+
   if (!courseId) {
     return json({
       course: null,
@@ -62,22 +62,22 @@ export const loader: LoaderFunction = async ({ request, params }) => {
   try {
     // Crear cliente autenticado desde la request
     const authenticatedApiClient = createApiClientFromRequest(request);
-    
+
     // Obtener el curso usando la API real
     const courseData = await CoursesAPI.getById(courseId, authenticatedApiClient);
-    
+
     return json({
       course: courseData,
       error: null,
       timestamp: new Date().toISOString()
     });
-    
+
   } catch (error) {
     console.error('Error al cargar curso:', error);
-    
+
     // Determinar el mensaje de error apropiado
     let errorMessage = "Error al cargar el curso";
-    
+
     if (error instanceof Error) {
       // Si es un error de red o API
       if (error.message.includes('404')) {
@@ -92,7 +92,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
         errorMessage = error.message || "Error de conexión";
       }
     }
-    
+
     return json({
       course: null,
       error: errorMessage,
@@ -122,7 +122,7 @@ function ContentsLayoutContent() {
   const params = useParams();
   const { user, hasRole } = useCurrentUser();
   const { course, error } = useLoaderData<LoaderData>();
-  
+
   const isCreatePage = location.pathname.includes('/create');
   const isEditPage = location.pathname.includes('/edit');
   const isDetailPage = location.pathname.match(/\/contents\/[^\/]+$/) && !isCreatePage;
@@ -156,6 +156,12 @@ function ContentsLayoutContent() {
                       <span className="text-blue-600 font-semibold">Crear</span>
                     </>
                   )}
+                  {isDetailPage && (
+                    <>
+                      <span className="text-gray-300">/</span>
+                      <span className="text-blue-600 font-semibold">detalle</span>
+                    </>
+                  )}
                   {isEditPage && (
                     <>
                       <span className="text-gray-300">/</span>
@@ -163,7 +169,7 @@ function ContentsLayoutContent() {
                     </>
                   )}
                 </nav>
-                
+
                 <div className="flex items-center space-x-4">
                   <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg">
                     <BookOpen className="h-8 w-8 text-white" />
@@ -173,7 +179,7 @@ function ContentsLayoutContent() {
                       {course ? course.translations?.[0]?.title : 'Gestión de Contenidos'}
                     </h1>
                     <p className="text-gray-600 mt-1 text-lg">
-                        Gestión general de contenidos
+                      Gestión general de contenidos
                     </p>
                   </div>
                 </div>
@@ -209,10 +215,9 @@ function ContentsLayoutContent() {
                   <NavLink
                     to="/contents"
                     className={({ isActive }) =>
-                      `flex items-center space-x-3 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
-                        isActive
-                          ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg transform scale-105'
-                          : 'text-gray-600 hover:text-gray-900 hover:bg-white/80 hover:shadow-md hover:scale-105 backdrop-blur-sm border border-gray-200/50'
+                      `flex items-center space-x-3 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${isActive
+                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg transform scale-105'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-white/80 hover:shadow-md hover:scale-105 backdrop-blur-sm border border-gray-200/50'
                       }`
                     }
                   >
@@ -251,20 +256,20 @@ function ContentsLayoutContent() {
               © {new Date().getFullYear()} Plataforma de Contenidos
             </div>
             <div className="flex space-x-6">
-              <a 
-                href="/help/contents" 
+              <a
+                href="/help/contents"
                 className="text-gray-600 hover:text-blue-600 transition-colors font-medium hover:underline"
               >
                 Ayuda
               </a>
-              <a 
-                href="/support" 
+              <a
+                href="/support"
                 className="text-gray-600 hover:text-blue-600 transition-colors font-medium hover:underline"
               >
                 Soporte
               </a>
-              <a 
-                href="/contents/analytics" 
+              <a
+                href="/contents/analytics"
                 className="text-gray-600 hover:text-blue-600 transition-colors font-medium hover:underline"
               >
                 Analíticas

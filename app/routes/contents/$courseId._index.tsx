@@ -314,7 +314,7 @@ export default function CourseContentsIndex() {
 
           <RoleGuard requiredRoles={['admin', 'instructor']} requireAll={false}>
             <NavLink
-              to="/contents/create"
+              to={`/contents/create?course=${courseId}`}
               className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 text-sm font-semibold"
             >
               <Plus className="h-5 w-5" />

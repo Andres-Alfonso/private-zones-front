@@ -52,7 +52,7 @@ export const ContentTypeSelector = ({
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 select-none">
       <div>
         <h3 className="text-lg font-semibold text-gray-900 mb-2">Tipo de Contenido</h3>
         <p className="text-gray-600 text-sm">Selecciona el tipo de contenido que deseas crear</p>

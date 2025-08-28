@@ -1,5 +1,5 @@
 // components/modules/ModuleGrid.tsx
-import { ModuleItem } from "../../api/types/modules";
+import { ModuleItem } from "../../api/types/modules.types";
 import ModuleCard from "./ModuleCard";
 
 interface ModuleGridProps {

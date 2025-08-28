@@ -61,7 +61,7 @@ export default defineConfig({
           route("modules", "routes/modules/_layout.tsx", () => {
             route("", "routes/modules/_index.tsx", { index: true });
             // route("course/:courseId", "routes/modules/create.tsx");
-            route("create", "routes/modules/create.tsx");
+            route("course/:courseId/create", "routes/modules/create.tsx");
             route("course/:courseId", "routes/modules/$courseId._index.tsx");
           });
 

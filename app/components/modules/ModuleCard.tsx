@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { NavLink } from "@remix-run/react";
 import { Layers, Edit, Trash2, MoreVertical, Image } from "lucide-react";
-import { ModuleItem } from "../../api/types/modules";
+import { ModuleItem } from "../../api/types/modules.types";
 
 interface ModuleCardProps {
   module: ModuleItem;
@@ -143,7 +143,7 @@ export default function ModuleCard({
         </div>
         
         {/* Indicador visual de hover */}
-        <div className="h-1 bg-gradient-to-r from-purple-500 to-purple-600 rounded-b-xl transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
+        {/* <div className="h-1 bg-gradient-to-r from-purple-500 to-purple-600 rounded-b-xl transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div> */}
       </NavLink>
     );
   }
@@ -240,7 +240,7 @@ export default function ModuleCard({
         </div>
         
         {/* Indicador visual de hover para lista */}
-        <div className="w-1 h-12 bg-gradient-to-b from-purple-500 to-purple-600 rounded-full transform scale-y-0 group-hover:scale-y-100 transition-transform duration-300 flex-shrink-0"></div>
+        {/* <div className="w-1 h-12 bg-gradient-to-b from-purple-500 to-purple-600 rounded-full transform scale-y-0 group-hover:scale-y-100 transition-transform duration-300 flex-shrink-0"></div> */}
       </div>
     </NavLink>
   );

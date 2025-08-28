@@ -2,6 +2,7 @@
 
 import type { MetaFunction, LoaderFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
+import "~/css/styles.css";
 import { Outlet, useLoaderData, Link, useParams, useLocation } from "@remix-run/react";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -795,7 +796,7 @@ function CourseMakeLayoutContent() {
                 </div>
             </div>
 
-            <style jsx>{`
+            {/* <style jsx>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(-10px); }
           to { opacity: 1; transform: translateY(0); }
@@ -809,7 +810,7 @@ function CourseMakeLayoutContent() {
           -webkit-box-orient: vertical;
           overflow: hidden;
         }
-      `}</style>
+      `}</style> */}
         </div>
     );
 }

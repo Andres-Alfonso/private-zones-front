@@ -5,7 +5,7 @@ import { RoleGuard } from '~/components/AuthGuard';
 import { LoaderFunction, ActionFunction } from "@remix-run/node";
 import { createApiClientFromRequest } from "~/api/client";
 import { ModuleAPI } from "~/api/endpoints/modules";
-import { ModuleItem, ModuleFilters, ModulesResponse } from "../../api/types/modules";
+import { ModuleItem, ModuleFilters, ModulesResponse } from "../../api/types/modules.types";
 import ModuleGrid from "~/components/modules/ModuleGrid";
 import ConfirmDeleteModal from "~/components/modules/ConfirmDeleteModal";
 

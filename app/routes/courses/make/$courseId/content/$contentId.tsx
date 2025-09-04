@@ -2,8 +2,8 @@
 
 import type { MetaFunction, LoaderFunction, ActionFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { useLoaderData, useActionData, Form, Link, useParams, useNavigation } from "@remix-run/react";
-import { useState, useEffect, useRef } from "react";
+import { useLoaderData, useActionData, Form, Link, useParams, useNavigation, useFetcher, useRevalidator } from "@remix-run/react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
     BookOpen, Play, Pause, Volume2, VolumeX, Maximize, Minimize,
     ChevronLeft, ChevronRight, CheckCircle, Clock, FileText,
@@ -16,6 +16,7 @@ import AuthGuard from '~/components/AuthGuard';
 import { useCurrentUser } from '~/context/AuthContext';
 import { ContentAPI } from "~/api/endpoints/contents";
 import { createApiClientFromRequest } from "~/api/client";
+import { notifyProgressUpdate } from "~/utils/progressCommunication";
 
 interface ContentData {
     id: string;
@@ -223,12 +224,92 @@ export default function ContentView() {
     );
 }
 
+function useProgressTracker(contentId: string, courseId: string, initialProgress: any) {
+    const [localProgress, setLocalProgress] = useState({
+        isCompleted: initialProgress.isCompleted,
+        timeSpent: initialProgress.timeSpent,
+        progressPercentage: 0,
+    });
+    
+    const fetcher = useFetcher();
+    const revalidator = useRevalidator();
+    const lastSyncRef = useRef(Date.now());
+    
+    const updateProgress = useCallback(async (update: any) => {
+        // 1. Actualizar estado local
+        setLocalProgress(prev => ({
+            ...prev,
+            timeSpent: prev.timeSpent + update.timeSpent,
+            progressPercentage: update.progressPercentage ?? prev.progressPercentage,
+            isCompleted: update.isCompleted ?? prev.isCompleted,
+        }));
+        
+        // 2. Notificar al layout
+        notifyProgressUpdate({
+            itemId: contentId,
+            overallProgress: update.progressPercentage,
+            completedItems: update.isCompleted ? [contentId] : undefined,
+            timeSpent: update.timeSpent,
+            isCompleted: update.isCompleted
+        });
+        
+        // 3. Enviar al servidor
+        const formData = new FormData();
+        formData.append('_action', 'update-progress');
+        formData.append('timeSpent', update.timeSpent.toString());
+        
+        if (update.progressPercentage !== undefined) {
+            formData.append('progressPercentage', update.progressPercentage.toString());
+        }
+        
+        fetcher.submit(formData, { method: 'POST' });
+        
+        // 4. Revalidar ocasionalmente
+        const now = Date.now();
+        if (now - lastSyncRef.current > 30000) {
+            revalidator.revalidate();
+            lastSyncRef.current = now;
+        }
+    }, [contentId, courseId, fetcher, revalidator]);
+    
+    const markComplete = useCallback(async () => {
+        setLocalProgress(prev => ({ ...prev, isCompleted: true, progressPercentage: 100 }));
+        
+        notifyProgressUpdate({
+            itemId: contentId,
+            completedItems: [contentId],
+            overallProgress: 100,
+            isCompleted: true
+        });
+        
+        const formData = new FormData();
+        formData.append('_action', 'complete');
+        fetcher.submit(formData, { method: 'POST' });
+        
+        setTimeout(() => revalidator.revalidate(), 1000);
+    }, [contentId, fetcher, revalidator]);
+    
+    return {
+        progress: localProgress,
+        updateProgress,
+        markComplete,
+        isUpdating: fetcher.state !== 'idle'
+    };
+}
+
+
 function ContentViewContent() {
     const { content, error } = useLoaderData<LoaderData>();
     const actionData = useActionData<ActionData>();
     const navigation = useNavigation();
     const params = useParams();
     const { user } = useCurrentUser();
+
+    const { progress, updateProgress, markComplete, isUpdating } = useProgressTracker(
+        content.id,
+        content.course.id,
+        content.userProgress
+    );
 
     // Video player state
     const videoRef = useRef<HTMLVideoElement>(null);
@@ -277,50 +358,37 @@ function ContentViewContent() {
         let secondsCounter = 0;
         
         const interval = setInterval(() => {
-            console.log('inicio proceso de progreso', { secondsCounter, isPlaying });
-            
-            // Solo contar si el contenido se está "consumiendo"
             const isContentActive = content.content.type === 'video' ? isPlaying : true;
             
-            if (isContentActive) {
+            if (isContentActive && !progress.isCompleted) {
                 secondsCounter++;
-                console.log('incrementando contador:', secondsCounter);
                 
-                // Guardar progreso cada 10 segundos
                 if (secondsCounter >= 10) {
-                    console.log('guardamos progreso');
-                    
-                    // 🟢 VOLVER A FormData para compatibilidad con Remix
-                    const formData = new FormData();
-                    formData.append('_action', 'update-progress');
-                    formData.append('timeSpent', '10');
+                    let progressPercentage: number | undefined;
                     
                     if (content.content.type === 'video') {
                         const video = videoRef.current;
-                        
                         if (video && video.duration > 0 && video.currentTime > 0) {
-                            const progressPercentage = (video.currentTime / video.duration) * 100;
-                            formData.append('progressPercentage', progressPercentage.toString());
-                            console.log('enviando progreso video:', { timeSpent: 10, progressPercentage });
+                            progressPercentage = (video.currentTime / video.duration) * 100;
                         }
                     } else {
-                        formData.append('progressPercentage', '100');
-                        console.log('enviando progreso no-video:', { timeSpent: 10, progressPercentage: 100 });
+                        progressPercentage = 100;
                     }
                     
-                    fetch('', { 
-                        method: 'POST', 
-                        body: formData  // Sin Content-Type, el browser lo pone automáticamente
+                    // 🟢 CAMBIO AQUÍ: usar updateProgress en lugar de fetch
+                    updateProgress({
+                        timeSpent: 10,
+                        progressPercentage,
+                        isCompleted: progressPercentage === 100
                     });
                     
-                    // Reset counter
                     secondsCounter = 0;
                 }
             }
         }, 1000);
 
         return () => clearInterval(interval);
-    }, [content.content.type, isPlaying]);
+    }, [content.content.type, isPlaying, progress.isCompleted, updateProgress]);
 
     if (error || !content) {
         return (
@@ -540,7 +608,7 @@ function ContentViewContent() {
         video.currentTime = Math.max(0, Math.min(video.duration, video.currentTime + seconds));
     };
 
-    const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+    const progressa = duration > 0 ? (currentTime / duration) * 100 : 0;
     const progressColor = content.course.colorTitle;
 
     return (
@@ -579,7 +647,7 @@ function ContentViewContent() {
                             </div>
                         )}
 
-                        {!content.userProgress.isCompleted && (
+                        {!progress.isCompleted && (
                         <Form method="post" className="inline">
                             <input type="hidden" name="_action" value="complete" />
                             <button
@@ -757,7 +825,7 @@ function ContentViewContent() {
                                         )}
 
                                         {/* Video Progress Indicator */}
-                                        {content.userProgress.isCompleted && (
+                                        {progress.isCompleted && (
                                             <div className="absolute top-4 right-4 bg-green-500 rounded-full p-2">
                                                 <Check className="h-4 w-4 text-white" />
                                             </div>
@@ -832,7 +900,7 @@ function ContentViewContent() {
                                         </div>
 
                                         {/* Completion Indicator */}
-                                        {content.userProgress.isCompleted && (
+                                        {progress.isCompleted && (
                                             <div className="absolute top-4 right-4 bg-green-500 rounded-full p-2">
                                                 <Check className="h-4 w-4 text-white" />
                                             </div>
@@ -949,7 +1017,7 @@ function ContentViewContent() {
                                         </div>
 
                                         {/* Completion Indicator */}
-                                        {content.userProgress.isCompleted && (
+                                        {progress.isCompleted && (
                                             <div className="absolute top-4 right-4 bg-green-500 rounded-full p-2">
                                                 <Check className="h-4 w-4 text-white" />
                                             </div>
@@ -992,7 +1060,7 @@ function ContentViewContent() {
                                         </div>
 
                                         {/* Completion Indicator */}
-                                        {content.userProgress.isCompleted && (
+                                        {progress.isCompleted && (
                                             <div className="absolute top-4 right-4 bg-green-500 rounded-full p-2">
                                                 <Check className="h-4 w-4 text-white" />
                                             </div>
@@ -1017,9 +1085,9 @@ function ContentViewContent() {
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center space-x-3">
                                                     <span className="text-white text-sm">SCORM Package</span>
-                                                    {content.userProgress.timeSpent > 0 && (
+                                                    {progress.timeSpent > 0 && (
                                                         <span className="text-gray-300 text-sm">
-                                                            Tiempo: {formatTime(content.userProgress.timeSpent)}
+                                                            Tiempo: {formatTime(progress.timeSpent)}
                                                         </span>
                                                     )}
                                                 </div>
@@ -1027,7 +1095,7 @@ function ContentViewContent() {
                                         </div>
 
                                         {/* Completion Indicator */}
-                                        {content.userProgress.isCompleted && (
+                                        {progress.isCompleted && (
                                             <div className="absolute top-4 right-4 bg-green-500 rounded-full p-2">
                                                 <Check className="h-4 w-4 text-white" />
                                             </div>
@@ -1140,7 +1208,7 @@ function ContentViewContent() {
                                             <div>
                                                 <div className="flex justify-between text-sm mb-2">
                                                     <span>Video completado</span>
-                                                    <span className="font-semibold">{Math.round(progress)}%</span>
+                                                    <span className="font-semibold">{Math.round(progress.progressPercentage)}%</span>
                                                 </div>
                                                 <div className="w-full bg-gray-200 rounded-full h-2">
                                                     <div
@@ -1156,7 +1224,7 @@ function ContentViewContent() {
 
                                         <div className="grid grid-cols-2 gap-3 text-sm">
                                             <div className="text-center p-3 bg-blue-50/60 rounded-xl">
-                                                <div className="font-semibold text-blue-900">{formatTime(content.userProgress.timeSpent)}</div>
+                                                <div className="font-semibold text-blue-900">{formatTime(progress.timeSpent)}</div>
                                                 <div className="text-blue-600">Tiempo invertido</div>
                                             </div>
                                             {content.content.type === 'video' ? (
@@ -1177,7 +1245,7 @@ function ContentViewContent() {
                                             )}
                                         </div>
 
-                                        {content.userProgress.isCompleted && (
+                                        {progress.isCompleted && (
                                             <div className="flex items-center space-x-2 p-3 bg-green-50/80 rounded-xl">
                                                 <CheckCircle className="h-5 w-5 text-green-600" />
                                                 <span className="text-sm font-medium text-green-800">Completado</span>

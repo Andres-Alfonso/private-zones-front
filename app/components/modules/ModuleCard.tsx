@@ -67,11 +67,11 @@ export default function ModuleCard({
           {/* Overlay con estado y acciones */}
           <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
             <span className={`px-2 py-1 rounded-full text-xs font-medium backdrop-blur-sm ${
-              module.configuration.isActive 
+              module.configuration?.isActive 
                 ? 'bg-green-100/90 text-green-800 border border-green-200/80' 
-                : 'bg-gray-100/90 text-gray-800 border border-gray-200/80'
-            }`}>
-              {module.configuration.isActive ? 'Activo' : 'Inactivo'}
+                : 'bg-gray-100/90 text-gray-800 border border-gray-200/80'}`}
+            >
+              {module.configuration?.isActive ? 'Activo' : 'Inactivo'}
             </span>
             
             {hasAdminRole && (
@@ -137,7 +137,7 @@ export default function ModuleCard({
           </p>
           
           <div className="flex items-center justify-between text-sm text-gray-500">
-            <span className="font-medium">Orden: {module.configuration.order}</span>
+            <span className="font-medium">Orden: {module.configuration?.order}</span>
             <span>{new Date(module.createdAt).toLocaleDateString()}</span>
           </div>
         </div>
@@ -176,11 +176,11 @@ export default function ModuleCard({
             
             <div className="flex items-center space-x-2 flex-shrink-0 ml-2">
               <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                module.configuration.isActive 
+                module.configuration?.isActive 
                   ? 'bg-green-100 text-green-800 border border-green-200' 
                   : 'bg-gray-100 text-gray-800 border border-gray-200'
               }`}>
-                {module.configuration.isActive ? 'Activo' : 'Inactivo'}
+                {module.configuration?.isActive ? 'Activo' : 'Inactivo'}
               </span>
               
               {hasAdminRole && (
@@ -234,7 +234,7 @@ export default function ModuleCard({
           </p>
           
           <div className="flex items-center justify-between text-sm text-gray-500">
-            <span className="font-medium">Orden: {module.configuration.order}</span>
+            <span className="font-medium">Orden: {module.configuration?.order}</span>
             <span>{new Date(module.createdAt).toLocaleDateString()}</span>
           </div>
         </div>

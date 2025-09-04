@@ -9,6 +9,7 @@ export interface ModuleItem {
     isActive: boolean;
     order: number;
   }
+  items?: any;
   createdAt: string;
   updatedAt: string;
 }
@@ -84,9 +85,9 @@ export interface CreateModuleData {
     approvalPercentage: number;
     metadata: Record<string, any>;
   };
-  items: {
-    type: 'content' | 'forum' | 'task' | 'quiz' | 'survey' | 'activity';
-    referenceId: string;
-    order: number;
-  }[];
+  // items: {
+  //   type: 'content' | 'forum' | 'task' | 'quiz' | 'survey' | 'activity';
+  //   referenceId: string;
+  //   order: number;
+  // }[];
 }

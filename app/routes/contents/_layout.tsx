@@ -189,7 +189,7 @@ function ContentsLayoutContent() {
               {course && (
                 <div className="ml-4">
                   <NavLink
-                    to={`/courses/${course.id}`}
+                    to={`/make/courses/${course.id}`}
                     className="flex items-center space-x-2 text-sm text-gray-600 hover:text-blue-600 transition-colors font-medium bg-white/60 backdrop-blur-sm px-4 py-2 rounded-xl border border-gray-200/50 hover:bg-white/80 hover:shadow-md"
                   >
                     <ArrowLeft className="h-4 w-4" />

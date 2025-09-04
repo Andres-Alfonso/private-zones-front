@@ -174,11 +174,11 @@ export const action: ActionFunction = async ({ request, params }) => {
                 approvalPercentage,
                 metadata
             },
-            items: items.map((item, index) => ({
-                type: item.type,
-                referenceId: item.referenceId,
-                order: item.order || index
-            }))
+            // items: items.map((item, index) => ({
+            //     type: item.type,
+            //     referenceId: item.referenceId,
+            //     order: item.order || index
+            // }))
         };
 
         const authenticatedApiClient = createApiClientFromRequest(request);
@@ -282,7 +282,7 @@ export default function CreateModule() {
 
     // Función onBack
     const handleBack = () => {
-        navigate(`/courses/${courseId}/modules`);
+        navigate(`/modules/course/${courseId}`);
     };
 
 

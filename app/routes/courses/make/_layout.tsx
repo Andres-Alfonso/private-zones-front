@@ -17,6 +17,7 @@ import { CoursesAPI } from '~/api/endpoints/courses';
 import { CourseLayoutData, CourseModuleLayoutData, CourseUserProgress } from "~/api/types/course.types";
 import { createApiClientFromRequest } from "~/api/client";
 import NavigationMenu from "~/components/courses/NavigationMenu";
+import { getSessionProgress } from "~/utils/progressCommunication";
 
 interface LoaderLayoutData {
     course: CourseLayoutData;
@@ -224,6 +225,27 @@ function CourseMakeLayoutContent() {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [expandedModules, setExpandedModules] = useState<string[]>(['1']);
 
+    const [syncedProgress, setSyncedProgress] = useState({
+        overallProgress: userProgress.overallProgress,
+        completedItems: userProgress.completedItems,
+    });
+
+    // Escuchar eventos de progreso
+    useEffect(() => {
+        const handleProgressUpdate = (event: CustomEvent) => {
+            setSyncedProgress(prev => ({
+                ...prev,
+                completedItems: event.detail.completedItems ? 
+                    [...new Set([...prev.completedItems, ...event.detail.completedItems])] : 
+                    prev.completedItems,
+                overallProgress: event.detail.overallProgress || prev.overallProgress,
+            }));
+        };
+        
+        window.addEventListener('progress-updated' as any, handleProgressUpdate);
+        return () => window.removeEventListener('progress-updated' as any, handleProgressUpdate);
+    }, []);
+
     if (error) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
@@ -276,7 +298,10 @@ function CourseMakeLayoutContent() {
     const getModuleProgress = (module: CourseModuleLayoutData) => {
         const completed = module.stats?.completedItems || 0;
         const total = module.stats?.totalItems || 0;
-        return total > 0 ? Math.round((completed / total) * 100) : 0;
+        const moduleItemsCompleted = module.items?.filter(item => 
+            syncedProgress.completedItems.includes(item.id)
+        ).length || completed;
+        return total > 0 ? Math.round((moduleItemsCompleted / total) * 100) : 0;
     };
 
     const isModuleLocked = (moduleIndex: number) => {
@@ -376,7 +401,7 @@ function CourseMakeLayoutContent() {
                             <div className="flex items-center space-x-3">
                                 <div className="hidden sm:flex items-center space-x-4 text-sm text-white/90">
                                     <div className="flex items-center space-x-2 px-3 py-1 bg-white/10 backdrop-blur-sm rounded-full">
-                                        <span className="font-medium">{userProgress.overallProgress}%</span>
+                                        <span className="font-medium">{syncedProgress.overallProgress}%</span>
                                     </div>
                                     <div className="flex items-center space-x-2 px-3 py-1 bg-white/10 backdrop-blur-sm rounded-full">
                                         <Clock className="h-4 w-4 text-white/80" />
@@ -500,7 +525,7 @@ function CourseMakeLayoutContent() {
                                 <div className="flex items-center space-x-2">
                                     <Target className="h-5 w-5 text-blue-600" />
                                     <span className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                                        {userProgress.overallProgress}%
+                                        {syncedProgress.overallProgress}%
                                     </span>
                                 </div>
                             </div>
@@ -510,7 +535,7 @@ function CourseMakeLayoutContent() {
                                 <div
                                     className="h-4 rounded-full transition-all duration-1000 ease-out relative"
                                     style={{
-                                        width: `${userProgress.overallProgress}%`,
+                                        width: `${syncedProgress.overallProgress}%`,
                                         background: `linear-gradient(135deg, ${titleColor} 0%, #8B5CF6 100%)`
                                     }}
                                 >
@@ -552,7 +577,7 @@ function CourseMakeLayoutContent() {
                             </div>
 
                             {/* Botón de continuar si hay progreso */}
-                            {userProgress.overallProgress > 0 && userProgress.currentItemId && (
+                            {syncedProgress.overallProgress > 0 && userProgress.currentItemId && (
                                 <Link
                                     to={`/make/courses/${course.id}/continue`}
                                     className="mt-4 w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"

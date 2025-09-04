@@ -50,7 +50,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 
         const authenticatedApiClient = createApiClientFromRequest(request);
 
-        const apiResponse: ModulesResponse = await ModuleAPI.getAllContents(courseId, filters, authenticatedApiClient);
+        const apiResponse: ModulesResponse = await ModuleAPI.getAllModules(courseId, filters, authenticatedApiClient);
 
         return json({
             modules: apiResponse,
@@ -168,8 +168,12 @@ export default function CourseModulesIndex() {
 
     // Estadísticas calculadas
     const totalModules = modules.pagination.total;
-    const activeModules = modules.data.filter(module => module.configuration.isActive).length;
-    const inactiveModules = totalModules - activeModules;
+
+    const activeModules = modules.data.filter(
+    (module) => module?.configuration?.isActive
+    );
+    const activeModulesLength = activeModules.length;
+    const inactiveModules = totalModules - activeModulesLength;
 
     if (error) {
         return (
@@ -323,7 +327,7 @@ export default function CourseModulesIndex() {
                             </div>
                             <div>
                                 <p className="text-sm text-gray-600 font-medium">Módulos Activos</p>
-                                <p className="text-2xl font-bold text-gray-900">{activeModules}</p>
+                                <p className="text-2xl font-bold text-gray-900">{activeModulesLength}</p>
                             </div>
                         </div>
                     </div>

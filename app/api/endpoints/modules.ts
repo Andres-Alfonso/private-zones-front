@@ -1,7 +1,7 @@
 // app/api/endpoints/modules.ts
 import { AxiosInstance } from "axios";
 import apiClient from "../client";
-import { CourseModule, CreateModuleData, ModuleApiResponse } from "../types/modules.types";
+import { CourseModule, CreateModuleData, ModuleApiResponse, ModulesResponse } from "../types/modules.types";
 // import { ContentCreateResponse } from "../types/content.types";
 
 const MODULES_ENDPOINTS = {
@@ -115,14 +115,14 @@ export const ModuleAPI = {
         return response.data;
     },
 
-    async getAllContents(
+    async getAllModules(
         courseId: string | null = null,
         filters: Record<string, any> = {},
         client?: AxiosInstance
-    ): Promise<ContentResponse[]> {
+    ): Promise<ModulesResponse> {
         const apiClientToUse = client || apiClient;
         const params = new URLSearchParams(filters);
-        const response = await apiClientToUse.get<ContentResponse[]>(
+        const response = await apiClientToUse.get<ModulesResponse>(
             MODULES_ENDPOINTS.GET_ALL(courseId),
             { params }
         );

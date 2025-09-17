@@ -1,6 +1,6 @@
 // app/utils/courseHelpers.ts
 import React from 'react';
-import { CourseFormData, CourseLevel, CourseStatus, CourseVisibility } from '~/api/types/course.types';
+import { CourseFormData, CourseLevel, CourseStatus, CourseTranslation, CourseVisibility } from '~/api/types/course.types';
 
 export function getCourseLevelColor(level: CourseLevel): string {
   switch (level) {
@@ -189,3 +189,12 @@ export function useAutoSave<T>(
 
   return { lastSaved, isSaving };
 }
+
+export const getCurrentTranslation = (
+  translations: CourseTranslation[], 
+  currentLanguage: string = 'en'
+): CourseTranslation | undefined => {
+  return translations.find(t => t.languageCode === currentLanguage) 
+    || translations.find(t => t.languageCode === 'en') // fallback a inglés
+    || translations[0]; // fallback a la primera disponible
+};

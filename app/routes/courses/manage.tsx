@@ -9,9 +9,12 @@ import {
   Download, Upload, BarChart3, BookOpen, Calendar, Star,
   ChevronLeft, ChevronRight
 } from "lucide-react";
-import { Course, CourseLevel } from "~/api/types/course.types";
+import { Course, CourseLevel, CourseFilters, CoursesResponse } from "~/api/types/course.types";
 // import { CoursesAPI } from "~/api/endpoints/courses";
 import { RoleGuard } from "~/components/AuthGuard";
+import { CoursesAPI } from "~/api/endpoints/courses";
+import { createApiClientFromRequest } from "~/api/client";
+import { getCurrentTranslation } from "~/utils/courseHelpers";
 
 interface ManageCourse extends Course {
   enrollments: number;
@@ -40,12 +43,28 @@ interface ActionData {
   action?: string;
 }
 
-export const loader: LoaderFunction = async ({ request }) => {
+export const loader: LoaderFunction = async ({ request, params }) => {
+
+  const url = new URL(request.url);
+  const tenantDomain = request.headers.get('host');
+
   try {
     // En producción: llamadas reales al API
     // const courses = await CoursesAPI.getAll({ includeStats: true });
     // const categories = await CoursesAPI.getCategories();
     // const instructors = await CoursesAPI.getInstructors();
+
+    const filters: CourseFilters = {
+      search: url.searchParams.get('search') || undefined,
+      isActive: url.searchParams.get('active') ? url.searchParams.get('active') === 'true' : undefined,
+      page: parseInt(url.searchParams.get('page') || '1'),
+      limit: parseInt(url.searchParams.get('limit') || '20'),
+    };
+
+    const authenticatedApiClient = createApiClientFromRequest(request);
+    
+    const apiResponse: CoursesResponse = await CoursesAPI.getAll(filters, authenticatedApiClient);
+
     
     // Datos simulados para gestión
     const mockCourses: ManageCourse[] = [
@@ -125,25 +144,47 @@ export const loader: LoaderFunction = async ({ request }) => {
       averageRating: mockCourses.reduce((acc, c) => acc + c.averageRating, 0) / mockCourses.length
     };
 
-    return json<LoaderData>({ 
-      courses: mockCourses,
-      stats,
-      categories: ['Frontend', 'Backend', 'Diseño', 'DevOps'],
-      instructors: [
-        { id: '1', name: 'Juan Pérez', email: 'juan@example.com' },
-        { id: '2', name: 'María García', email: 'maria@example.com' },
-        { id: '3', name: 'Ana Rodríguez', email: 'ana@example.com' }
-      ],
-      error: null 
+    // return json<LoaderData>({ 
+    //   courses: mockCourses,
+    //   stats,
+    //   categories: ['Frontend', 'Backend', 'Diseño', 'DevOps'],
+    //   instructors: [
+    //     { id: '1', name: 'Juan Pérez', email: 'juan@example.com' },
+    //     { id: '2', name: 'María García', email: 'maria@example.com' },
+    //     { id: '3', name: 'Ana Rodríguez', email: 'ana@example.com' }
+    //   ],
+    //   error: null 
+    // });
+
+    return json({
+        courses: apiResponse,
+        stats,
+        categories: ['Frontend', 'Backend', 'Diseño', 'DevOps'],
+        instructors: [
+          { id: '1', name: 'Juan Pérez', email: 'juan@example.com' },
+          { id: '2', name: 'María García', email: 'maria@example.com' },
+          { id: '3', name: 'Ana Rodríguez', email: 'ana@example.com' }
+        ],
+        error: null
     });
   } catch (error: any) {
-    console.error('Error loading course management data:', error);
-    return json<LoaderData>({ 
-      courses: [],
-      stats: { totalCourses: 0, activeCourses: 0, totalStudents: 0, totalRevenue: 0, averageRating: 0 },
-      categories: [],
-      instructors: [],
-      error: error.message || 'Error al cargar los datos de gestión'
+    // console.error('Error loading course management data:', error);
+    // return json<LoaderData>({ 
+    //   courses: [],
+    //   stats: { totalCourses: 0, activeCourses: 0, totalStudents: 0, totalRevenue: 0, averageRating: 0 },
+    //   categories: [],
+    //   instructors: [],
+    //   error: error.message || 'Error al cargar los datos de gestión'
+    // });
+
+    console.error('Error loading modules:', error);
+    return json({
+        modules: { 
+            data: [], 
+            pagination: { page: 1, limit: 12, total: 0, totalPages: 0, hasNext: false, hasPrev: false }
+        },
+        courseId: params.courseId,
+        error: error.message || 'Error al cargar los módulos'
     });
   }
 };
@@ -196,9 +237,25 @@ export default function ManageCourses() {
 }
 
 function ManageCoursesContent() {
-  const { courses, stats, categories, instructors, error } = useLoaderData<LoaderData>();
+  const { courses, stats, categories, error } = useLoaderData<{
+    courses: CoursesResponse,
+    stats: {
+      totalCourses: number,
+      activeCourses: number,
+      totalStudents: number,
+      totalRevenue: number,
+      averageRating: number
+    },
+    categories: string[],
+    error: string | null
+  }>();
   const actionData = useActionData<ActionData>();
   const navigation = useNavigation();
+
+  const getCourseTitle = (course: Course, languageCode: string = 'en'): string => {
+    const translation = course.translations.find(t => t.languageCode === languageCode);
+    return translation?.title || course.translations[0]?.title || '';
+  };
   
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
@@ -208,16 +265,17 @@ function ManageCoursesContent() {
   const isSubmitting = navigation.state === 'submitting';
 
   // Filtrar cursos
-  const filteredCourses = courses.filter(course => {
-    const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         course.instructor.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = !filterCategory || course.category === filterCategory;
+  const filteredCourses = courses?.data?.filter(course => {
+    const title = getCourseTitle(course);
+    
+    const matchesSearch = title.toLowerCase().includes(searchTerm.toLowerCase());
+    
     const matchesStatus = !filterStatus || 
                          (filterStatus === 'active' && course.isActive) ||
                          (filterStatus === 'inactive' && !course.isActive);
     
-    return matchesSearch && matchesCategory && matchesStatus;
-  });
+    return matchesSearch && matchesStatus;
+  }) || [];
 
   // Manejar selección de cursos
   const handleSelectCourse = (courseId: string) => {
@@ -491,6 +549,10 @@ function CourseManagementRow({
   onSelect: () => void,
   isSubmitting: boolean 
 }) {
+
+  const currentLanguage = 'es'; // o desde context, localStorage, etc.
+  const currentTranslation = getCurrentTranslation(course.translations, currentLanguage);
+
   const getLevelColor = (level: CourseLevel) => {
     switch (level) {
       case CourseLevel.BEGINNER:
@@ -538,33 +600,33 @@ function CourseManagementRow({
 
       <td className="px-6 py-4">
         <div className="flex items-center">
-          {course.thumbnail && (
+          {course.configuration?.thumbnailImage && (
             <div className="flex-shrink-0 h-12 w-12 mr-4">
               <img 
                 className="h-12 w-12 rounded-xl object-cover shadow-md" 
-                src={course.thumbnail} 
-                alt={course.title}
+                src={course.configuration?.thumbnailImage} 
+                alt={currentTranslation?.title || 'Course image'}
               />
             </div>
           )}
           <div>
             <div className="text-sm font-semibold text-gray-900">
               <Link 
-                to={`/courses/${course.id}`}
+                to={`/make/courses/${course.id}`}
                 className="hover:text-blue-600 transition-colors"
               >
-                {course.title}
+                {currentTranslation?.title ?? course.slug ?? 'Curso prueba'}
               </Link>
             </div>
-            <div className="flex items-center space-x-2 mt-1">
+            {/* <div className="flex items-center space-x-2 mt-1">
               <span className={`px-2 py-1 text-xs font-medium rounded-full ${getLevelColor(course.level)}`}>
                 {getLevelText(course.level)}
               </span>
               <span className="text-xs text-gray-500">{course.category}</span>
-            </div>
+            </div> */}
             <div className="flex items-center text-xs text-gray-400 mt-1">
               <Calendar className="h-3 w-3 mr-1" />
-              {course.duration}h
+              {course.configuration?.estimatedHours}h
             </div>
           </div>
         </div>
@@ -587,13 +649,13 @@ function CourseManagementRow({
 
       <td className="px-6 py-4">
         <div>
-          <div className="text-sm font-semibold text-gray-900">{course.enrollments}/{course.maxStudents}</div>
+          <div className="text-sm font-semibold text-gray-900">{course.enrollments}/{course.configuration?.maxEnrollments}</div>
           <div className="text-xs text-gray-500">{course.completionRate}% completado</div>
           <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
-            <div 
+            {/* <div 
               className="bg-blue-600 h-1.5 rounded-full transition-all duration-200" 
-              style={{ width: `${(course.enrollments / course.maxStudents) * 100}%` }}
-            ></div>
+              style={{ width: `${(course.enrollments / course.configuration.maxEnrollments) * 100}%` }}
+            ></div> */}
           </div>
         </div>
       </td>

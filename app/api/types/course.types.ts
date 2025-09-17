@@ -285,6 +285,20 @@ export interface CourseFilters {
   limit?: number;
 }
 
+export interface CoursePagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
+export interface CoursesResponse {
+  data: Course[];
+  pagination: CoursePagination;
+}
+
 // Interfaces para formularios
 export interface CourseFormData {
   // Información básica

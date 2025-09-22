@@ -51,7 +51,7 @@ function getAuthTokensFromCookies(cookieString?: string): { accessToken?: string
 // Configura la URL base según el entorno
 const BASE_URL = process.env.NODE_ENV === 'production' 
   ? 'https://api.klmsystem.online' 
-  : 'http://192.168.1.12:3020';
+  : 'https://api.klmsystem.online';
 
 function getCurrentDomain(): string {
   if (typeof window === 'undefined') {

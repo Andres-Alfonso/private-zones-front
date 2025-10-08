@@ -1,11 +1,10 @@
 // app/routes/auth/register.tsx
-import { json, redirect, ActionFunction, LoaderFunction } from '@remix-run/node';
-import { useActionData, Form, useNavigation, useLoaderData, useNavigate } from '@remix-run/react';
+import { json, ActionFunction } from '@remix-run/node';
+import { useActionData, Form, useNavigation, useNavigate } from '@remix-run/react';
 import type { MetaFunction } from "@remix-run/node";
 import { useEffect, useState } from 'react';
 import Input from '~/components/ui/Input';
 import Select from '~/components/ui/Select';
-import Checkbox from '~/components/ui/Checkbox';
 import Modal from '~/components/ui/Modal';
 import { validateRegisterForm, getErrorByField } from '~/utils/validation';
 import { AuthAPI } from '~/api/endpoints/auth';
@@ -21,99 +20,37 @@ export const meta: MetaFunction = () => {
   ];
 };
 
-interface TenantConfig {
-  allowSelfRegistration: boolean;
-  allowGoogleLogin: boolean;
-  allowFacebookLogin: boolean;
-  requireLastName: boolean;
-  requirePhone: boolean;
-  requireDocumentType: boolean;
-  requireDocument: boolean;
-  requireOrganization: boolean;
-  requirePosition: boolean;
-  requireGender: boolean;
-  requireCity: boolean;
-  requireAddress: boolean;
-}
-
-interface LoaderData {
-  tenantConfig: TenantConfig;
-  documentTypes: Array<{ value: string; label: string }>;
-  genderOptions: Array<{ value: string; label: string }>;
-}
-
 interface ActionData {
   errors?: Array<{ field: string; message: string }>;
   generalError?: string;
   success?: boolean;
 }
 
-export const loader: LoaderFunction = async ({ request }) => {
-  // Obtener configuración del tenant desde tu API o base de datos
-  const url = new URL(request.url);
-  const domain = url.hostname;
-  
-  try {
-    // Aquí deberías obtener la configuración del tenant
-    // const tenantConfig = await getTenantConfig(domain);
-    
-    // Por ahora, simulo la configuración
-    const tenantConfig: TenantConfig = {
-      allowSelfRegistration: true,
-      allowGoogleLogin: false,
-      allowFacebookLogin: false,
-      requireLastName: true,
-      requirePhone: true,
-      requireDocumentType: true,
-      requireDocument: true,
-      requireOrganization: false,
-      requirePosition: true,
-      requireGender: false,
-      requireCity: true,
-      requireAddress: false,
-    };
-
-    // Si no se permite auto-registro, redirigir
-    if (!tenantConfig.allowSelfRegistration) {
-      throw new Response("Registro no permitido", { status: 403 });
-    }
-
-    const documentTypes = [
-      { value: 'cc', label: 'Cédula de Ciudadanía' },
-      { value: 'ce', label: 'Cédula de Extranjería' },
-      { value: 'passport', label: 'Pasaporte' },
-      { value: 'ti', label: 'Tarjeta de Identidad' },
-    ];
-
-    const genderOptions = [
-      { value: 'MASCULINO', label: 'Masculino' },
-      { value: 'FEMENINO', label: 'Femenino' },
-      { value: 'OTRO', label: 'Otro' },
-      { value: 'PREFIERO_NO_DECIR', label: 'Prefiero no decir' },
-    ];
-
-    return json<LoaderData>({
-      tenantConfig,
-      documentTypes,
-      genderOptions,
-    });
-  } catch (error) {
-    throw new Response("Error al cargar configuración", { status: 500 });
-  }
-};
+// Interfaz para la configuración del tenant
+interface TenantConfig {
+  allowSelfRegistration?: boolean;
+  allowGoogleLogin?: boolean;
+  allowFacebookLogin?: boolean;
+  requireLastName?: boolean;
+  requirePhone?: boolean;
+  requireDocumentType?: boolean;
+  requireDocument?: boolean;
+  requireOrganization?: boolean;
+  requirePosition?: boolean;
+  requireGender?: boolean;
+  requireCity?: boolean;
+  requireAddress?: boolean;
+}
 
 export const action: ActionFunction = async ({ request }) => {
   const formData = await request.formData();
-  
+
   // Obtener configuración del tenant para validación
   const url = new URL(request.url);
   const domain = url.hostname;
   
-  // Aquí deberías obtener la configuración del tenant nuevamente
-  // const tenantConfig = await getTenantConfig(domain);
-  
-  // Validar formulario con configuración dinámica
-  const validation = validateRegisterForm(formData, /* tenantConfig */);
+  // Validar formulario (validación básica en el servidor)
+  const validation = validateRegisterForm(formData);
 
   if (!validation.isValid) {
     return json<ActionData>({ 
@@ -127,19 +64,18 @@ export const action: ActionFunction = async ({ request }) => {
     password: formData.get('password') as string,
     name: formData.get('first-name') as string,
     lastName: formData.get('last-name') as string,
-    phone: formData.get('phone') as string,
-    documentType: formData.get('document-type') as string,
-    document: formData.get('document') as string,
-    organization: formData.get('organization') as string,
-    position: formData.get('position') as string,
-    gender: formData.get('gender') as string,
-    city: formData.get('city') as string,
-    address: formData.get('address') as string,
+    phone: formData.get('phone') as string || undefined,
+    documentType: formData.get('document-type') as string || undefined,
+    document: formData.get('document') as string || undefined,
+    organization: formData.get('organization') as string || undefined,
+    position: formData.get('position') as string || undefined,
+    gender: formData.get('gender') as string || undefined,
+    city: formData.get('city') as string || undefined,
+    address: formData.get('address') as string || undefined,
     tenantId: domain,
   };
 
   try {
-    // Llamar al API de registro
     const response = await AuthAPI.register(registrationData);
     
     console.log('Registro exitoso:', response);
@@ -161,7 +97,7 @@ export const action: ActionFunction = async ({ request }) => {
         if (errorData?.message) {
           generalError = errorData.message;
         } else {
-          generalError = 'El correo electrónico ya está en uso';
+          generalError = 'El correo electrónico o documento ya está en uso';
         }
       } else if (status === 429) {
         generalError = 'Demasiados intentos. Intenta más tarde';
@@ -179,17 +115,41 @@ export const action: ActionFunction = async ({ request }) => {
 };
 
 export default function RegisterPage() {
-  const loaderData = useLoaderData<LoaderData>();
   const actionData = useActionData<ActionData>();
   const navigation = useNavigation();
   const navigate = useNavigate();
   const { state, login, clearError } = useAuth();
   const { redirectAfterLogin } = useAuthRedirect();
+  const { state: tenantState } = useTenant();
+  const { tenant } = tenantState;
 
-  // ← Estado para controlar el modal de términos
   const [showTermsModal, setShowTermsModal] = useState(false);
 
-  const { tenantConfig, documentTypes, genderOptions } = loaderData;
+  // Configuración del tenant con tipos
+  const config: TenantConfig = (tenant?.config as TenantConfig) || {};
+  const allowSelfRegistration = config.allowSelfRegistration ?? true;
+
+  // Opciones para selects
+  const documentTypes = [
+    { value: 'cc', label: 'Cédula de Ciudadanía' },
+    { value: 'ce', label: 'Cédula de Extranjería' },
+    { value: 'passport', label: 'Pasaporte' },
+    { value: 'ti', label: 'Tarjeta de Identidad' },
+  ];
+
+  const genderOptions = [
+    { value: 'MASCULINO', label: 'Masculino' },
+    { value: 'FEMENINO', label: 'Femenino' },
+    { value: 'OTRO', label: 'Otro' },
+    { value: 'PREFIERO_NO_DECIR', label: 'Prefiero no decir' },
+  ];
+
+  // Redirigir si no se permite auto-registro
+  useEffect(() => {
+    if (!allowSelfRegistration) {
+      navigate('/auth/login');
+    }
+  }, [allowSelfRegistration, navigate]);
 
   // Redirigir si ya está autenticado
   useEffect(() => {
@@ -200,6 +160,11 @@ export default function RegisterPage() {
   
   const isSubmitting = navigation.state === 'submitting';
   const errors = actionData?.errors || [];
+
+  // Si no se permite auto-registro, no mostrar nada
+  if (!allowSelfRegistration) {
+    return null;
+  }
 
   return (
     <div className="space-y-6">
@@ -221,7 +186,7 @@ export default function RegisterPage() {
 
       <Form method="post" className="space-y-4" noValidate>
         {/* Información básica */}
-        <div className={`grid grid-cols-1 gap-4 ${tenantConfig.requireLastName ? 'sm:grid-cols-2' : ''}`}>
+        <div className={`grid grid-cols-1 gap-4 ${config.requireLastName ? 'sm:grid-cols-2' : ''}`}>
           <Input
             type="text"
             id="first-name"
@@ -234,13 +199,13 @@ export default function RegisterPage() {
             placeholder="Tu nombre"
           />
           
-          {tenantConfig.requireLastName && (
+          {config.requireLastName && (
             <Input
               type="text"
               id="last-name"
               name="last-name"
               label="Apellido"
-              required={tenantConfig.requireLastName}
+              required={config.requireLastName}
               autoComplete="family-name"
               error={getErrorByField(errors, 'last-name')}
               disabled={isSubmitting}
@@ -262,13 +227,13 @@ export default function RegisterPage() {
         />
 
         {/* Teléfono */}
-        {tenantConfig.requirePhone && (
+        {config.requirePhone && (
           <Input
             type="tel"
             id="phone"
             name="phone"
             label="Teléfono"
-            required={tenantConfig.requirePhone}
+            required={config.requirePhone}
             autoComplete="tel"
             error={getErrorByField(errors, 'phone')}
             disabled={isSubmitting}
@@ -277,16 +242,16 @@ export default function RegisterPage() {
         )}
 
         {/* Documentos de identidad */}
-        {(tenantConfig.requireDocumentType || tenantConfig.requireDocument) && (
+        {(config.requireDocumentType || config.requireDocument) && (
           <div className={`grid grid-cols-1 gap-4 ${
-            tenantConfig.requireDocumentType && tenantConfig.requireDocument ? 'sm:grid-cols-2' : ''
+            config.requireDocumentType && config.requireDocument ? 'sm:grid-cols-2' : ''
           }`}>
-            {tenantConfig.requireDocumentType && (
+            {config.requireDocumentType && (
               <Select
                 id="document-type"
                 name="document-type"
                 label="Tipo de documento"
-                required={tenantConfig.requireDocumentType}
+                required={config.requireDocumentType}
                 error={getErrorByField(errors, 'document-type')}
                 disabled={isSubmitting}
                 options={documentTypes}
@@ -294,13 +259,13 @@ export default function RegisterPage() {
               />
             )}
             
-            {tenantConfig.requireDocument && (
+            {config.requireDocument && (
               <Input
                 type="text"
                 id="document"
                 name="document"
                 label="Número de documento"
-                required={tenantConfig.requireDocument}
+                required={config.requireDocument}
                 error={getErrorByField(errors, 'document')}
                 disabled={isSubmitting}
                 placeholder="12345678"
@@ -310,30 +275,30 @@ export default function RegisterPage() {
         )}
 
         {/* Información profesional */}
-        {(tenantConfig.requireOrganization || tenantConfig.requirePosition) && (
+        {(config.requireOrganization || config.requirePosition) && (
           <div className={`grid grid-cols-1 gap-4 ${
-            tenantConfig.requireOrganization && tenantConfig.requirePosition ? 'sm:grid-cols-2' : ''
+            config.requireOrganization && config.requirePosition ? 'sm:grid-cols-2' : ''
           }`}>
-            {tenantConfig.requireOrganization && (
+            {config.requireOrganization && (
               <Input
                 type="text"
                 id="organization"
                 name="organization"
                 label="Organización"
-                required={tenantConfig.requireOrganization}
+                required={config.requireOrganization}
                 error={getErrorByField(errors, 'organization')}
                 disabled={isSubmitting}
                 placeholder="Nombre de la empresa"
               />
             )}
             
-            {tenantConfig.requirePosition && (
+            {config.requirePosition && (
               <Input
                 type="text"
                 id="position"
                 name="position"
                 label="Cargo"
-                required={tenantConfig.requirePosition}
+                required={config.requirePosition}
                 error={getErrorByField(errors, 'position')}
                 disabled={isSubmitting}
                 placeholder="Tu cargo o posición"
@@ -343,12 +308,12 @@ export default function RegisterPage() {
         )}
 
         {/* Información personal adicional */}
-        {tenantConfig.requireGender && (
+        {config.requireGender && (
           <Select
             id="gender"
             name="gender"
             label="Género"
-            required={tenantConfig.requireGender}
+            required={config.requireGender}
             error={getErrorByField(errors, 'gender')}
             disabled={isSubmitting}
             options={genderOptions}
@@ -357,30 +322,30 @@ export default function RegisterPage() {
         )}
 
         {/* Información de ubicación */}
-        {(tenantConfig.requireCity || tenantConfig.requireAddress) && (
+        {(config.requireCity || config.requireAddress) && (
           <div className={`grid grid-cols-1 gap-4 ${
-            tenantConfig.requireCity && tenantConfig.requireAddress ? 'sm:grid-cols-2' : ''
+            config.requireCity && config.requireAddress ? 'sm:grid-cols-2' : ''
           }`}>
-            {tenantConfig.requireCity && (
+            {config.requireCity && (
               <Input
                 type="text"
                 id="city"
                 name="city"
                 label="Ciudad"
-                required={tenantConfig.requireCity}
+                required={config.requireCity}
                 error={getErrorByField(errors, 'city')}
                 disabled={isSubmitting}
                 placeholder="Tu ciudad"
               />
             )}
             
-            {tenantConfig.requireAddress && (
+            {config.requireAddress && (
               <Input
                 type="text"
                 id="address"
                 name="address"
                 label="Dirección"
-                required={tenantConfig.requireAddress}
+                required={config.requireAddress}
                 error={getErrorByField(errors, 'address')}
                 disabled={isSubmitting}
                 placeholder="Tu dirección completa"
@@ -415,7 +380,7 @@ export default function RegisterPage() {
           placeholder="Repite tu contraseña"
         />
         
-        {/* ← Checkbox con enlace personalizado para términos */}
+        {/* Checkbox de términos */}
         <div className="space-y-2">
           <div className="flex items-start">
             <input
@@ -475,7 +440,7 @@ export default function RegisterPage() {
         </div>
 
         {/* Opciones de login social si están habilitadas */}
-        {(tenantConfig.allowGoogleLogin || tenantConfig.allowFacebookLogin) && (
+        {(config.allowGoogleLogin || config.allowFacebookLogin) && (
           <div className="space-y-4">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -489,7 +454,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="grid gap-3">
-              {tenantConfig.allowGoogleLogin && (
+              {config.allowGoogleLogin && (
                 <button
                   type="button"
                   disabled={isSubmitting}
@@ -505,7 +470,7 @@ export default function RegisterPage() {
                 </button>
               )}
 
-              {tenantConfig.allowFacebookLogin && (
+              {config.allowFacebookLogin && (
                 <button
                   type="button"
                   disabled={isSubmitting}
@@ -535,7 +500,7 @@ export default function RegisterPage() {
         </p>
       </div>
 
-      {/* ← Modal de términos y condiciones */}
+      {/* Modal de términos y condiciones */}
       <Modal
         title="Términos y Condiciones"
         isOpen={showTermsModal}

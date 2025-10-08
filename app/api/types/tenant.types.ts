@@ -116,6 +116,21 @@ export interface TenantConfig {
   dateFormat: string;
   currency: string;
   customCss?: string;
+  loginMethod: 'email' | 'document' | 'both';
+  allowSelfRegistration: boolean;
+  allowGoogleLogin: boolean;
+  allowFacebookLogin: boolean;
+  allowUserPasswordChange: boolean;
+  allowValidationStatusUsers: boolean;
+
+  // Campos requeridos en registro
+  requireLastName: boolean;
+  requirePhone: boolean;
+  requireDocumentType: boolean;
+  requireDocument: boolean;
+  requireOrganization: boolean;
+  requirePosition: boolean;
+  requireGender: boolean
 }
 
 export interface TenantContactInfo {

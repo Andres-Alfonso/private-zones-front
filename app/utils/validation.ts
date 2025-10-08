@@ -28,6 +28,10 @@ export const ValidationRules = {
     required: "El correo electrónico es obligatorio",
     invalid: "El formato del correo electrónico no es válido",
   },
+  document: {
+    required: "El documento es requerido",
+    invalid: "El documento debe contener solo números (5-20 dígitos)"
+  },
   password: {
     required: "La contraseña es obligatoria",
     minLength: "La contraseña debe tener al menos 8 caracteres",
@@ -56,6 +60,26 @@ export const validateEmail = (email: string): string | null => {
   }
 
   return null;
+};
+
+export const validateDocument = (document: string): string | null => {
+  if (!document || document.trim() === '') {
+    return ValidationRules.document.required;
+  }
+  
+  // Validar que solo contenga números y tenga entre 5 y 20 caracteres
+  const documentRegex = /^[0-9]{5,20}$/;
+  if (!documentRegex.test(document.trim())) {
+    return ValidationRules.document.invalid;
+  }
+  
+  return null;
+};
+
+// Validar si es email o documento
+export const isEmail = (value: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(value);
 };
 
 export const validatePassword = (password: string): string | null => {
@@ -110,17 +134,64 @@ export const validateConfirmPassword = (
 };
 
 // Validadores para formularios completos
-export const validateLoginForm = (formData: FormData): ValidationResult => {
-  const email = formData.get("email") as string;
+export const validateLoginForm = (
+  formData: FormData, 
+  loginMethod: 'email' | 'document' | 'both' = 'email'
+): ValidationResult => {
+  const identifier = formData.get("identifier") as string;
   const password = formData.get("password") as string;
 
   const errors: ValidationError[] = [];
 
-  const emailError = validateEmail(email);
-  if (emailError) {
-    errors.push({ field: "email", message: emailError });
+  // Validar el identificador según el loginMethod
+  if (!identifier || identifier.trim() === '') {
+    const fieldName = loginMethod === 'document' ? 'documento' : 
+                     loginMethod === 'email' ? 'correo electrónico' : 
+                     'documento o correo electrónico';
+    errors.push({ 
+      field: "identifier", 
+      message: `El ${fieldName} es requerido` 
+    });
+  } else {
+    // Validar según el método de login configurado
+    switch(loginMethod) {
+      case 'document':
+        const documentError = validateDocument(identifier);
+        if (documentError) {
+          errors.push({ field: "identifier", message: documentError });
+        }
+        break;
+        
+      case 'email':
+        const emailError = validateEmail(identifier);
+        if (emailError) {
+          errors.push({ field: "identifier", message: emailError });
+        }
+        break;
+        
+      case 'both':
+        // Validar si es email o documento
+        const isEmailFormat = isEmail(identifier);
+        
+        if (isEmailFormat) {
+          const emailError = validateEmail(identifier);
+          if (emailError) {
+            errors.push({ field: "identifier", message: emailError });
+          }
+        } else {
+          const documentError = validateDocument(identifier);
+          if (documentError) {
+            errors.push({ 
+              field: "identifier", 
+              message: "Debe ingresar un correo electrónico válido o un documento válido (5-20 dígitos numéricos)" 
+            });
+          }
+        }
+        break;
+    }
   }
 
+  // Validar contraseña
   const passwordError = validatePassword(password);
   if (passwordError) {
     errors.push({ field: "password", message: passwordError });

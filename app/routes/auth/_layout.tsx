@@ -4,6 +4,7 @@ import { Outlet, NavLink, useLocation } from "@remix-run/react";
 import { useState } from "react";
 import { User, UserPlus, Shield, Lock } from "lucide-react";
 import Modal from "~/components/ui/Modal";
+import { useTenant } from "~/context/TenantContext";
 
 export const meta: MetaFunction = () => {
   return [
@@ -14,12 +15,18 @@ export const meta: MetaFunction = () => {
 
 export default function AuthLayout() {
   const location = useLocation();
+  const { state: tenantState } = useTenant();
+  const { tenant } = tenantState;
+  
   const isLoginPage = location.pathname.includes('login');
   const isRegisterPage = location.pathname.includes('register');
   const isForgotPasswordPage = location.pathname.includes('forgot-password');
   const isResetPasswordPage = location.pathname.includes('reset-password');
 
   const [showTerms, setShowTerms] = useState(false);
+
+  // Obtener configuración de auto-registro del tenant
+  const allowSelfRegistration = tenant?.config?.allowSelfRegistration ?? true;
 
   // Determinar el ancho máximo basado en la página
   const getMaxWidth = () => {
@@ -54,19 +61,23 @@ export default function AuthLayout() {
                       <User className="h-4 w-4" />
                       <span>Iniciar Sesión</span>
                     </NavLink>
-                    <NavLink
-                      to="/auth/register"
-                      className={({ isActive }) =>
-                        `flex items-center space-x-2 px-6 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${
-                          isActive
-                            ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-md transform scale-105'
-                            : 'text-gray-600 hover:text-gray-900 hover:bg-white/80 hover:shadow-md hover:scale-105'
-                        }`
-                      }
-                    >
-                      <UserPlus className="h-4 w-4" />
-                      <span>Registrarse</span>
-                    </NavLink>
+                    
+                    {/* Solo mostrar pestaña de registro si está habilitado */}
+                    {allowSelfRegistration && (
+                      <NavLink
+                        to="/auth/register"
+                        className={({ isActive }) =>
+                          `flex items-center space-x-2 px-6 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                            isActive
+                              ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-md transform scale-105'
+                              : 'text-gray-600 hover:text-gray-900 hover:bg-white/80 hover:shadow-md hover:scale-105'
+                          }`
+                        }
+                      >
+                        <UserPlus className="h-4 w-4" />
+                        <span>Registrarse</span>
+                      </NavLink>
+                    )}
                   </nav>
                 </div>
               )}
@@ -107,15 +118,19 @@ export default function AuthLayout() {
                       >
                         ¿Olvidaste tu contraseña?
                       </NavLink>
-                      <div className="text-sm text-gray-600">
-                        ¿No tienes cuenta?{' '}
-                        <NavLink
-                          to="/auth/register"
-                          className="font-medium text-green-600 hover:text-green-700 transition-colors hover:underline"
-                        >
-                          Regístrate aquí
-                        </NavLink>
-                      </div>
+                      
+                      {/* Solo mostrar enlace de registro si está habilitado */}
+                      {allowSelfRegistration && (
+                        <div className="text-sm text-gray-600">
+                          ¿No tienes cuenta?{' '}
+                          <NavLink
+                            to="/auth/register"
+                            className="font-medium text-green-600 hover:text-green-700 transition-colors hover:underline"
+                          >
+                            Regístrate aquí
+                          </NavLink>
+                        </div>
+                      )}
                     </div>
                   )}
 

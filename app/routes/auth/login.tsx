@@ -2,11 +2,12 @@
 import { json, redirect, ActionFunction } from '@remix-run/node';
 import { useActionData, Form, useNavigation, useSearchParams } from '@remix-run/react';
 import type { MetaFunction } from "@remix-run/node";
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Input from '~/components/ui/Input';
 import { validateLoginForm, getErrorByField } from '~/utils/validation';
 import { useAuth } from '~/context/AuthContext';
 import { useAuthRedirect } from '~/components/AuthGuard';
+import { useTenant } from "~/context/TenantContext";
 
 export const meta: MetaFunction = () => {
   return [
@@ -41,22 +42,36 @@ export const action: ActionFunction = async ({ request }) => {
 export default function LoginPage() {
   const actionData = useActionData<ActionData>();
   const navigation = useNavigation();
+  const { state: tenantState } = useTenant();
+  const { tenant } = tenantState;
   const [searchParams] = useSearchParams();
   const { state, login, clearError } = useAuth();
   const { redirectAfterLogin } = useAuthRedirect();
   
+  // Estado local para errores de validación del cliente
+  const [clientErrors, setClientErrors] = useState<Array<{ field: string; message: string }>>([]);
+  
+  const allowSelfRegistration = tenant?.config?.allowSelfRegistration ?? true;
+
   const isSubmitting = navigation.state === 'submitting' || state.isLoading;
-  const errors = actionData?.errors || [];
+  const errors = clientErrors.length > 0 ? clientErrors : (actionData?.errors || []);
+
+  // Obtener el loginMethod del tenant
+  const loginMethod = tenant?.config?.loginMethod || 'email';
+
+  // console.log('LoginPage - loginMethod:', loginMethod);
+  console.log('LoginPage - tenant:', tenant);
 
   // Limpiar errores cuando el componente se monta
   useEffect(() => {
     clearError();
+    setClientErrors([]);
   }, [clearError]);
 
   // Redirigir si ya está autenticado
   useEffect(() => {
     if (state.isAuthenticated) {
-      redirectAfterLogin('/home'); // Ruta por defecto después del login
+      redirectAfterLogin('/home');
     }
   }, [state.isAuthenticated, redirectAfterLogin]);
 
@@ -64,24 +79,85 @@ export default function LoginPage() {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     
+    console.log('handleSubmit called');
+    
     const formData = new FormData(event.currentTarget);
-    const email = formData.get('email') as string;
+    const identifier = formData.get('identifier') as string;
     const password = formData.get('password') as string;
 
+    // console.log('Form data:', { identifier, password: '***', loginMethod });
+
+    // Limpiar errores previos
+    setClientErrors([]);
+
     // Validar en el cliente antes de proceder
-    const validation = validateLoginForm(formData);
+    const validation = validateLoginForm(formData, loginMethod);
+    
+    // console.log('Validation result:', validation);
+    
     if (!validation.isValid) {
-      return; // Los errores se mostrarán automáticamente
+      console.log('Validation failed:', validation.errors);
+      setClientErrors(validation.errors);
+      return;
     }
 
     try {
-      await login({ email, password });
-      // El useEffect de arriba manejará la redirección
+      // console.log('Attempting login...');
+      
+      // Determinar qué campo enviar según el loginMethod
+      let loginData: any = { password };
+      
+      if (loginMethod === 'document') {
+        loginData.document = identifier;
+      } else if (loginMethod === 'email') {
+        loginData.email = identifier;
+      } else { // both
+        // Detectar si es email o documento
+        const isEmailFormat = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier);
+        if (isEmailFormat) {
+          loginData.email = identifier;
+        } else {
+          loginData.document = identifier;
+        }
+      }
+      
+      // console.log('Login data to send:', loginData);
+      
+      await login(loginData);
+      console.log('Login successful');
     } catch (error) {
-      // Los errores se manejan en el AuthContext
       console.error('Login error:', error);
     }
   };
+
+  // Determinar labels y placeholders según loginMethod
+  const getFieldConfig = () => {
+    switch(loginMethod) {
+      case 'document':
+        return {
+          label: 'Documento',
+          placeholder: '123456789',
+          autoComplete: 'username',
+          helperText: 'Ingresa tu número de documento'
+        };
+      case 'both':
+        return {
+          label: 'Documento o Correo electrónico',
+          placeholder: '123456789 o ejemplo@correo.com',
+          autoComplete: 'username',
+          helperText: 'Puedes ingresar tu documento o correo'
+        };
+      default: // email
+        return {
+          label: 'Correo electrónico',
+          placeholder: 'ejemplo@correo.com',
+          autoComplete: 'email',
+          helperText: ''
+        };
+    }
+  };
+
+  const fieldConfig = getFieldConfig();
 
   return (
     <div className="space-y-6">
@@ -135,15 +211,16 @@ export default function LoginPage() {
 
       <Form method="post" onSubmit={handleSubmit} className="space-y-4" noValidate>
         <Input
-          type="email"
-          id="email"
-          name="email"
-          label="Correo electrónico"
+          type={loginMethod === 'email' ? 'email' : 'text'}
+          id="identifier"
+          name="identifier"
+          label={fieldConfig.label}
           required
-          autoComplete="email"
-          error={getErrorByField(errors, 'email')}
+          autoComplete={fieldConfig.autoComplete}
+          error={getErrorByField(errors, 'identifier')}
           disabled={isSubmitting}
-          placeholder="ejemplo@correo.com"
+          placeholder={fieldConfig.placeholder}
+          helperText={fieldConfig.helperText}
         />
         
         <Input
@@ -160,22 +237,9 @@ export default function LoginPage() {
         />
         
         <div className="flex items-center justify-between">
-          {/* <div className="flex items-center">
-            <input
-              id="remember-me"
-              name="remember-me"
-              type="checkbox"
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              disabled={isSubmitting}
-            />
-            <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
-              Recordarme
-            </label>
-          </div> */}
-          
           <div className="text-sm">
             <a 
-              href="#" 
+              href="/auth/forgot-password" 
               className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
             >
               ¿Olvidaste tu contraseña?
@@ -204,18 +268,19 @@ export default function LoginPage() {
         </div>
       </Form>
 
-      {/* Enlaces adicionales */}
-      <div className="text-center text-sm text-gray-600">
-        <p>
-          ¿No tienes cuenta?{' '}
-          <a 
-            href="/auth/register" 
-            className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
-          >
-            Regístrate aquí
-          </a>
-        </p>
-      </div>
+      {allowSelfRegistration && (
+        <div className="text-center text-sm text-gray-600">
+          <p>
+            ¿No tienes cuenta?{' '}
+            <a 
+              href="/auth/register" 
+              className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
+            >
+              Regístrate aquí
+            </a>
+          </p>
+        </div>
+      )}
     </div>
   );
 }

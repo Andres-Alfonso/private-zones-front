@@ -13,7 +13,7 @@ export default function CoursesSection() {
             progress: 75,
             duration: "2h 30m",
             status: "En progreso",
-            thumbnail: null
+            thumbnail: "https://formacionvirtual.clinicaupb.org.co/storage/Médicos_y_otros_asistenciales_qTAEduLWU9/clubs/c8d714db1f75ada9e513d8520ce652bb67e09fb301616.jpg"
         },
         {
             id: "2", 
@@ -22,7 +22,7 @@ export default function CoursesSection() {
             progress: 100,
             duration: "1h 45m",
             status: "Completado",
-            thumbnail: null
+            thumbnail: "https://formacionvirtual.clinicaupb.org.co/storage/Prueba_grupo_31j41OPKtj/clubs/2a04e9db076e1652e9cca0b521d3a5fc6435c6f505c6e.jpg"
         },
         {
             id: "3",
@@ -31,7 +31,7 @@ export default function CoursesSection() {
             progress: 25,
             duration: "3h 15m",
             status: "En progreso",
-            thumbnail: null
+            thumbnail: "https://formacionvirtual.clinicaupb.org.co/storage/Curso_|_Reactivovigilancia_(Programas_Especiales_d/clubs/94a7a7b5423145b226edfac26800867567b65b7c6de34.jpg"
         },
         {
             id: "4",
@@ -63,12 +63,12 @@ export default function CoursesSection() {
                         className="group block bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200/50 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] hover:border-blue-200"
                     >
                         {/* Thumbnail */}
-                        <div className="relative aspect-video overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100">
+                        <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100">
                             {course.thumbnail ? (
                                 <img 
                                     src={course.thumbnail} 
                                     alt={course.title}
-                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                    className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                                 />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center">

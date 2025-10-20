@@ -174,7 +174,7 @@ export default function CourseDetail() {
           <span>Volver al catálogo</span>
         </Link>
 
-        <RoleGuard requiredRoles={['admin', 'instructor']} requireAll={false}>
+        <RoleGuard requiredRoles={['superadmin', 'admin', 'instructor']} requireAll={false}>
           <div className="flex items-center space-x-3">
             <Link
               to={`/courses/${course.id}/edit`}
@@ -237,7 +237,7 @@ export default function CourseDetail() {
       </div>
 
       {/* Panel administrativo adicional */}
-      <RoleGuard requiredRoles={['admin', 'instructor']} requireAll={false}>
+      <RoleGuard requiredRoles={['superadmin', 'admin', 'instructor']} requireAll={false}>
         <div className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 backdrop-blur-sm border border-yellow-200/50 rounded-2xl p-8 shadow-lg">
           <div className="flex items-center space-x-3 mb-6">
             <div className="p-3 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-xl text-white">

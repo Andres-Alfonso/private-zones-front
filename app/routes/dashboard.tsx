@@ -38,7 +38,7 @@ function DashboardContent() {
         </div>
 
         {/* Panel solo para admins */}
-        <RoleGuard requiredRole="admin">
+        <RoleGuard requiredRoles={['superadmin', 'admin']}>
           <div className="bg-yellow-50 p-6 rounded-lg shadow border border-yellow-200">
             <h2 className="text-xl font-semibold mb-4 text-yellow-800">Panel Admin</h2>
             <p className="text-yellow-700">Gestión de usuarios y productos</p>

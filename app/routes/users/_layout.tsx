@@ -25,7 +25,7 @@ export const loader: LoaderFunction = async ({ request }) => {
 export default function UsersLayout() {
   return (
     <AuthGuard>
-      <RoleGuard requiredRoles={['admin', 'moderator']} requireAll={false}>
+      <RoleGuard requiredRoles={['superadmin', 'admin', 'moderator']} requireAll={false}>
         <UsersLayoutContent />
       </RoleGuard>
     </AuthGuard>

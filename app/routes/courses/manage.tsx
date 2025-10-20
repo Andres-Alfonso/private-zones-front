@@ -230,7 +230,7 @@ export const action: ActionFunction = async ({ request }) => {
 
 export default function ManageCourses() {
   return (
-    <RoleGuard requiredRoles={['admin', 'instructor']} requireAll={false}>
+    <RoleGuard requiredRoles={['superadmin', 'admin', 'instructor']} requireAll={false}>
       <ManageCoursesContent />
     </RoleGuard>
   );

@@ -209,7 +209,7 @@ export default function CourseModulesIndex() {
                             </div>
                         </div>
 
-                        <RoleGuard requiredRoles={['admin', 'instructor']} requireAll={false}>
+                        <RoleGuard requiredRoles={['superadmin', 'admin', 'instructor']} requireAll={false}>
                             <NavLink
                                 to={`/modules/course/${params.courseId}/create`}
                                 className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 font-semibold"
@@ -370,7 +370,7 @@ export default function CourseModulesIndex() {
                                 }
                             </p>
                             
-                            <RoleGuard requiredRoles={['admin', 'instructor']} requireAll={false}>
+                            <RoleGuard requiredRoles={['superadmin', 'admin', 'instructor']} requireAll={false}>
                                 <NavLink
                                     to={`/modules/course/${params.courseId}/create`}
                                     className="inline-flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 font-semibold"

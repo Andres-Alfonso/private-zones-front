@@ -176,7 +176,7 @@ function CoursesLayoutContent() {
                 </nav>
 
                 {/* Navegación administrativa */}
-                <RoleGuard requiredRoles={['admin', 'instructor']} requireAll={false}>
+                <RoleGuard requiredRoles={['superadmin', 'admin', 'instructor']} requireAll={false}>
                   <NavTabs items={adminNavigation} />
                 </RoleGuard>
               </div>
@@ -195,7 +195,7 @@ function CoursesLayoutContent() {
                   <span>Volver al catálogo</span>
                 </NavLink>
 
-                <RoleGuard requiredRoles={['admin', 'instructor']} requireAll={false}>
+                <RoleGuard requiredRoles={['superadmin', 'admin', 'instructor']} requireAll={false}>
                   <div className="flex space-x-3">
                     <button className="px-6 py-3 text-sm border border-gray-300 rounded-xl hover:bg-white/80 hover:shadow-md transition-all duration-200 font-medium bg-white/60 backdrop-blur-sm">
                       Editar

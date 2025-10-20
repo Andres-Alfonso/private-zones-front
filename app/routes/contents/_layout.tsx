@@ -226,7 +226,7 @@ function ContentsLayoutContent() {
                   </NavLink>
                 </nav>
                 
-                <RoleGuard requiredRoles={['admin', 'instructor']} requireAll={false}>
+                <RoleGuard requiredRoles={['superadmin', 'admin', 'instructor']} requireAll={false}>
                   <div className="flex space-x-3">
                     <NavLink
                       to="/contents/create"

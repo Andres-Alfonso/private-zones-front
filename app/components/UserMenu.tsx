@@ -82,7 +82,7 @@ export function UserMenu({ colorText }: { colorText: string }) {
               Mi Perfil
             </a>
             
-            <RoleGuard requiredRole="admin">
+            <RoleGuard requiredRoles={['superadmin', 'admin']}>
               <a
                 href="/admin"
                 className="block px-4 py-3 text-sm text-gray-700 hover:bg-purple-50/50 transition-colors duration-200"

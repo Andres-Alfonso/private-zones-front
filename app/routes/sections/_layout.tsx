@@ -33,7 +33,7 @@ export const loader: LoaderFunction = async ({ request }) => {
 export default function SectionsLayout() {
     return (
         <AuthGuard>
-            <RoleGuard requiredRole="admin">
+            <RoleGuard requiredRoles={['superadmin', 'admin']}>
                 <SectionsLayoutContent />
             </RoleGuard>
         </AuthGuard>

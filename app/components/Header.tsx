@@ -108,7 +108,7 @@ export default function Header() {
                       </NavLink>
                     </RoleGuard>
 
-                    <RoleGuard requiredRole="superadmin">
+                    <RoleGuard requiredRoles={['superadmin', 'admin']}>
                       <NavLink 
                         to="/tenants" 
                         icon={<Building2 className="h-4 w-4" />}
@@ -118,7 +118,7 @@ export default function Header() {
                       </NavLink>
                     </RoleGuard>
 
-                    <RoleGuard requiredRole="admin">
+                    <RoleGuard requiredRoles={['superadmin', 'admin']}>
                       <NavLink 
                         to="/users"
                         textColor={navbarConfig?.textColor || '#ffffff'}
@@ -282,7 +282,7 @@ export default function Header() {
                   </MobileNavLink>
                 </RoleGuard>
                 
-                <RoleGuard requiredRole="admin">
+                <RoleGuard requiredRoles={['superadmin', 'admin']}>
                   <MobileNavLink 
                     to="/tenants" 
                     icon={<Building2 className="h-5 w-5" />}

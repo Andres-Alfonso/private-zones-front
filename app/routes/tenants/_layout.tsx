@@ -24,7 +24,7 @@ export const loader: LoaderFunction = async ({ request }) => {
 
 export default function TenantsLayout() {
   return (
-    <RoleGuard requiredRole="admin">
+    <RoleGuard requiredRoles={['superadmin', 'admin']}>
       <TenantsLayoutContent />
     </RoleGuard>
   );

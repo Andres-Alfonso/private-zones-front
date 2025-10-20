@@ -207,7 +207,7 @@ export default function BasicInfoForm({
           </div>
         </div>
 
-        <RoleGuard requiredRole="admin">
+        <RoleGuard requiredRoles={['superadmin', 'admin']}>
           {/* Roles */}
           <div className="mt-6">
             <label className="block text-sm font-medium text-gray-700 mb-3">

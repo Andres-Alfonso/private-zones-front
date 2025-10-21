@@ -74,10 +74,10 @@ export const loader: LoaderFunction = async ({ params }) => {
       error: null 
     });
   } catch (error: any) {
-    console.error('Error loading tenant for edit:', error);
+    console.error('Error loading cliente for edit:', error);
     return json<LoaderData>({ 
       tenant: null, 
-      error: error.message || 'Error al cargar el tenant'
+      error: error.message || 'Error al cargar el cliente'
     });
   }
 };
@@ -203,7 +203,7 @@ export const action: ActionFunction = async ({ request, params }) => {
     console.error('Error updating tenant:', error);
     
     return json<ActionData>({ 
-      generalError: 'Error inesperado al actualizar el tenant'
+      generalError: 'Error inesperado al actualizar el cliente'
     }, { status: 500 });
   }
 };
@@ -221,7 +221,7 @@ function getSpecificErrorMessage(error: TenantErrorResponse): string {
     case 'DATABASE_ERROR':
       return 'Error al guardar en la base de datos. Intenta nuevamente.';
     default:
-      return error.message || 'Error al actualizar el tenant';
+      return error.message || 'Error al actualizar el cliente';
   }
 }
 
@@ -416,7 +416,7 @@ export default function EditTenant() {
         currency: tenant.config?.currency || 'USD',
 
         // Navbar
-        backgroundColorNavbar: homeConfig?.backgroundColor || tenant.config?.primaryColor || '#0052cc'
+        backgroundColorNavbar: homeConfig?.backgroundColor || tenant.config?.primaryColor || '#484848'
         // textColorNavbar: tenant.config?.textColorNavbar || '#ffffff',
         // logoNavbar: tenant.config?.logoNavbar || 'K&LM',
         // showNotifications: tenant.config?.showNotifications || true,
@@ -521,7 +521,7 @@ export default function EditTenant() {
             <AlertCircle className="h-8 w-8 text-red-500" />
           </div>
           <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-2">Error</h1>
-          <p className="text-gray-600 mb-6">{error || 'Tenant no encontrado'}</p>
+          <p className="text-gray-600 mb-6">{error || 'Cliente no encontrado'}</p>
           <button
             onClick={() => navigate('/tenants')}
             className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transform hover:scale-105 transition-all duration-200 shadow-lg font-medium"
@@ -581,10 +581,10 @@ export default function EditTenant() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                Editar Tenant
+                Editar Cliente
               </h1>
               <p className="text-lg text-gray-600 mt-2">
-                Modifica la información del tenant "{tenant.name}"
+                Modifica la información del cliente "{tenant.name}"
               </p>
             </div>
             <div className="flex space-x-3">
@@ -627,7 +627,7 @@ export default function EditTenant() {
           <div className="bg-white/80 backdrop-blur-sm shadow-lg rounded-2xl border border-gray-200/50 hover:shadow-xl transition-all duration-300">
             <div className="px-6 py-4 border-b border-gray-200/50 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-2xl">
               <h2 className="text-lg font-semibold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                Estado del Tenant
+                Estado del Cliente
               </h2>
             </div>
             
@@ -642,7 +642,7 @@ export default function EditTenant() {
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="status" className="ml-3 text-sm font-medium text-gray-700">
-                  Tenant activo y operativo
+                  Cliente activo y operativo
                 </label>
               </div>
 
@@ -691,7 +691,7 @@ export default function EditTenant() {
                   type="text"
                   id="name"
                   name="name"
-                  label="Nombre del Tenant"
+                  label="Nombre del Cliente"
                   required
                   error={getErrorByField('name')}
                   disabled={isSubmitting}
@@ -728,7 +728,7 @@ export default function EditTenant() {
                   placeholder="empresa-abc.klmsystem.test"
                   value={formData.domain || ''}
                   onChange={(e) => handleChange('domain', e.target.value)}
-                  helperText="Dominio principal para acceder al tenant"
+                  helperText="Dominio principal para acceder al cliente"
                 />
 
                 <Input

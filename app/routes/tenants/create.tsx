@@ -67,9 +67,9 @@ export const action: ActionFunction = async ({ request }) => {
       storageLimit: Number(formData.get('storageLimit')),
 
       adminFirstName: formData.get('adminFirstName') as string,
-      adminLastName: formData.get('adminFirstName') as string,
-      adminEmail: formData.get('adminFirstName') as string,
-      adminPassword: formData.get('adminFirstName') as string,
+      adminLastName: formData.get('adminLastName') as string,
+      adminEmail: formData.get('adminEmail') as string,
+      adminPassword: formData.get('adminPassword') as string,
       
       // Información de contacto
       contactPerson: formData.get('contactPerson') as string,
@@ -80,8 +80,8 @@ export const action: ActionFunction = async ({ request }) => {
       url_portal: formData.get('url_portal') as string,
       nit: formData.get('nit') as string,
 
-      backgroundColorNavbar: formData.get('primaryColor') as string || '#0052cc',
-      textColorNavbar: formData.get('secondaryColor') as string || '#ffffff',
+      backgroundColorNavbar: formData.get('backgroundColorNavbar') as string || '#484848',
+      textColorNavbar: formData.get('textColorNavbar') as string || '#ffffff',
       logoNavbar: formData.get('logo') as string || 'Mi App',
       // showSearch: formData.get('showSearch') === 'on',
       showNotifications: formData.get('showNotifications') === 'on',
@@ -187,7 +187,7 @@ export const action: ActionFunction = async ({ request }) => {
     console.error('Error creating tenant:', error);
     
     return json<ActionData>({ 
-      generalError: 'Error inesperado al crear el tenant'
+      generalError: 'Error inesperado al crear el cliente'
     }, { status: 500 });
   }
 };
@@ -206,7 +206,7 @@ function getSpecificErrorMessage(error: TenantErrorResponse): string {
     case 'DATABASE_ERROR':
       return 'Error al guardar en la base de datos. Intenta nuevamente.';
     default:
-      return error.message || 'Error al crear el tenant';
+      return error.message || 'Error al crear el cliente';
   }
 }
 
@@ -724,9 +724,9 @@ export default function CreateTenant() {
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Crear Nuevo Tenant</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Crear Nuevo Cliente</h1>
             <p className="text-gray-600 mt-1">
-              Complete la información para configurar un nuevo tenant en la plataforma
+              Complete la información para configurar un nuevo cliente en la plataforma
             </p>
           </div>
           <button
@@ -765,7 +765,7 @@ export default function CreateTenant() {
                 type="text"
                 id="name"
                 name="name"
-                label="Nombre del Tenant"
+                label="Nombre del Cliente"
                 required
                 error={getErrorByField('name')}
                 disabled={isSubmitting}
@@ -789,7 +789,7 @@ export default function CreateTenant() {
                   helperText={
                     isSlugManuallyEdited 
                       ? "Slug personalizado. Usa solo letras, números y guiones." 
-                      : "Se genera automáticamente desde el nombre. Puedes editarlo manualmente."
+                      : "Se genera automáticamente desde el nombre."
                   }
                 />
                 
@@ -820,7 +820,7 @@ export default function CreateTenant() {
                 placeholder="empresa-abc.klmsystem.test"
                 value={formData.domain}
                 onChange={(e) => handleChange('domain', e.target.value)}
-                helperText="Dominio principal para acceder al tenant"
+                helperText="Dominio principal para acceder al cliente."
               />
 
               <Input
@@ -1285,7 +1285,7 @@ export default function CreateTenant() {
         <input type="hidden" name="textColorNavbar" value={formData.textColorNavbar} />
         <input type="hidden" name="logoNavbar" value={formData.logoNavbar} />
         <input type="hidden" name="showSearch" value={formData.showSearch ? 'on' : ''} />
-        <input type="hidden" name="showNotifications" value={formData.showNotifications ? 'on' : ''} />
+        {/* <input type="hidden" name="showNotifications" value={formData.showNotifications ? 'on' : ''} /> */}
         <input type="hidden" name="showProfile" value={formData.showProfile ? 'on' : ''} />
 
         {/* Campos hidden para configuraciones de vistas */}

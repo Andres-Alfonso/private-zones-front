@@ -137,7 +137,7 @@ export default function Header() {
                     </RoleGuard>
 
                     {/* Dropdown de Cursos */}
-                    <CourseDropdown textColor={navbarConfig?.textColor || '#ffffff'} navbarColor={navbarConfig?.backgroundColor ?? '#ffffff'} />
+                    <CourseDropdown textColor={navbarConfig?.textColor || '#ffffff'} navbarColor={navbarConfig?.backgroundColor ?? '#484848'} />
                     
                     {/* <NavLink to="/products" icon={<Package className="h-4 w-4" />}>
                       Productos

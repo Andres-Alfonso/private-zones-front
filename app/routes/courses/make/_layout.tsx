@@ -358,14 +358,13 @@ function CourseMakeLayoutContent() {
 
     return (
         <div className="min-h-screen" style={backgroundStyle}>
-
             {/* Header del curso con imagen de fondo y card */}
             <div className="relative overflow-hidden">
                 {/* Imagen de fondo con overlay */}
                 <div
                     className="absolute inset-0 bg-cover bg-center bg-no-repeat"
                     style={{
-                        backgroundImage: `url(${course.configuration?.coverImage || course.configuration?.menuImage || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&h=400&fit=crop'})`
+                        backgroundImage: `url(${course.configuration?.coverImage || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&h=400&fit=crop'})`
                     }}
                 >
                     <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/30"></div>
@@ -428,9 +427,9 @@ function CourseMakeLayoutContent() {
                             {/* Card de imagen del curso */}
                             <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-3 shadow-2xl border border-white/20 flex-shrink-0">
                                 <img
-                                    src={course.configuration?.thumbnailImage || course.configuration?.menuImage || course.configuration?.coverImage}
+                                    src={course.configuration?.thumbnailImage}
                                     alt={courseTitle}
-                                    className="w-26 h-26 lg:w-30 lg:h-30 rounded-xl object-cover shadow-lg"
+                                    className="w-28 h-28 lg:w-32 lg:h-32 rounded-xl object-cover shadow-lg"
                                 />
 
                                 {/* Badge de intensidad sobre la imagen */}
@@ -625,6 +624,17 @@ function CourseMakeLayoutContent() {
                         </div> */}
                     </div>
                 </div>
+
+                <div className="relative z-10 mx-auto">
+                    <div className="w-full overflow-hidden shadow-xl border-white/20">
+                        <img
+                            src={course.configuration?.menuImage || 'https://images.unsplash.com/photo-1557683316-973673baf926?w=1200&h=200&fit=crop'}
+                            alt="Course Banner"
+                            className="w-full h-30 md:h-38 lg:h-46 object-cover"
+                        />
+                    </div>
+                </div>
+
                 <NavigationMenu course={course}/>
             </div>
 

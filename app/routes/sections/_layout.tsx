@@ -61,12 +61,12 @@ function SectionsLayoutContent() {
             icon: Grid,
             active: isIndexPage,
         },
-        {
-            name: "Gestionar Secciones",
-            href: "/sections/manage",
-            icon: List,
-            active: isManagePage,
-        },
+        // {
+        //     name: "Gestionar Secciones",
+        //     href: "/sections/manage",
+        //     icon: List,
+        //     active: isManagePage,
+        // },
     ];
 
     // Navegación para administradores
@@ -176,7 +176,7 @@ function SectionsLayoutContent() {
                                 </nav>
 
                                 {/* Navegación administrativa */}
-                                <NavTabs items={adminNavigation} />
+                                {/* <NavTabs items={adminNavigation} /> */}
                             </div>
                         </div>
                     )}

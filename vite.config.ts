@@ -65,6 +65,15 @@ export default defineConfig({
             route("course/:courseId", "routes/modules/$courseId._index.tsx");
           });
 
+
+          // Rutas de gestion de foros
+          route("forums", "routes/forums/_layout.tsx", () => {
+            route("", "routes/forums/_index.tsx", { index: true });
+            // route("course/:courseId", "routes/modules/create.tsx");
+            // route("course/:courseId/create", "routes/modules/create.tsx");
+            route("course/:courseId", "routes/forums/$courseId._index.tsx");
+          });
+
           // Rutas de gestión de tenants (solo para administradores)
           route("tenants", "routes/tenants/_layout.tsx", () => {
             route("", "routes/tenants/_index.tsx", { index: true });

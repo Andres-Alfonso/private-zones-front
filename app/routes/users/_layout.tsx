@@ -51,12 +51,12 @@ function UsersLayoutContent() {
       icon: Users,
       active: isIndexPage
     },
-    {
-      name: 'Estadísticas',
-      href: '/users/stats',
-      icon: BarChart3,
-      active: isStatsPage
-    }
+    // {
+    //   name: 'Estadísticas',
+    //   href: '/users/stats',
+    //   icon: BarChart3,
+    //   active: isStatsPage
+    // }
   ];
 
   // Navegación administrativa
@@ -180,7 +180,7 @@ function UsersLayoutContent() {
                 </nav>
 
                 {/* Navegación administrativa */}
-                <NavTabs items={adminNavigation} />
+                {/* <NavTabs items={adminNavigation} /> */}
               </div>
             </div>
           )}

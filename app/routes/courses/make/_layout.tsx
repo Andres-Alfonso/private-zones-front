@@ -9,7 +9,8 @@ import {
     BookOpen, Play, FileText, MessageSquare, ClipboardCheck,
     BarChart3, Users, Calendar, Clock, Star, ChevronRight, ChevronDown, ChevronUp,
     Settings, Share2, Bookmark, Download, Eye, Lock, CheckCircle,
-    PlayCircle, ArrowLeft, Menu, X, Home, Trophy, Target, User, Settings as SettingsIcon, Award, Zap
+    PlayCircle, ArrowLeft, Menu, X, Home, Trophy, Target, User, Settings as SettingsIcon, Award, Zap,
+    ImageOff
 } from "lucide-react";
 import AuthGuard from '~/components/AuthGuard';
 import { useCurrentUser } from '~/context/AuthContext';
@@ -426,12 +427,18 @@ function CourseMakeLayoutContent() {
                         <div className="flex items-start space-x-6">
                             {/* Card de imagen del curso */}
                             <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-3 shadow-2xl border border-white/20 flex-shrink-0">
+                                
+                                {course.configuration?.thumbnailImage ? (
                                 <img
-                                    src={course.configuration?.thumbnailImage}
+                                    src={course.configuration.thumbnailImage}
                                     alt={courseTitle}
                                     className="w-28 h-28 lg:w-32 lg:h-32 rounded-xl object-cover shadow-lg"
                                 />
-
+                                ) : (
+                                <div className="w-28 h-28 lg:w-32 lg:h-32 rounded-xl bg-gray-100 flex items-center justify-center shadow-lg">
+                                    <ImageOff className="w-10 h-10 text-gray-400" />
+                                </div>
+                                )}
                                 {/* Badge de intensidad sobre la imagen */}
                                 {/* <div className="flex justify-center mt-2">
                                     <span className={`px-2 py-1 text-xs font-bold rounded-full ${course.configuration.intensity === 1 ? 'bg-green-100 text-green-800' :
@@ -625,15 +632,17 @@ function CourseMakeLayoutContent() {
                     </div>
                 </div>
 
-                <div className="relative z-10 mx-auto">
-                    <div className="w-full overflow-hidden shadow-xl border-white/20">
-                        <img
-                            src={course.configuration?.menuImage || 'https://images.unsplash.com/photo-1557683316-973673baf926?w=1200&h=200&fit=crop'}
-                            alt="Course Banner"
-                            className="w-full h-30 md:h-38 lg:h-46 object-cover"
-                        />
+                {course.configuration?.menuImage && (
+                    <div className="relative z-10 mx-auto">
+                        <div className="w-full overflow-hidden shadow-xl border-white/20">
+                            <img
+                                src={course.configuration.menuImage}
+                                alt="Course Banner"
+                                className="w-full h-30 md:h-38 lg:h-46 object-cover"
+                            />
+                        </div>
                     </div>
-                </div>
+                )}
 
                 <NavigationMenu course={course}/>
             </div>

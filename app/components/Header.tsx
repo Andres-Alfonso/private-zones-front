@@ -61,7 +61,7 @@ export default function Header() {
             <div className="flex items-center justify-between h-16">
               
               {/* Logo y nombre de la app */}
-              <Link to="/" className="flex items-center space-x-3 group">
+              <Link to="/home" className="flex items-center space-x-3 group">
                 <div className="relative">
                   <div className="w-12 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105">
                     <span className="text-white font-bold text-sm">K&LM</span>

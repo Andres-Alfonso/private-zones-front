@@ -1,7 +1,7 @@
 // app/routes/forums/$courseId._index.tsx
 
 import { json, LoaderFunction } from "@remix-run/node";
-import { useLoaderData, useSearchParams, useParams } from "@remix-run/react";
+import { useLoaderData, useSearchParams, useParams, NavLink } from "@remix-run/react";
 import { useState } from "react";
 import { 
   AlertCircle, 
@@ -135,12 +135,14 @@ const ForumsFilters = ({
   searchTerm, 
   onSearchChange, 
   onSearchSubmit,
-  totalResults
+  totalResults,
+  courseId
 }: {
   searchTerm: string;
   onSearchChange: (value: string) => void;
   onSearchSubmit: (e: React.FormEvent) => void;
   totalResults: number;
+  courseId: string;
 }) => {
   return (
     <div className="space-y-4">
@@ -159,10 +161,17 @@ const ForumsFilters = ({
         </form>
 
         <div className="flex gap-3">
-          <button className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 text-sm font-semibold">
+          {/* <button className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 text-sm font-semibold">
             <Plus className="h-4 w-4" />
             <span>Crear Foro</span>
-          </button>
+          </button> */}
+          <NavLink
+            to={`/forums/create?course=${courseId}`}
+            className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 text-sm font-semibold"
+          >
+            <Plus className="h-5 w-5" />
+            <span>Crear Contenido</span>
+          </NavLink>
         </div>
       </div>
     </div>
@@ -413,6 +422,7 @@ export default function ForumsIndex() {
           onSearchChange={setLocalSearch}
           onSearchSubmit={handleSearch}
           totalResults={forums.total}
+          courseId={useParams().courseId!}
         />
       </div>
 

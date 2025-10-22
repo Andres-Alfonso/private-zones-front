@@ -69,8 +69,7 @@ export default defineConfig({
           // Rutas de gestion de foros
           route("forums", "routes/forums/_layout.tsx", () => {
             route("", "routes/forums/_index.tsx", { index: true });
-            // route("course/:courseId", "routes/modules/create.tsx");
-            // route("course/:courseId/create", "routes/modules/create.tsx");
+            route("create", "routes/forums/create.tsx");
             route("course/:courseId", "routes/forums/$courseId._index.tsx");
           });
 

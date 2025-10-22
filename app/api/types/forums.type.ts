@@ -13,8 +13,8 @@ export interface ForumBasic {
   viewCount: number;
   authorId: string;
   tenantId: string;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CreateForumDto {

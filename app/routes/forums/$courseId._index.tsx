@@ -178,7 +178,7 @@ const ForumsFilters = ({
   );
 };
 
-const ForumsGrid = ({ forums }: { forums: ForumItem[] }) => {
+const ForumsGrid = ({ forums, courseId }: { forums: ForumItem[] }) => {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   const formatDate = (dateString: string) => {
@@ -206,6 +206,11 @@ const ForumsGrid = ({ forums }: { forums: ForumItem[] }) => {
   const handleMenuAction = (action: string, forumId: string) => {
     setOpenMenuId(null);
     console.log(`${action} forum:`, forumId);
+
+    if(action === 'Editar'){
+      // Navegar a la página de edición
+      window.location.href = `/forums/${forumId}?course=${courseId}`;
+    }
     // Aquí puedes agregar la lógica para cada acción
   };
 
@@ -355,7 +360,8 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     return json({
       forums: apiResponse,
       stats: apiResponse.stats || { totalForums: 0, totalThreads: 0, totalPosts: 0, activeUsers: 0 },
-      error: null
+      error: null,
+      courseId
     });
 
   } catch (error: any) {
@@ -369,7 +375,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 };
 
 export default function ForumsIndex() {
-  const { forums, stats, error } = useLoaderData<{
+  const { forums, stats, error, courseId } = useLoaderData<{
     forums: { data: ForumItem[], total: number, page: number, limit: number },
     stats: ForumStats,
     error: string | null
@@ -435,7 +441,7 @@ export default function ForumsIndex() {
         </div> */}
 
         {forums.data.length > 0 ? (
-          <ForumsGrid forums={forums.data} />
+          <ForumsGrid forums={forums.data} courseId={courseId} />
         ) : (
           <div className="text-center py-16">
             <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-8 max-w-md mx-auto">

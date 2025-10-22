@@ -70,6 +70,7 @@ export default defineConfig({
           route("forums", "routes/forums/_layout.tsx", () => {
             route("", "routes/forums/_index.tsx", { index: true });
             route("create", "routes/forums/create.tsx");
+            route(":forumId", "routes/forums/$forumId.tsx");
             route("course/:courseId", "routes/forums/$courseId._index.tsx");
           });
 

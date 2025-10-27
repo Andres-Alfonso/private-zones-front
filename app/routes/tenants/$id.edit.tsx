@@ -158,6 +158,7 @@ export const action: ActionFunction = async ({ request, params }) => {
         backgroundType: formData.get('metricsBackgroundType') as 'imagen' | 'color' || 'color',
         backgroundImage: formData.get('metricsBackgroundImage') as string || '',
         backgroundColor: formData.get('metricsBackgroundColor') as string || '#eff4ff',
+        additionalSettings: JSON.parse(formData.get('metricsAdditionalSettings') as string || '{}')
       },
       groupsSettings:{
         type: 'courses',
@@ -165,6 +166,7 @@ export const action: ActionFunction = async ({ request, params }) => {
         backgroundType: formData.get('groupsBackgroundType') as 'imagen' | 'color' || 'color',
         backgroundImage: formData.get('groupsBackgroundImage') as string || '',
         backgroundColor: formData.get('groupsBackgroundColor') as string || '#eff4ff',
+        additionalSettings: JSON.parse(formData.get('groupsAdditionalSettings') as string || '{}')
       },
       sectionsSettings: {
         type: 'sections',

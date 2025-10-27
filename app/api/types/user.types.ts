@@ -561,3 +561,33 @@ export const USER_LANGUAGES = [
   { value: 'pt', label: 'Português' },
   { value: 'fr', label: 'Français' },
 ] as const;
+
+
+
+export interface ProfileData {
+  id: string;
+  name: string;
+  lastName: string;
+  email: string;
+  isActive: boolean;
+  roles: Array<{ id: string; name: string }>;
+  createdAt: string;
+  updatedAt: string;
+  profileConfig?: {
+    id: string;
+    avatarPath?: string;
+    bio?: string;
+    phoneNumber?: string;
+    type_document?: string;
+    documentNumber?: string;
+    organization?: string;
+    charge?: string;
+    gender?: string;
+    city?: string;
+    country?: string;
+    address?: string;
+    dateOfBirth?: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+}

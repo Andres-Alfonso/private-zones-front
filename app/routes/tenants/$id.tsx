@@ -513,10 +513,10 @@ export default function TenantDetail() {
                     <p className="text-lg font-bold text-green-700 mt-2">{tenant.config?.language?.toUpperCase()}</p>
                   </div>
 
-                  <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 rounded-xl">
+                  {/* <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 rounded-xl">
                     <label className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Moneda</label>
                     <p className="text-lg font-bold text-yellow-700 mt-2">{tenant.config?.currency}</p>
-                  </div>
+                  </div> */}
 
                   <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-xl">
                     <label className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Zona horaria</label>

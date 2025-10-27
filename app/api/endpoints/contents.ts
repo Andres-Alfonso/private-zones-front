@@ -91,7 +91,7 @@ export const ContentAPI = {
         client?: AxiosInstance
     ): Promise<ContentResponse> {
         const apiClientToUse = client || apiClient;
-        console.log('CLIENTE EN CONTENTS API:', apiClientToUse);
+        // console.log('CLIENTE EN CONTENTS API:', apiClientToUse);
 
         const params = new URLSearchParams();
 

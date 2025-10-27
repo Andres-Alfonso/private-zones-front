@@ -119,14 +119,14 @@ export function TenantProvider({ children, initialDomain }: TenantProviderProps)
             } else {
                 dispatch({
                     type: 'SET_ERROR',
-                    payload: response.message || 'Tenant no válido'
+                    payload: response.message || 'Cliente no válido'
                 });
             }
         } catch (error: any) {
-            console.error('Error validating tenant:', error);
+            console.error('Error validating cliente:', error);
             dispatch({
                 type: 'SET_ERROR',
-                payload: 'Error al validar el tenant'
+                payload: 'Error al validar el cliente'
             });
         }
     };

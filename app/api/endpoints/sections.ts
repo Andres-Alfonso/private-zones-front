@@ -87,7 +87,7 @@ export const SectionApi = {
             `${API_CONFIG.ENDPOINTS.SECTIONS.BASE}/${sectionId}`
           );
     
-          console.log("Tenant fetched successfully:", response.data);
+          // console.log("Tenant fetched successfully:", response.data);
     
           return response.data;
         } catch (error: any) {
@@ -104,12 +104,12 @@ export const SectionApi = {
               case 404:
                 return {
                   error: SectionError.SECTION_NOT_FOUND,
-                  message: "Tenant no encontrado",
+                  message: "Cliente no encontrado",
                 };
               case 403:
                 return {
                   error: SectionError.FORBIDDEN,
-                  message: "Acceso denegado al tenant",
+                  message: "Acceso denegado al cliente",
                 };
               case 500:
                 return {

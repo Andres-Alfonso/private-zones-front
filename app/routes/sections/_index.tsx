@@ -122,7 +122,7 @@ export const loader: LoaderFunction = async ({ request }) => {
     return json<LoaderData>({ 
       sections: { data: [], total: 0, page: 1, limit: 20 },
       // stats: { totalTenants: 0, activeTenants: 0, trialTenants: 0, expiredTenants: 0, totalUsers: 0, totalRevenue: 0, storageUsed: 0, averageUsers: 0 },
-      error: error.message || 'Error al cargar los tenants' 
+      error: error.message || 'Error al cargar los clientes' 
     });
   }
 };

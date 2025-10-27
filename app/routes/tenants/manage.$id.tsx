@@ -728,7 +728,7 @@ export default function ManageTenant() {
               </button>
             </div>
             <h1 className="text-2xl font-bold text-gray-900">
-              Gestionar Tenant: {tenant.name}
+              Gestionar Cliente: {tenant.name}
             </h1>
             <p className="text-gray-600 mt-1">
               Edita la configuración y personalización del tenant
@@ -875,7 +875,7 @@ export default function ManageTenant() {
                 </select>
               </div>
 
-              <div>
+              {/* <div>
                 <label htmlFor="currency" className="block text-sm font-medium text-gray-700 mb-2">
                   Moneda
                 </label>
@@ -891,7 +891,7 @@ export default function ManageTenant() {
                     <option key={curr.code} value={curr.code}>{curr.name}</option>
                   ))}
                 </select>
-              </div>
+              </div> */}
 
               <Input
                 type="text"

@@ -935,7 +935,7 @@ export default function CreateTenant() {
                 </select>
               </div>
 
-              <div>
+              {/* <div>
                 <label htmlFor="currency" className="block text-sm font-medium text-gray-700 mb-2">
                   Moneda
                 </label>
@@ -951,7 +951,7 @@ export default function CreateTenant() {
                     <option key={curr.code} value={curr.code}>{curr.name}</option>
                   ))}
                 </select>
-              </div>
+              </div> */}
 
               <Input
                 type="text"

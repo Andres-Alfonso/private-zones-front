@@ -83,12 +83,12 @@ export const TenantsAPI = {
           case 404:
             return {
               error: TenantError.TENANT_NOT_FOUND,
-              message: 'El tenant no fue encontrado',
+              message: 'El cliente no fue encontrado',
             };
           case 403:
             return {
               error: TenantError.UNAUTHORIZED,
-              message: 'No tienes permisos para modificar este tenant',
+              message: 'No tienes permisos para modificar este cliente',
             };
           case 400:
             return {
@@ -105,7 +105,7 @@ export const TenantsAPI = {
       
       return {
         error: TenantError.NETWORK_ERROR,
-        message: 'Error de conexión al actualizar el estado del tenant',
+        message: 'Error de conexión al actualizar el estado del cliente',
       };
     }
   },
@@ -134,12 +134,12 @@ export const TenantsAPI = {
           case 404:
             return {
               error: TenantError.TENANT_NOT_FOUND,
-              message: "Tenant no encontrado",
+              message: "Cliente no encontrado",
             };
           case 403:
             return {
               error: TenantError.FORBIDDEN,
-              message: "Acceso denegado al tenant",
+              message: "Acceso denegado al cliente",
             };
           case 500:
             return {
@@ -157,7 +157,7 @@ export const TenantsAPI = {
       console.error("Network Error:", error.message);
       return {
         error: TenantError.NETWORK_ERROR,
-        message: "Error de conexión al obtener el tenant",
+        message: "Error de conexión al obtener el cliente",
       };
     }
   },
@@ -192,7 +192,7 @@ export const TenantsAPI = {
             // Usar el error específico del backend
             return {
               error: errorData?.error || TenantError.DOMAIN_MISMATCH,
-              message: errorData?.message || "Datos inválidos para crear el tenant",
+              message: errorData?.message || "Datos inválidos para crear el cliente",
               field: errorData?.field,
               value: errorData?.value,
               details: errorData?.details
@@ -200,7 +200,7 @@ export const TenantsAPI = {
           case 409:
             return {
               error: errorData?.error || TenantError.DOMAIN_MISMATCH,
-              message: errorData?.message || "El tenant ya existe",
+              message: errorData?.message || "El cliente ya existe",
               field: errorData?.field,
               value: errorData?.value
             };
@@ -221,7 +221,7 @@ export const TenantsAPI = {
       console.error("Network Error:", error.message);
       return {
         error: TenantError.NETWORK_ERROR,
-        message: "Error de conexión al crear el tenant",
+        message: "Error de conexión al crear el cliente",
       };
     }
   },
@@ -276,7 +276,7 @@ export const TenantsAPI = {
             page: 0,
             limit: 0,
             error: "TENANTS_NOT_FOUND",
-            message: "No se encontraron tenants",
+            message: "No se encontraron clientes",
           };
         } else if (status === 403) {
           return {
@@ -285,7 +285,7 @@ export const TenantsAPI = {
             page: 0,
             limit: 0,
             error: "FORBIDDEN",
-            message: "Acceso denegado a los tenants",
+            message: "Acceso denegado a los clientes",
           };
         } else if (errorData?.message) {
           return {
@@ -306,7 +306,7 @@ export const TenantsAPI = {
         page: 0,
         limit: 0,
         error: "NETWORK_ERROR",
-        message: "Error de conexión al obtener los tenants",
+        message: "Error de conexión al obtener los clientes",
       };
     }
   },
@@ -336,7 +336,7 @@ export const TenantsAPI = {
             isValid: false,
             isActive: false,
             error: "TENANT_NOT_FOUND",
-            message: "Tenant no encontrado para este dominio",
+            message: "Cliente no encontrado para este dominio",
           };
         } else if (status === 403) {
           return {
@@ -344,7 +344,7 @@ export const TenantsAPI = {
             isValid: false,
             isActive: false,
             error: "TENANT_INACTIVE",
-            message: "El tenant no está activo",
+            message: "El cliente no está activo",
           };
         } else if (errorData?.message) {
           return {
@@ -363,7 +363,7 @@ export const TenantsAPI = {
         isValid: false,
         isActive: false,
         error: "NETWORK_ERROR",
-        message: "Error de conexión al validar el tenant",
+        message: "Error de conexión al validar el cliente",
       };
     }
   },

@@ -26,7 +26,8 @@ import {
     SectionsViewCustomizer,
     FAQViewCustomizer,
     RegistrationViewCustomizer,
-    NotificationViewCustomizer
+    NotificationViewCustomizer,
+    LogoCustomizer
 } from '~/components/tenant/viewCustomizers';
 import TermsPrivacyConfig from '~/components/tenant/RichTextEditor';
 import { LoginMethod } from '~/components/tenant/viewCustomizers/RegistrationViewCustomizer';
@@ -86,6 +87,12 @@ export const action: ActionFunction = async ({ request }) => {
       // showSearch: formData.get('showSearch') === 'on',
       showNotifications: formData.get('showNotifications') === 'on',
       showProfile: formData.get('showProfile') === 'on',
+
+      faviconPath: formData.get('faviconPath') as string || '',
+      logoPath: formData.get('logoPath') as string || '',
+      loginBackgroundPath: formData.get('loginBackgroundPath') as string || '',
+      iconPath: formData.get('iconPath') as string || '',
+      logoAdditionalSettings: JSON.parse(formData.get('logoAdditionalSettings') as string || '{}'),
       
       // Configuración inicial
       primaryColor: formData.get('primaryColor') as string || '#0052cc',
@@ -419,6 +426,16 @@ export default function CreateTenant() {
     enableEmailNotifications: true
   });
 
+  const [logoSettings, setLogoSettings] = useState({
+    faviconPath: '',
+    logoPath: '',
+    loginBackgroundPath: '',
+    iconPath: '',
+    additionalSettings: {
+      loginLogoPath: ''
+    }
+  });
+
   // Handlers individuales mejorados
   const handleHomeChange = (field: string, value: string | boolean | File | any) => {
     if (field === 'additionalSettings') {
@@ -480,6 +497,17 @@ export default function CreateTenant() {
     setNotificationSettings(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleLogoChange = (field: string, value: any) => {
+    if (field === 'additionalSettings') {
+      setLogoSettings(prev => ({
+        ...prev,
+        additionalSettings: { ...prev.additionalSettings, ...value }
+      }));
+    } else {
+      setLogoSettings(prev => ({ ...prev, [field]: value }));
+    }
+  };
+
   const configTabs = [
     { 
       id: 'registration', 
@@ -494,6 +522,13 @@ export default function CreateTenant() {
       component: NotificationViewCustomizer, 
       handler: handleNotificationChange,
       settings: notificationSettings
+    },
+    { 
+      id: 'logos', 
+      label: 'Logos e Imágenes', 
+      component: LogoCustomizer, 
+      handler: handleLogoChange,
+      settings: logoSettings
     }
   ];
 
@@ -1287,6 +1322,13 @@ export default function CreateTenant() {
         <input type="hidden" name="showSearch" value={formData.showSearch ? 'on' : ''} />
         {/* <input type="hidden" name="showNotifications" value={formData.showNotifications ? 'on' : ''} /> */}
         <input type="hidden" name="showProfile" value={formData.showProfile ? 'on' : ''} />
+
+        {/* Logo Settings */}
+        <input type="hidden" name="faviconPath" value={logoSettings.faviconPath} />
+        <input type="hidden" name="logoPath" value={logoSettings.logoPath} />
+        <input type="hidden" name="loginBackgroundPath" value={logoSettings.loginBackgroundPath} />
+        <input type="hidden" name="iconPath" value={logoSettings.iconPath} />
+        <input type="hidden" name="logoAdditionalSettings" value={JSON.stringify(logoSettings.additionalSettings)} />
 
         {/* Campos hidden para configuraciones de vistas */}
         {/* Home Settings */}

@@ -1,5 +1,6 @@
 // app/types/tenant.types.ts
 
+import { a } from "node_modules/tailwindcss/dist/types-B254mqw1.mjs";
 import { HomeAdditionalSettings } from "~/components/tenant/viewCustomizers/types";
 
 export interface Tenant {
@@ -27,6 +28,13 @@ export interface Tenant {
   contactInfo?: TenantContactInfo;
   viewConfigs?: TenantViewConfig[];
   componentConfigs?: TenantComponentConfig[];
+
+  homeSettings?: ViewConfiguration;
+  videoCallSettings?: ViewConfiguration;
+  metricsSettings?: ViewConfiguration;
+  groupsSettings?: ViewConfiguration;
+  sectionsSettings?: ViewConfiguration;
+  faqSettings?: ViewConfiguration;
 }
 
 export interface TenantViewConfig {
@@ -107,6 +115,7 @@ export interface TenantConfig {
   primaryColor: string;
   secondaryColor: string;
   logo?: string;
+  logoPath?: string;
   favicon?: string;
   showLearningModule: boolean;
   enableChatSupport: boolean;
@@ -298,6 +307,11 @@ export interface CreateTenantRequest {
   logoNavbar: string;
   showNotifications: boolean;
   showProfile: boolean;
+  faviconPath?: string;
+  logoPath?: string;
+  loginBackgroundPath?: string;
+  iconPath?: string;
+  logoAdditionalSettings?: any;
   
   // Configuración inicial
   primaryColor?: string;
@@ -331,6 +345,11 @@ export interface CreateTenantRequest {
   requireAddress: boolean;
 
   enableEmailNotifications: boolean;
+
+  termsEs?: string;
+  termsEn?: string;
+  privacyEs?: string;
+  privacyEn?: string;
 
   // registrationSettings: RegistrationSettings;
   // notificationSettings: NotificationSettings;
@@ -401,7 +420,9 @@ export interface TenantFormData {
   
   // Propiedades para navbar customizer (UI específicas - no en DB)
   backgroundColorNavbar?: string;
+  backgroundColor?: string; // backgroundColorNavbar renombrado
   textColorNavbar?: string;
+  textColor?: string; // textColorNavbar renombrado
   logoNavbar?: string;
   showSearch?: boolean;
   showNotifications?: boolean;

@@ -193,7 +193,13 @@ export const action: ActionFunction = async ({ request, params }) => {
       termsEs: formData.get('termsEs') as string || '',
       termsEn: formData.get('termsEn') as string || '',
       privacyEs: formData.get('privacyEs') as string || '',
-      privacyEn: formData.get('privacyEn') as string || ''
+      privacyEn: formData.get('privacyEn') as string || '',
+
+      faviconPath: formData.get('faviconPath') as string || '',
+      logoPath: formData.get('logoPath') as string || '',
+      loginBackgroundPath: formData.get('loginBackgroundPath') as string || '',
+      iconPath: formData.get('iconPath') as string || '',
+      logoAdditionalSettings: JSON.parse(formData.get('logoAdditionalSettings') as string || '{}'),
     };
 
     const tenantResult = await TenantsAPI.update(id, tenantData);
@@ -426,6 +432,16 @@ export default function ManageTenant() {
     enableEmailNotifications: tenant.enableEmailNotifications || true
   });
 
+  const [logoSettings, setLogoSettings] = useState({
+    faviconPath: tenant.faviconPath || '',
+    logoPath: tenant.logoPath || '',
+    loginBackgroundPath: tenant.loginBackgroundPath || '',
+    iconPath: tenant.iconPath || '',
+    additionalSettings: tenant.logoAdditionalSettings || {
+      loginLogoPath: ''
+    }
+  });
+
   // Handlers individuales mejorados
   const handleHomeChange = (field: string, value: string | boolean | File | any) => {
     if (field === 'additionalSettings') {
@@ -485,6 +501,17 @@ export default function ManageTenant() {
 
   const handleNotificationChange = (field: string, value: any) => {
     setNotificationSettings(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleLogoChange = (field: string, value: any) => {
+    if (field === 'additionalSettings') {
+      setLogoSettings(prev => ({
+        ...prev,
+        additionalSettings: { ...prev.additionalSettings, ...value }
+      }));
+    } else {
+      setLogoSettings(prev => ({ ...prev, [field]: value }));
+    }
   };
 
   const configTabs = [
@@ -596,7 +623,13 @@ export default function ManageTenant() {
     termsEs: tenant.termsEs || '',
     termsEn: tenant.termsEn || '',
     privacyEs: tenant.privacyEs || '',
-    privacyEn: tenant.privacyEn || ''
+    privacyEn: tenant.privacyEn || '',
+
+    faviconPath: tenant.faviconPath || '',
+    logoPath: tenant.logoPath || '',
+    loginBackgroundPath: tenant.loginBackgroundPath || '',
+    iconPath: tenant.iconPath || '',
+    logoAdditionalSettings: JSON.parse(tenant.logoAdditionalSettings || '{}'),
   });
 
   const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false);
@@ -1157,6 +1190,12 @@ export default function ManageTenant() {
         <input type="hidden" name="showSearch" value={formData.showSearch ? 'on' : ''} />
         <input type="hidden" name="showNotifications" value={formData.showNotifications ? 'on' : ''} />
         <input type="hidden" name="showProfile" value={formData.showProfile ? 'on' : ''} />
+
+        <input type="hidden" name="faviconPath" value={logoSettings.faviconPath} />
+        <input type="hidden" name="logoPath" value={logoSettings.logoPath} />
+        <input type="hidden" name="loginBackgroundPath" value={logoSettings.loginBackgroundPath} />
+        <input type="hidden" name="iconPath" value={logoSettings.iconPath} />
+        <input type="hidden" name="logoAdditionalSettings" value={JSON.stringify(logoSettings.additionalSettings)} />
 
         {/* Campos hidden para configuraciones de vistas */}
         {/* Home Settings */}

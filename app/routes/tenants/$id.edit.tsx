@@ -416,9 +416,9 @@ export default function EditTenant() {
         currency: tenant.config?.currency || 'USD',
 
         // Navbar
-        backgroundColorNavbar: homeConfig?.backgroundColor || tenant.config?.primaryColor || '#484848'
-        // textColorNavbar: tenant.config?.textColorNavbar || '#ffffff',
-        // logoNavbar: tenant.config?.logoNavbar || 'K&LM',
+        backgroundColorNavbar: tenant.componentConfigs?.[0]?.backgroundColor || tenant.config?.primaryColor || '#484848',
+        textColorNavbar: tenant.componentConfigs?.[0].textColor || '#ffffff',
+        logoNavbar: tenant.config?.logoPath || 'K&LM',
         // showNotifications: tenant.config?.showNotifications || true,
         // showProfile: tenant.config?.showProfile || true,
       });

@@ -53,14 +53,27 @@ const NavbarCustomizer: React.FC<NavbarCustomizerProps> = ({
         >
             {/* Logo */}
             <div className="flex items-center space-x-2">
-                <div
-                    className="w-8 h-8 rounded flex items-center justify-center font-bold text-sm"
-                    style={{ backgroundColor: textColor, color: backgroundColor }}
-                >
-                    {logo.charAt(0)}
-                </div>
-                <span className="text-xl font-semibold">{logo}</span>
+                {logo && (logo.startsWith('http') || logo.startsWith('/storage/')) ? (
+                    <>
+                    <img
+                        src={logo}
+                        alt="Logo"
+                        className="w-34 h-26 object-contain rounded"
+                    />
+                    </>
+                ) : (
+                    <>
+                    <div
+                        className="w-8 h-8 rounded flex items-center justify-center font-bold text-sm"
+                        style={{ backgroundColor: textColor, color: backgroundColor }}
+                    >
+                        {logo?.charAt(0) || 'L'}
+                    </div>
+                    <span className="text-xl font-semibold">{logo || 'Logo'}</span>
+                    </>
+                )}
             </div>
+
 
             {/* Navigation */}
             <nav className="hidden md:flex items-center space-x-6">

@@ -8,4 +8,5 @@ export { SectionsViewCustomizer } from './SectionsViewCustomizer';
 export { FAQViewCustomizer } from './FAQViewCustomizer';
 export { default as RegistrationViewCustomizer } from './RegistrationViewCustomizer';
 export { default as NotificationViewCustomizer } from './NotificationViewCustomizer';
+export { default as LogoCustomizer } from './LogoCustomizer';
 export type { ViewSettings, ViewCustomizerProps, SpecificViewCustomizerProps } from './types';

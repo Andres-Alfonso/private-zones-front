@@ -361,6 +361,12 @@ export default function CreateTenant() {
     backgroundType: 'color',
     backgroundImage: '',
     backgroundColor: '#eff4ff',
+    additionalSettings: {
+      customTitles: {
+        en: 'Groups',
+        es: 'Grupos'
+      },
+    }
   });
 
   const [sectionsSettings, setSectionsSettings] = useState<ViewSettings>({

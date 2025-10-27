@@ -367,6 +367,12 @@ export default function ManageTenant() {
     backgroundType: tenant.groupsSettings?.backgroundType || 'color',
     backgroundImage: tenant.groupsSettings?.backgroundImage || '',
     backgroundColor: tenant.groupsSettings?.backgroundColor || '#eff4ff',
+    additionalSettings: tenant.groupsSettings?.additionalSettings || {
+      customTitles: {
+        en: 'Groups',
+        es: 'Grupos'
+      },
+    }
   });
 
   const [sectionsSettings, setSectionsSettings] = useState<ViewSettings>({
@@ -1223,6 +1229,7 @@ export default function ManageTenant() {
         <input type="hidden" name="groupsBackgroundType" value={groupsSettings.backgroundType || 'color'} />
         <input type="hidden" name="groupsBackgroundImage" value={groupsSettings.backgroundImage || ''} />
         <input type="hidden" name="groupsBackgroundColor" value={groupsSettings.backgroundColor || '#eff4ff'} />
+        <input type="hidden" name="groupsAdditionalSettings" value={JSON.stringify(groupsSettings.additionalSettings)} />
 
         {/* Sections Settings */}
         <input type="hidden" name="sectionsCustomBackground" value={sectionsSettings.customBackground ? 'true' : 'false'} />

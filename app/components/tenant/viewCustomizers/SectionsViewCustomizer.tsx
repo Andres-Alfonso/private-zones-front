@@ -93,7 +93,7 @@ export const SectionsViewCustomizer: React.FC<SectionsViewCustomizerProps> = ({
                                     type="text"
                                     value={sectionsConfig.customTitles?.es || ''}
                                     onChange={(e) => handleTitleChange('es', e.target.value)}
-                                    placeholder="Video Llamadas"
+                                    placeholder="Secciones"
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     disabled={isSubmitting}
                                 />
@@ -106,7 +106,7 @@ export const SectionsViewCustomizer: React.FC<SectionsViewCustomizerProps> = ({
                                     type="text"
                                     value={sectionsConfig.customTitles?.en || ''}
                                     onChange={(e) => handleTitleChange('en', e.target.value)}
-                                    placeholder="Video Calls"
+                                    placeholder="Sections"
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     disabled={isSubmitting}
                                 />

@@ -44,7 +44,7 @@ function TenantsLayoutContent() {
   // Navegación principal
   const navigation = [
     {
-      name: 'Todos los Tenants',
+      name: 'Todos los Clientes',
       href: '/tenants',
       icon: Grid,
       active: isIndexPage
@@ -60,7 +60,7 @@ function TenantsLayoutContent() {
   // Navegación administrativa
   const adminNavigation = [
     {
-      name: 'Crear Tenant',
+      name: 'Crear Cliente',
       href: '/tenants/create',
       icon: Plus,
       active: isCreatePage

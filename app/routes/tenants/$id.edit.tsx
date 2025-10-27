@@ -1058,7 +1058,7 @@ export default function EditTenant() {
                   <Palette className="h-5 w-5 text-white" />
                 </div>
                 <h2 className="text-lg font-semibold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                  Personalizador de Navbar
+                  Personalizador de barra de navegación
                 </h2>
               </div>
             </div>

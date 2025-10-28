@@ -34,6 +34,7 @@ export interface CreateSectionData {
 }
 
 export interface UpdateSectionData {
+  id: string;
   name?: string;
   slug?: string;
   description?: string;
@@ -41,6 +42,7 @@ export interface UpdateSectionData {
   order?: number;
   allowBanner?: boolean;
   bannerPath?: string;
+  tenantId?: string;
   courseIds?: string[];
 }
 

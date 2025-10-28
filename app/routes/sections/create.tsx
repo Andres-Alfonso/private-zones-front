@@ -151,7 +151,7 @@ export const loader: LoaderFunction = async ({ request }) => {
     );
     
     // coursesResult ES el array directamente
-    console.log('Available coursessssss:', coursesResult);
+    // console.log('Available courses:', coursesResult);
     return json<LoaderData>({
       availableCourses: processedCourses || [],
     });
@@ -185,7 +185,8 @@ export const action: ActionFunction = async ({ request }) => {
       order: parseInt(formData.get('order') as string) || 1,
       allowBanner: formData.get('allowBanner') === 'on',
       bannerPath: formData.get('bannerPath') as string,
-      tenantId: formData.get('tenantId') as string
+      tenantId: formData.get('tenantId') as string,
+      courseIds: formData.getAll('courseIds') as string[]
     };
 
     const tenantDomain = request.headers.get('host');
@@ -797,7 +798,9 @@ export default function CreateSection() {
           <input type="hidden" name="allowBanner" value={formData.allowBanner ? 'on' : ''} />
           <input type="hidden" name="bannerPath" value={formData.bannerPath} />
           <input type="hidden" name="tenantId" value={formData.tenantId} />
-          <input type="hidden" name="courseIds" value={JSON.stringify(formData.courseIds)} />
+          {formData.courseIds.map((courseId) => (
+            <input key={courseId} type="hidden" name="courseIds" value={courseId} />
+          ))}
 
           {/* Contenido del paso actual */}
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-6">

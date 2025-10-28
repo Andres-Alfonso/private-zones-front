@@ -14,6 +14,9 @@ import Checkbox from '~/components/ui/Checkbox';
 import { validateSectionForm, getErrorByField } from '~/utils/sectionValidation';
 import { SectionApi } from '~/api/endpoints/sections';
 import { SectionErrorResponse } from '~/api/types/section.types';
+import { CoursesAPI } from '~/api/endpoints/courses';
+import { CourseBasic, CourseFromAPI } from '~/api/types/course.types';
+import { createApiClientFromRequest } from '~/api/client';
 
 interface Section {
   id: string;
@@ -51,6 +54,7 @@ interface SectionFormData {
   order: number;
   allowBanner: boolean;
   bannerPath: string;
+  tenantId: string;
   courseIds: string[];
 }
 
@@ -59,7 +63,51 @@ function isSectinoErrorResponse(result: Section | SectionErrorResponse): result 
   return 'error' in result && 'message' in result;
 }
 
-export const loader: LoaderFunction = async ({ params }) => {
+function processCourseTranslations(
+  courses: CourseFromAPI[], 
+  preferredLanguage: string = 'es'
+): CourseBasic[] {
+  return courses.map(course => {
+    // Buscar traducción en el idioma preferido
+    let selectedTranslation = course.translations.find(
+      t => t.languageCode === preferredLanguage
+    );
+    
+    // Si no existe en el idioma preferido, usar la primera disponible
+    if (!selectedTranslation && course.translations.length > 0) {
+      selectedTranslation = course.translations[0];
+    }
+    
+    // Si no hay traducciones, crear valores por defecto
+    if (!selectedTranslation) {
+      selectedTranslation = {
+        id: '',
+        courseId: course.id,
+        languageCode: preferredLanguage,
+        title: 'Sin título',
+        description: 'Sin descripción',
+        metadata: {},
+        createdAt: course.created_at,
+        updatedAt: course.updated_at
+      };
+    }
+
+    return {
+      id: course.id,
+      slug: course.slug,
+      title: selectedTranslation.title,
+      description: selectedTranslation.description,
+      isActive: course.isActive,
+      tenantId: course.tenantId,
+      created_at: course.created_at,
+      updated_at: course.updated_at,
+      languageCode: selectedTranslation.languageCode,
+      allTranslations: course.translations
+    };
+  });
+}
+
+export const loader: LoaderFunction = async ({ params, request }) => {
   try {
     const sectionId = params.id as string;
     
@@ -79,28 +127,36 @@ export const loader: LoaderFunction = async ({ params }) => {
     }
 
     // Cargar cursos disponibles del tenant
-    const coursesResult = await CourseApi.getByTenant(result.tenantId);
-    const availableCourses = coursesResult.data || [];
+    let availableCourses: Array<{ id: string; title: string; slug: string; isActive: boolean }> = [];
+    let sectionCourses: string[] = [];
 
-    // Obtener IDs de cursos ya asociados a la sección
-    const sectionCourses = result.courses?.map(course => course.id) || [];
+    try {
+      const requestApiClient = createApiClientFromRequest(request);
+      const coursesResult = await CoursesAPI.getByTenant(requestApiClient);
+      
+      console.log('Courses Result:', coursesResult); // Debug
+
+      // Verificar si es un error o datos válidos
+      if (coursesResult && !('error' in coursesResult)) {
+        if (Array.isArray(coursesResult)) {
+          // Si ya es un array, procesarlo
+          availableCourses = processCourseTranslations(coursesResult, 'es');
+        } else {
+          console.warn('coursesResult no es un array:', coursesResult);
+        }
+      } else {
+        console.error('Error al cargar cursos:', coursesResult);
+      }
+
+      // Obtener IDs de cursos ya asociados a la sección
+      if (result.courses && Array.isArray(result.courses)) {
+        sectionCourses = result.courses.map(course => course.id);
+      }
+    } catch (error) {
+      console.error('Error loading courses:', error);
+      // Continuar con arrays vacíos
+    }
     
-    // Datos mock - en una aplicación real, estos vendrían de la base de datos
-    const mockSection: Section = {
-      id: sectionId,
-      tenantId: 'tenant-1',
-      slug: 'colaboradores',
-      name: 'Colaboradores',
-      description: 'Sección dedicada a contenido para colaboradores internos de la empresa',
-      thumbnailImagePath: '/images/sections/colaboradores.jpg',
-      order: 1,
-      allowBanner: true,
-      bannerPath: '/images/banners/colaboradores-banner.jpg',
-      courseCount: 12,
-      createdAt: '2024-01-15T10:00:00Z',
-      updatedAt: '2024-01-20T14:30:00Z'
-    };
-
     return json<LoaderData>({ 
       section: result, 
       error: null,
@@ -143,11 +199,18 @@ export const action: ActionFunction = async ({ request, params }) => {
           order: parseInt(formData.get('order') as string) || null,
           allowBanner: formData.get('allowBanner') === 'on',
           bannerPath: formData.get('bannerPath') as string,
-          courseIds: JSON.parse(formData.get('courseIds') as string || '[]'),
+          // tenantId: formData.get('tenantId') as string,
+          courseIds: formData.getAll('courseIds') as string[],
         };
 
+        const requestApiClient = createApiClientFromRequest(request);
+
         // Llamar al API para actualizar la sección incluyendo cursos
-        const updateResult = await SectionApi.updateWithCourses(sectionId, updateData);
+        const updateResult = await SectionApi.update(
+          sectionId, 
+          updateData,
+          requestApiClient  // ⬅️ Pasar el cliente de API
+        );
 
         if ('error' in updateResult) {
           return json<ActionData>({ 
@@ -155,7 +218,17 @@ export const action: ActionFunction = async ({ request, params }) => {
           }, { status: 400 });
         }
         
-        return json<ActionData>({ success: true });
+        // return json<ActionData>({ success: true });
+        
+        if (!updateResult) {
+          return json<ActionData>({
+            errors: { general: "Error al actualizar la seccion. Intente nuevamente." },
+            values: updateData
+          }, { status: 500 });
+        }
+                
+        // Simular éxito
+        return redirect(`/sections?updated=true`);
 
       case 'delete':
         // Aquí se llamaría al API para eliminar la sección
@@ -179,7 +252,7 @@ export const action: ActionFunction = async ({ request, params }) => {
 };
 
 export default function EditSection() {
-  const { section, error, availableCourses, sectionCourses } = useLoaderData<LoaderData>();
+  const { section, error, availableCourses = [], sectionCourses = [] } = useLoaderData<LoaderData>();
   const actionData = useActionData<ActionData>();
   const navigation = useNavigation();
   const navigate = useNavigate();
@@ -192,6 +265,7 @@ export default function EditSection() {
     order: 1,
     allowBanner: false,
     bannerPath: '',
+    tenantId: section ? section.tenantId : '',
     courseIds: [],
   });
   
@@ -215,7 +289,8 @@ export default function EditSection() {
         order: section.order || 1,
         allowBanner: section.allowBanner,
         bannerPath: section.bannerPath || '',
-        courseIds: sectionCourses, // NUEVO: cargar cursos asociados
+        tenantId: section.tenantId,
+        courseIds: sectionCourses || [],
       });
       setPreviewImage(section.thumbnailImagePath);
       setPreviewBanner(section.bannerPath);
@@ -427,8 +502,115 @@ export default function EditSection() {
             </div>
           </div>
         );
-
       case 3:
+        return (
+            <div className="space-y-6">
+                <div className="flex items-center space-x-3 mb-6">
+                    <BookOpen className="h-6 w-6 text-purple-600" />
+                    <h2 className="text-xl font-semibold text-gray-900">Cursos Asociados</h2>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                    <div className="flex items-center">
+                        <AlertCircle className="h-5 w-5 text-blue-400 mr-2" />
+                        <p className="text-sm text-blue-800">
+                            Selecciona los cursos que aparecerán en esta sección. Los usuarios podrán ver todos los cursos asociados.
+                        </p>
+                    </div>
+                </div>
+
+                {availableCourses.length === 0 ? (
+                    <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
+                        <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                        <p className="text-gray-600 mb-2">No hay cursos disponibles</p>
+                        <p className="text-sm text-gray-500">Crea cursos primero para poder asociarlos a esta sección</p>
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-between mb-4">
+                            <p className="text-sm text-gray-600">
+                                {formData.courseIds.length} de {availableCourses.length} cursos seleccionados
+                            </p>
+                            <div className="flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            courseIds: availableCourses.map(c => c.id)
+                                        }));
+                                        setHasChanges(true);
+                                    }}
+                                    className="text-sm text-purple-600 hover:text-purple-700 font-medium"
+                                >
+                                    Seleccionar todos
+                                </button>
+                                <span className="text-gray-300">|</span>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            courseIds: []
+                                        }));
+                                        setHasChanges(true);
+                                    }}
+                                    className="text-sm text-gray-600 hover:text-gray-700 font-medium"
+                                >
+                                    Deseleccionar todos
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto">
+                            {availableCourses.map((course) => {
+                                const isSelected = formData.courseIds.includes(course.id);
+                                return (
+                                    <label
+                                        key={course.id}
+                                        className={`flex items-start p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                                            isSelected
+                                                ? 'border-purple-500 bg-purple-50'
+                                                : 'border-gray-200 bg-white hover:border-purple-200 hover:bg-purple-50/50'
+                                        }`}
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={isSelected}
+                                            onChange={(e) => {
+                                                const checked = e.target.checked;
+                                                setFormData(prev => ({
+                                                    ...prev,
+                                                    courseIds: checked
+                                                        ? [...prev.courseIds, course.id]
+                                                        : prev.courseIds.filter(id => id !== course.id)
+                                                }));
+                                                setHasChanges(true);
+                                            }}
+                                            className="mt-1 h-4 w-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                                        />
+                                        <div className="ml-3 flex-1">
+                                            <p className="font-medium text-gray-900">{course.title}</p>
+                                            <p className="text-sm text-gray-500">{course.slug}</p>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                                                    course.isActive
+                                                        ? 'bg-green-100 text-green-800'
+                                                        : 'bg-gray-100 text-gray-800'
+                                                }`}>
+                                                    {course.isActive ? 'Activo' : 'Inactivo'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </label>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+      case 4:
         return (
           <div className="space-y-6">
             {/* Imagen thumbnail */}
@@ -560,7 +742,7 @@ export default function EditSection() {
           </div>
         );
 
-      case 4:
+      case 5:
         return (
           <div className="space-y-6">
             <div className="bg-white border border-gray-200 rounded-lg p-6">
@@ -660,6 +842,27 @@ export default function EditSection() {
                 </div>
               </div>
             )}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Cursos Asociados</label>
+              {formData.courseIds.length === 0 ? (
+                  <p className="text-sm text-gray-500 italic">No hay cursos asociados</p>
+              ) : (
+                  <div className="space-y-2">
+                      {formData.courseIds.map(courseId => {
+                          const course = availableCourses.find(c => c.id === courseId);
+                          return course ? (
+                              <div key={courseId} className="flex items-center p-2 bg-purple-50 rounded-lg">
+                                  <BookOpen className="h-4 w-4 text-purple-600 mr-2" />
+                                  <span className="text-sm text-gray-900">{course.title}</span>
+                              </div>
+                          ) : null;
+                      })}
+                      <p className="text-sm text-gray-500 mt-2">
+                          {formData.courseIds.length} curso{formData.courseIds.length !== 1 ? 's' : ''} seleccionado{formData.courseIds.length !== 1 ? 's' : ''}
+                      </p>
+                  </div>
+                )}
+            </div>
           </div>
         );
 
@@ -746,7 +949,10 @@ export default function EditSection() {
           <input type="hidden" name="order" value={formData.order} />
           <input type="hidden" name="allowBanner" value={formData.allowBanner ? 'on' : ''} />
           <input type="hidden" name="bannerPath" value={formData.bannerPath} />
-          <input type="hidden" name="courseIds" value={JSON.stringify(formData.courseIds)} />
+          <input type="hidden" name="tenantId" value={formData.tenantId} />
+          {formData.courseIds.map((courseId) => (
+            <input key={courseId} type="hidden" name="courseIds" value={courseId} />
+          ))}
 
           {/* Contenido del paso actual */}
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-6">

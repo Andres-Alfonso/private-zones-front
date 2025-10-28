@@ -1,7 +1,7 @@
 // app/api/endpoints/sections.ts
 
 
-import { create } from "node_modules/axios/index.cjs";
+import { AxiosInstance, create } from "node_modules/axios/index.cjs";
 import { createApiClient } from "../client";
 import { API_CONFIG } from '../config';
 
@@ -177,13 +177,22 @@ export const SectionApi = {
         }
     },
 
-    udpate: async (sectionData: UpdateSectionData): Promise<Section | SectionErrorResponse> => {
+    update: async (
+        id: string, 
+        sectionData: UpdateSectionData,
+        apiClient?: AxiosInstance
+    ): Promise<Section | SectionErrorResponse> => {
         try {
-            const apiClient = createApiClient(getCurrentDomain());
-            const response = await apiClient.post(API_CONFIG.ENDPOINTS.SECTIONS.CREATE, sectionData);
+            // Usar el cliente proporcionado o crear uno por defecto
+            const client = apiClient || createApiClient(getCurrentDomain());
+            
+            const response = await client.put(
+                API_CONFIG.ENDPOINTS.SECTIONS.UPDATE(id), 
+                sectionData
+            );
             return response.data;
         } catch (error: any) {
-            console.error('Error al crear la sección:', error);
+            console.error('Error al actualizar la sección:', error);
             if (error.response) {
                 const status = error.response.status;
                 const errorData = error.response.data;
@@ -212,7 +221,7 @@ export const SectionApi = {
             }
             return {
                 error: SectionError.NETWORK_ERROR,
-                message: 'Error de conexión al crear la sección',
+                message: 'Error de conexión al actualizar la sección',
             };
         }
     }

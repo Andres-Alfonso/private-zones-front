@@ -25,6 +25,7 @@ import { CourseFormActions } from '~/components/courses/CourseFormActions';
 import { generateAcronym } from '~/utils/acronymGenerator';
 import { CoursesAPI } from '~/api/endpoints/courses';
 import { useTenant } from '~/context/TenantContext';
+import { createApiClientFromRequest } from '~/api/client';
 
 interface ActionData {
   errors?: Array<{ field: string; message: string }>;
@@ -193,8 +194,10 @@ export const action: ActionFunction = async ({ request }) => {
       // }
     };
 
+    const requestApiClient = createApiClientFromRequest(request);
+
     // En producción, aquí llamarías al API
-    const course = await CoursesAPI.create(courseData);
+    const course = await CoursesAPI.create(courseData, requestApiClient);
     
     // Simulamos una respuesta exitosa
     const mockCourse = { id: 'new-course-id', ...courseData };
@@ -303,7 +306,7 @@ function CreateCourseContent() {
   // Redirigir si se creó exitosamente
   useEffect(() => {
     if (actionData?.success && actionData?.courseId) {
-      navigate(`/courses/${actionData.courseId}`);
+      navigate(`/courses/manage?created=true&id=${actionData.courseId}`);
     }
   }, [actionData, navigate]);
 

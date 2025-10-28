@@ -133,9 +133,9 @@ export function CourseCard({ course }: CourseCardProps) {
         {/* Footer con precio y botón */}
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            {/* <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               ${course.price}
-            </div>
+            </div> */}
             <div className="text-xs text-gray-500">USD</div>
           </div>
           <Link

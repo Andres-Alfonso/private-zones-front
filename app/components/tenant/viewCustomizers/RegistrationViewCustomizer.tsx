@@ -59,8 +59,8 @@ export default function RegistrationViewCustomizer({
   const requiredFields = [
     { key: 'requireLastName', label: 'Apellido', icon: User },
     { key: 'requirePhone', label: 'Teléfono', icon: User },
-    { key: 'requireDocumentType', label: 'Tipo de Documento', icon: User },
-    { key: 'requireDocument', label: 'Número de Documento', icon: User },
+    { key: 'requireDocumentType', label: 'Tipo de Identificación', icon: User },
+    { key: 'requireDocument', label: 'Número de Identificación', icon: User },
     { key: 'requireOrganization', label: 'Organización', icon: User },
     { key: 'requirePosition', label: 'Cargo', icon: User },
     { key: 'requireGender', label: 'Género', icon: User },

@@ -138,7 +138,7 @@ export default function LoginPage() {
           label: 'Documento',
           placeholder: '123456789',
           autoComplete: 'username',
-          helperText: 'Ingresa tu número de documento'
+          helperText: 'Ingresa tu número de identificación'
         };
       case 'both':
         return {

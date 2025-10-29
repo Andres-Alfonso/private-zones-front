@@ -16,6 +16,24 @@ export default function ProfileInfoForm({
   onFieldChange 
 }: ProfileInfoFormProps) {
 
+
+  const documentTypes = [
+    { value: "CC", label: "Cédula de Ciudadanía" },
+    { value: "TI", label: "Tarjeta de Identidad" },
+    { value: "CE", label: "Cédula de Extranjería" },
+    { value: "PA", label: "Pasaporte" },
+    { value: "RC", label: "Registro Civil" },
+    { value: "NIT", label: "NIT (Número de Identificación Tributaria)" },
+    // { value: "PEP", label: "Permiso Especial de Permanencia" },
+    { value: "DNI", label: "Documento Nacional de Identidad" },
+    // { value: "ID", label: "Documento de Identidad (General)" },
+    // { value: "DL", label: "Licencia de Conducción" },
+    // { value: "SSN", label: "Número de Seguridad Social" },
+    // { value: "CURP", label: "CURP (México)" },
+    // { value: "RUT", label: "RUT (Chile)" },
+    { value: "OTHER", label: "Otro" },
+  ];
+
   const handleProfileConfigChange = (
     field: keyof UserFormData["profileConfig"]
   ) => (
@@ -74,11 +92,11 @@ export default function ProfileInfoForm({
             />
           </div>
 
-          {/* Tipo de documento */}
+          {/* Tipo de Identificación */}
           <div>
             <label htmlFor="type_document" className="block text-sm font-medium text-gray-700 mb-2">
               <FileText className="h-4 w-4 inline mr-1" />
-              Tipo de Documento
+              Tipo de Identificación
             </label>
             <select
               id="type_document"
@@ -88,17 +106,18 @@ export default function ProfileInfoForm({
               className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">Seleccionar tipo</option>
-              <option value="DNI">DNI</option>
-              <option value="Passport">Pasaporte</option>
-              <option value="License">Licencia</option>
-              <option value="Other">Otro</option>
+              {documentTypes.map((doc) => (
+                <option key={doc.value} value={doc.value}>
+                  {doc.label}
+                </option>
+              ))}
             </select>
           </div>
 
-          {/* Número de documento */}
+          {/* Número de Identificación */}
           <div>
             <label htmlFor="documentNumber" className="block text-sm font-medium text-gray-700 mb-2">
-              Número de Documento
+              Número de Identificación
             </label>
             <input
               type="text"

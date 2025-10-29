@@ -131,10 +131,14 @@ export default function RegisterPage() {
 
   // Opciones para selects
   const documentTypes = [
-    { value: 'cc', label: 'Cédula de Ciudadanía' },
-    { value: 'ce', label: 'Cédula de Extranjería' },
-    { value: 'passport', label: 'Pasaporte' },
-    { value: 'ti', label: 'Tarjeta de Identidad' },
+    { value: "CC", label: "Cédula de Ciudadanía" },
+    { value: "TI", label: "Tarjeta de Identidad" },
+    { value: "CE", label: "Cédula de Extranjería" },
+    { value: "PA", label: "Pasaporte" },
+    { value: "RC", label: "Registro Civil" },
+    { value: "NIT", label: "NIT (Número de Identificación Tributaria)" },
+    { value: "DNI", label: "Documento Nacional de Identidad" },
+    { value: "OTHER", label: "Otro" },
   ];
 
   const genderOptions = [
@@ -249,8 +253,8 @@ export default function RegisterPage() {
             {config.requireDocumentType && (
               <Select
                 id="document-type"
-                name="document-type"
-                label="Tipo de documento"
+                name="type_document"
+                label="Tipo de identificación"
                 required={config.requireDocumentType}
                 error={getErrorByField(errors, 'document-type')}
                 disabled={isSubmitting}
@@ -264,7 +268,7 @@ export default function RegisterPage() {
                 type="text"
                 id="document"
                 name="document"
-                label="Número de documento"
+                label="Número de identificación"
                 required={config.requireDocument}
                 error={getErrorByField(errors, 'document')}
                 disabled={isSubmitting}

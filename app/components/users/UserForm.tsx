@@ -42,7 +42,6 @@ export default function UserForm({
 
   const { tenants, roles } = loaderData;
 
-  // Sincronizar con valores de actionData si hay errores de validación
   useEffect(() => {
     if (actionData?.values) {
       updateFields(actionData.values);
@@ -57,37 +56,55 @@ export default function UserForm({
     }
   };
 
-  // Función para manejar el envío del formulario
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    // El formulario se enviará normalmente, pero necesitamos asegurar
-    // que todos los valores estén en los campos hidden o sean manejados correctamente
-    
-    // Agregar campos hidden para todos los valores del estado
     const form = e.currentTarget;
+    
+    // Eliminar campos hidden anteriores
     const existingHiddenInputs = form.querySelectorAll('input[type="hidden"][data-state-field]');
     existingHiddenInputs.forEach(input => input.remove());
 
-    // Agregar campos hidden para valores que podrían no estar en la pestaña actual
+    // Función auxiliar para crear un input hidden
+    const createHiddenInput = (name: string, value: string) => {
+      const hiddenInput = document.createElement('input');
+      hiddenInput.type = 'hidden';
+      hiddenInput.name = name;
+      hiddenInput.value = value;
+      hiddenInput.setAttribute('data-state-field', 'true');
+      return hiddenInput;
+    };
+
+    // Procesar cada campo del formData
     Object.entries(formData).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && key !== 'roles') {
-        const hiddenInput = document.createElement('input');
-        hiddenInput.type = 'hidden';
-        hiddenInput.name = key;
-        hiddenInput.value = typeof value === 'boolean' ? (value ? 'on' : '') : String(value);
-        hiddenInput.setAttribute('data-state-field', 'true');
-        form.appendChild(hiddenInput);
+      if (value === undefined || value === null) return;
+      
+      // Manejar roles por separado
+      if (key === 'roles' || key === 'roleIds') return;
+
+      // Manejar objetos (profileConfig, notificationConfig)
+      if (typeof value === 'object' && !Array.isArray(value)) {
+        // Serializar como JSON
+        form.appendChild(createHiddenInput(key, JSON.stringify(value)));
+      }
+      // Manejar booleanos
+      else if (typeof value === 'boolean') {
+        form.appendChild(createHiddenInput(key, value ? 'on' : ''));
+      }
+      // Manejar arrays (excepto roles)
+      else if (Array.isArray(value)) {
+        value.forEach(item => {
+          form.appendChild(createHiddenInput(key, String(item)));
+        });
+      }
+      // Manejar valores primitivos
+      else {
+        form.appendChild(createHiddenInput(key, String(value)));
       }
     });
 
-    // Manejar roles por separado
+    // Manejar roles específicamente
     if (formData.roleIds && Array.isArray(formData.roleIds)) {
       formData.roleIds.forEach(roleId => {
-        const hiddenInput = document.createElement('input');
-        hiddenInput.type = 'hidden';
-        hiddenInput.name = 'roles';
-        hiddenInput.value = roleId;
-        hiddenInput.setAttribute('data-state-field', 'true');
-        form.appendChild(hiddenInput);
+        form.appendChild(createHiddenInput('roles', roleId));
       });
     }
   };
@@ -95,12 +112,9 @@ export default function UserForm({
   return (
     <div className="max-w-4xl mx-auto">
       <Form method="post" className="space-y-6" onSubmit={handleSubmit}>
-        {/* Contenedor principal del formulario */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 overflow-hidden">
-          {/* Pestañas */}
           <FormTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
-          {/* Contenido de las pestañas */}
           <div className="p-6">
             {activeTab === 'basic' && (
               <BasicInfoForm
@@ -132,7 +146,6 @@ export default function UserForm({
           </div>
         </div>
 
-        {/* Error general */}
         {actionData?.errors?.general && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
             <div className="flex items-center">
@@ -142,7 +155,6 @@ export default function UserForm({
           </div>
         )}
 
-        {/* Indicador de estado del formulario en desarrollo */}
         {process.env.NODE_ENV === 'development' && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <details>
@@ -156,7 +168,6 @@ export default function UserForm({
           </div>
         )}
 
-        {/* Botones de acción */}
         <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
           <button
             type="button"

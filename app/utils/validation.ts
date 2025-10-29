@@ -317,32 +317,32 @@ export function validateRegisterForm(
     }
   }
 
-  // Validación de tipo de documento (si es requerido)
+  // Validación de tipo de identificación (si es requerido)
   if (tenantConfig?.requireDocumentType) {
     if (!documentType || documentType.trim().length === 0) {
       errors.push({
         field: 'document-type',
-        message: 'El tipo de documento es requerido'
+        message: 'El tipo de identificación es requerido'
       });
     }
   }
 
-  // Validación de número de documento (si es requerido)
+  // Validación de número de identificación (si es requerido)
   if (tenantConfig?.requireDocument) {
     if (!document || document.trim().length === 0) {
       errors.push({
         field: 'document',
-        message: 'El número de documento es requerido'
+        message: 'El número de identificación es requerido'
       });
     } else if (document.trim().length < 3) {
       errors.push({
         field: 'document',
-        message: 'El número de documento debe tener al menos 3 caracteres'
+        message: 'El número de identificación debe tener al menos 3 caracteres'
       });
     } else if (document.trim().length > 20) {
       errors.push({
         field: 'document',
-        message: 'El número de documento no puede tener más de 20 caracteres'
+        message: 'El número de identificación no puede tener más de 20 caracteres'
       });
     }
   }

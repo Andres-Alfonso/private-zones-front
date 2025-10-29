@@ -161,7 +161,7 @@ export default function BasicInfoForm({
           <div>
             <label htmlFor="tenantId" className="block text-sm font-medium text-gray-700 mb-2">
               <Building2 className="h-4 w-4 inline mr-1" />
-              Tenant *
+              Cliente *
             </label>
             <select
               id="tenantId"
@@ -237,13 +237,13 @@ export default function BasicInfoForm({
                     )}
                   </div>
                   {/* Hidden inputs para envío del formulario */}
-                  {selectedRoles.includes(role.id) && (
+                  {/* {selectedRoles.includes(role.id) && (
                     <input
                       type="hidden"
                       name="roles"
                       value={role.id}
                     />
-                  )}
+                  )} */}
                 </div>
               ))}
             </div>

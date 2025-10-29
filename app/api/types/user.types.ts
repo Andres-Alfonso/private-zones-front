@@ -8,7 +8,11 @@ export interface BackendUser {
   password?: string; // Viene encriptada, no la usamos
   tenantId: string;
   isActive: boolean;
-  roles: string[]; // En el backend viene como 'roles', no 'roleIds'
+  roles: Array<{
+    id: string;
+    name: string;
+    description?: string;
+  }>; // En el backend viene como 'roles'
   createdAt: string;
   updatedAt: string;
   lastLoginAt?: string;
@@ -322,7 +326,7 @@ export const userToFormData = (backendUser: BackendUser): UserFormData => {
   };
 
   // Manejar roles (viene como 'roles' en el backend, necesitamos 'roleIds')
-  const roleIds = Array.isArray(backendUser.roles) ? backendUser.roles : [];
+  const roleIds = backendUser.roles?.map(role => role.id) || []
 
   const formData: UserFormData = {
     id: backendUser.id,

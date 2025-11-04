@@ -6,11 +6,11 @@ import { SpecificViewCustomizerProps } from './types';
 // Interfaz específica para configuraciones del Home
 export interface HomeAdditionalSettings {
     // Configuración de cursos
-    showCourses?: boolean;
-    showPrivateCourses?: boolean; // Solo si showCourses está habilitado
+    allowCoursesHome?: boolean;
+    showPrivateCourses?: boolean; // Solo si allowCoursesHome está habilitado
 
     // Configuración de secciones
-    showSections?: boolean;
+    allowSectionsHome?: boolean;
     selectedSections?: string[]; // IDs de secciones seleccionadas
 
     textColor?: string;
@@ -58,9 +58,9 @@ export const HomeViewCustomizer: React.FC<HomeViewCustomizerProps> = ({
 }) => {
     // Estados locales para configuraciones específicas del Home
     const [homeConfig, setHomeConfig] = useState<HomeAdditionalSettings>({
-        showCourses: false,
+        allowCoursesHome: false,
         showPrivateCourses: false,
-        showSections: false,
+        allowSectionsHome: false,
         selectedSections: [],
         textColor: '#000000',
         enableBanner: false,
@@ -307,19 +307,19 @@ export const HomeViewCustomizer: React.FC<HomeViewCustomizerProps> = ({
                     <div className="mb-8 p-4 bg-purple-50 rounded-lg">
                         <div className="flex items-center mb-4">
                             <input
-                                id="showCourses"
+                                id="allowCoursesHome"
                                 type="checkbox"
-                                checked={homeConfig.showCourses || false}
-                                onChange={(e) => handleHomeConfigChange('showCourses', e.target.checked)}
+                                checked={homeConfig.allowCoursesHome || false}
+                                onChange={(e) => handleHomeConfigChange('allowCoursesHome', e.target.checked)}
                                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                                 disabled={isSubmitting}
                             />
-                            <label htmlFor="showCourses" className="ml-2 text-sm font-medium text-gray-800">
+                            <label htmlFor="allowCoursesHome" className="ml-2 text-sm font-medium text-gray-800">
                                 Mostrar Cursos en Home
                             </label>
                         </div>
 
-                        {homeConfig.showCourses && (
+                        {homeConfig.allowCoursesHome && (
                             <div className="ml-6">
                                 <div className="flex items-center">
                                     <input
@@ -342,19 +342,19 @@ export const HomeViewCustomizer: React.FC<HomeViewCustomizerProps> = ({
                     <div className="mb-8 p-4 bg-yellow-50 rounded-lg">
                         <div className="flex items-center mb-4">
                             <input
-                                id="showSections"
+                                id="allowSectionsHome"
                                 type="checkbox"
-                                checked={homeConfig.showSections || false}
-                                onChange={(e) => handleHomeConfigChange('showSections', e.target.checked)}
+                                checked={homeConfig.allowSectionsHome || false}
+                                onChange={(e) => handleHomeConfigChange('allowSectionsHome', e.target.checked)}
                                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                                 disabled={isSubmitting}
                             />
-                            <label htmlFor="showSections" className="ml-2 text-sm font-medium text-gray-800">
+                            <label htmlFor="allowSectionsHome" className="ml-2 text-sm font-medium text-gray-800">
                                 Mostrar Secciones en Home
                             </label>
                         </div>
 
-                        {homeConfig.showSections && availableSections.length > 0 && (
+                        {homeConfig.allowSectionsHome && availableSections.length > 0 && (
                             <div className="ml-6">
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Seleccionar Secciones a Mostrar:
@@ -379,7 +379,7 @@ export const HomeViewCustomizer: React.FC<HomeViewCustomizerProps> = ({
                             </div>
                         )}
 
-                        {/* {homeConfig.showSections && availableSections.length === 0 && (
+                        {/* {homeConfig.allowSectionsHome && availableSections.length === 0 && (
                             <div className="ml-6 text-sm text-gray-500 italic">
                                 No hay secciones disponibles
                             </div>

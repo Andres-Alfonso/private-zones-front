@@ -263,9 +263,9 @@ export default function CreateTenant() {
     backgroundImage: '',
     backgroundColor: '#eff4ff',
     additionalSettings: {
-      showCourses: false,
+      allowCoursesHome: false,
       showPrivateCourses: false,
-      showSections: false,
+      allowSectionsHome: false,
       selectedSections: [],
       textColor: '#000000',
       enableBanner: false,

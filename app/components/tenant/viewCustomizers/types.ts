@@ -35,11 +35,11 @@ export interface SpecificViewCustomizerProps {
 // Estructura de additionalSettings para cada vista
 export interface HomeAdditionalSettings {
   // Configuración de cursos
-  showCourses?: boolean;
+  allowCoursesHome?: boolean;
   showPrivateCourses?: boolean;
   
   // Configuración de secciones
-  showSections?: boolean;
+  allowSectionsHome?: boolean;
   selectedSections?: string[];
 
   textColor?: string;

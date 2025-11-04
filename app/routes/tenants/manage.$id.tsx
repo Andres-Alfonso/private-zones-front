@@ -295,9 +295,9 @@ export default function ManageTenant() {
     backgroundImage: tenant.homeSettings?.backgroundImage || '',
     backgroundColor: tenant.homeSettings?.backgroundColor || '#eff4ff',
     additionalSettings: tenant.homeSettings?.additionalSettings || {
-      showCourses: false,
+      allowCoursesHome: false,
       showPrivateCourses: false,
-      showSections: false,
+      allowSectionsHome: false,
       selectedSections: [],
       enableBanner: false,
       bannerType: 'image',

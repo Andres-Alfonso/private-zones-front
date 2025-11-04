@@ -8,14 +8,21 @@ interface SectionsSectionProps {
         data: any[];
         total: number;
     };
+    textColor?: string;
 }
 
-export default function SectionsSection({ sections }: SectionsSectionProps) {
+export default function SectionsSection({ sections, textColor }: SectionsSectionProps) {
+    // Usar color personalizado si existe y no está vacío, sino usar colores por defecto
+    const shouldUseCustomColor = textColor && textColor.trim() !== '';
+    
     if (!sections.data || sections.data.length === 0) {
         return (
             <div>
                 <div className="mb-6">
-                    <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent flex items-center gap-3">
+                    <h2 
+                        className={`text-2xl font-bold flex items-center gap-3 ${!shouldUseCustomColor ? 'bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent' : ''}`}
+                        style={shouldUseCustomColor ? { color: textColor } : {}}
+                    >
                         <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg">
                             <Building2 className="h-6 w-6 text-white" />
                         </div>
@@ -27,7 +34,12 @@ export default function SectionsSection({ sections }: SectionsSectionProps) {
                     <div className="text-gray-400 mb-4">
                         <Folder className="w-12 h-12 mx-auto" />
                     </div>
-                    <p className="text-gray-600">No hay secciones disponibles</p>
+                    <p 
+                        className={!shouldUseCustomColor ? 'text-gray-600' : ''}
+                        style={shouldUseCustomColor ? { color: textColor } : {}}
+                    >
+                        No hay secciones disponibles
+                    </p>
                 </div>
             </div>
         );
@@ -36,7 +48,10 @@ export default function SectionsSection({ sections }: SectionsSectionProps) {
     return (
         <div>
             <div className="mb-6">
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent flex items-center gap-3">
+                <h2 
+                    className={`text-2xl font-bold flex items-center gap-3 ${!shouldUseCustomColor ? 'bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent' : ''}`}
+                    style={shouldUseCustomColor ? { color: textColor } : {}}
+                >
                     <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg">
                         <Building2 className="h-6 w-6 text-white" />
                     </div>
@@ -66,7 +81,6 @@ export default function SectionsSection({ sections }: SectionsSectionProps) {
                                         alt="Sección por defecto"
                                         className="w-16 h-16 opacity-60 group-hover:opacity-80 transition-opacity"
                                         onError={(e) => {
-                                            // Fallback si no existe la imagen por defecto
                                             e.currentTarget.style.display = 'none';
                                             e.currentTarget.parentElement!.innerHTML = `
                                                 <div class="w-full h-full flex items-center justify-center">

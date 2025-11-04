@@ -65,6 +65,9 @@ function HomeLayoutContent() {
     // Determinar si hay background activo
     const hasBackground = !!(backgroundImage || backgroundColor);
 
+    // Obtener el color de texto personalizado
+    const customTextColor = homeViewConfig?.additionalSettings?.textColor || '#000000';
+
     return (
         <div 
             className="min-h-screen"
@@ -84,7 +87,12 @@ function HomeLayoutContent() {
                         <div className="flex flex-col space-y-4">
                             {/* Bienvenida y botones */}
                             <div className="mt-4">
-                                <p className="mb-4 text-xl font-semibold text-gray-800">Bienvenido {user?.name} {user?.lastName}</p>
+                                <p 
+                                    className="mb-4 text-xl font-semibold"
+                                    style={{ color: customTextColor }}
+                                >
+                                    Bienvenido {user?.name} {user?.lastName}
+                                </p>
                                 <div className="mt-2 flex flex-wrap gap-4">
                                     <button className="flex items-center space-x-3 px-6 py-3 rounded-xl text-sm font-semibold duration-200 bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow hover:from-blue-700 hover:to-blue-800 hover:shadow-md hover:scale-105 transition-all">
                                         Mi Actividad

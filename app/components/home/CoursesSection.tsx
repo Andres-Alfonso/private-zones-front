@@ -1,9 +1,16 @@
 // app/components/home/CoursesSection.tsx
 
 import { Link } from "@remix-run/react";
-import { GraduationCap, Clock, Play, BookOpen } from "lucide-react";
+import { GraduationCap, Clock, Play } from "lucide-react";
 
-export default function CoursesSection() {
+interface CoursesSectionProps {
+    textColor?: string;
+}
+
+export default function CoursesSection({ textColor }: CoursesSectionProps) {
+    // Usar color personalizado si existe y no está vacío, sino usar colores por defecto
+    const shouldUseCustomColor = textColor && textColor.trim() !== '';
+    
     // Datos mock - aquí conectarías con tu API de cursos
     const mockCourses = [
         {
@@ -47,7 +54,10 @@ export default function CoursesSection() {
     return (
         <div>
             <div className="mb-6">
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent flex items-center gap-3">
+                <h2 
+                    className={`text-2xl font-bold flex items-center gap-3 ${!shouldUseCustomColor ? 'bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent' : ''}`}
+                    style={shouldUseCustomColor ? { color: textColor } : {}}
+                >
                     <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg">
                         <GraduationCap className="h-6 w-6 text-white" />
                     </div>
@@ -77,7 +87,6 @@ export default function CoursesSection() {
                                         alt="Curso por defecto"
                                         className="w-16 h-16 opacity-60 group-hover:opacity-80 transition-opacity"
                                         onError={(e) => {
-                                            // Fallback si no existe la imagen por defecto
                                             e.currentTarget.style.display = 'none';
                                             e.currentTarget.parentElement!.innerHTML = `
                                                 <div class="w-full h-full flex items-center justify-center">

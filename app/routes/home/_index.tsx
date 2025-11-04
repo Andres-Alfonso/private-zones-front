@@ -43,6 +43,8 @@ export default function HomeIndex() {
     const allowSectionsHome = homeConfig?.additionalSettings?.allowSectionsHome;
     const allowCoursesHome = homeConfig?.additionalSettings?.allowCoursesHome;
 
+    const customTextColor = homeConfig?.additionalSettings?.textColor || '#000000';
+
     if (error) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -65,13 +67,13 @@ export default function HomeIndex() {
         <div className="space-y-8">
             {/* Mostrar secciones si está habilitado */}
             {allowSectionsHome && (
-                <SectionsSection sections={sections} />
+                <SectionsSection sections={sections} textColor={customTextColor} />
             )}
 
             
             {/* Mostrar cursos si está habilitado */}
             {allowCoursesHome && (
-                <CoursesSection />
+                <CoursesSection textColor={customTextColor} />
             )}
 
 
@@ -84,10 +86,10 @@ export default function HomeIndex() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2 2v-5m16 0h-2M4 13h2m6-8v6m0 0v6m0-6h6m-6 0H8" />
                             </svg>
                         </div>
-                        <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                        <h3 className="text-xl font-semibold text-gray-900 mb-2" style={{ color: customTextColor }}>
                             Bienvenido, {user?.name}
                         </h3>
-                        <p className="text-gray-600">
+                        <p className="text-gray-600" style={{ color: customTextColor }}>
                             Tu espacio de aprendizaje está siendo configurado.
                         </p>
                     </div>

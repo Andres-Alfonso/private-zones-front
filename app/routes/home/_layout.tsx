@@ -32,6 +32,23 @@ export default function HomeLayout() {
     );
 }
 
+// Función para codificar URL solo si es necesario
+function safeEncodeURI(url: string): string {
+  try {
+    // Intentar decodificar la URL
+    const decoded = decodeURI(url);
+    // Si la URL decodificada es diferente a la original, ya estaba codificada
+    if (decoded !== url) {
+      return url; // Ya está codificada, devolverla tal cual
+    }
+    // Si no estaba codificada, codificarla
+    return encodeURI(url);
+  } catch (e) {
+    // Si hay error al decodificar, asumir que necesita codificación
+    return encodeURI(url);
+  }
+}
+
 function HomeLayoutContent() {
     const location = useLocation();
     const { user } = useCurrentUser();
@@ -56,7 +73,7 @@ function HomeLayoutContent() {
     if (isBackgroundActive) {
         if (backgroundType === 'image' && homeViewConfig?.backgroundImagePath) {
             // NO codificar - la URL ya viene codificada desde la BD
-            backgroundImage = homeViewConfig.backgroundImagePath;
+            backgroundImage = safeEncodeURI(homeViewConfig.backgroundImagePath);
         } else if (backgroundType === 'color' && homeViewConfig?.backgroundColor) {
             backgroundColor = homeViewConfig.backgroundColor;
         }

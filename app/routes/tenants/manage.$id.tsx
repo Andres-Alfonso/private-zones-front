@@ -475,8 +475,15 @@ export default function ManageTenant() {
     setMetricsSettings(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleGroupsChange = (field: string, value: string | boolean | File) => {
-    setGroupsSettings(prev => ({ ...prev, [field]: value }));
+  const handleGroupsChange = (field: string, value: string | boolean | File | any) => {
+    if (field === 'additionalSettings') {
+      setGroupsSettings(prev => ({
+        ...prev,
+        additionalSettings: { ...prev.additionalSettings, ...value }
+      }));
+    } else {
+      setGroupsSettings(prev => ({ ...prev, [field]: value }));
+    }
   };
 
   const handleSectionsChange = (field: string, value: string | boolean | File | any) => {
@@ -613,9 +620,9 @@ export default function ManageTenant() {
     city: tenant.city || '',
     country: tenant.country || '',
 
-    backgroundColorNavbar: tenant.backgroundColorNavbar || '#0052cc',
-    textColorNavbar: tenant.textColorNavbar || '#ffffff',
-    logoNavbar: tenant.logoNavbar || 'K&LM',
+    backgroundColorNavbar: tenant.componentConfigs[0]?.backgroundColor || '#0052cc',
+    textColorNavbar: tenant.componentConfigs[0]?.textColor || '#ffffff',
+    logoNavbar: tenant.config?.logoPath || 'K&LM',
     showSearch: tenant.showSearch ?? true,
     showNotifications: tenant.showNotifications ?? true,
     showProfile: tenant.showProfile ?? true,
@@ -631,10 +638,10 @@ export default function ManageTenant() {
     privacyEs: tenant.privacyEs || '',
     privacyEn: tenant.privacyEn || '',
 
-    faviconPath: tenant.faviconPath || '',
-    logoPath: tenant.logoPath || '',
-    loginBackgroundPath: tenant.loginBackgroundPath || '',
-    iconPath: tenant.iconPath || '',
+    faviconPath: tenant.config?.favicon || '',
+    logoPath: tenant.config?.logoPath || '',
+    loginBackgroundPath: tenant.config?.loginBackgroundPath || '',
+    iconPath: tenant.config?.iconPath || '',
     logoAdditionalSettings: JSON.parse(tenant.logoAdditionalSettings || '{}'),
   });
 
@@ -1196,6 +1203,7 @@ export default function ManageTenant() {
         <input type="hidden" name="showSearch" value={formData.showSearch ? 'on' : ''} />
         <input type="hidden" name="showNotifications" value={formData.showNotifications ? 'on' : ''} />
         <input type="hidden" name="showProfile" value={formData.showProfile ? 'on' : ''} />
+        <input type="hidden" name='slug' value={formData.slug} />
 
         <input type="hidden" name="faviconPath" value={logoSettings.faviconPath} />
         <input type="hidden" name="logoPath" value={logoSettings.logoPath} />

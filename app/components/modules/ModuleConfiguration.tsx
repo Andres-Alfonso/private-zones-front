@@ -1,7 +1,7 @@
 // ~/components/modules/ModuleConfiguration.tsx
 
 import { Settings, ToggleLeft, ToggleRight, Hash, Target, Tag } from "lucide-react";
-import { ModuleFormData } from "~/routes/modules/course/$courseId/create";
+import { ModuleFormData } from "~/routes/modules/create";
 
 interface ModuleConfigurationProps {
   formData: ModuleFormData;

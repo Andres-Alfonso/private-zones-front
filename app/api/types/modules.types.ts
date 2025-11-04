@@ -3,7 +3,7 @@ export interface ModuleItem {
   id: string;
   tenantId: string;
   title: string;
-  thumbnailUrl: string | null;
+  thumbnailImagePath: string | null;
   description: string | null;
   configuration: {
     isActive: boolean;

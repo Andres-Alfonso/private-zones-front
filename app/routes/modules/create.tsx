@@ -29,7 +29,7 @@ export interface ModuleItemData {
     title?: string; // Para mostrar en la UI
 }
 
-interface ModuleFormData {
+export interface ModuleFormData {
     title: string;
     description: string;
     thumbnailImagePath: string;
@@ -186,7 +186,7 @@ export const action: ActionFunction = async ({ request, params }) => {
 
         if (response.success) {
             // Redireccionar a la vista del curso con sus módulos
-            return redirect(`/courses/${courseId}/modules?created=${response.data.id}`);
+            return redirect(`/modules/course/${courseId}?created=${response.data.id}`);
         } else {
             throw new Error(response.message || 'Error desconocido');
         }

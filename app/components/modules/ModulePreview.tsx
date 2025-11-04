@@ -1,7 +1,7 @@
 // ~/components/modules/ModulePreview.tsx
 
 import { X, BookOpen, Users, Clock, Target, CheckCircle, XCircle, FileText, MessageSquare, ClipboardList, HelpCircle, BarChart3, Activity } from "lucide-react";
-import { ModuleFormData } from "~/routes/modules/course/$courseId/create";
+import { ModuleFormData } from "~/routes/modules/create";
 import { CourseBasic } from "~/api/types/course.types";
 import { ContentItem } from "~/api/types/content.types";
 
@@ -251,8 +251,8 @@ export function ModulePreview({
               <h4 className="font-medium text-gray-700 mb-2">Información del Curso</h4>
               <div className="flex items-center space-x-4 text-sm text-gray-600">
                 <span><strong>Curso:</strong> {course.title}</span>
-                <span><strong>Categoría:</strong> {course.category}</span>
-                <span><strong>Instructor:</strong> {course.instructor}</span>
+                {/* <span><strong>Categoría:</strong> {course.category}</span>
+                <span><strong>Instructor:</strong> {course.instructor}</span> */}
               </div>
             </div>
           </div>

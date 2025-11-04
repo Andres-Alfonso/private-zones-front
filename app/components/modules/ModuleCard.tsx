@@ -33,10 +33,10 @@ export default function ModuleCard({
   const renderThumbnail = (size: 'small' | 'large') => {
     const sizeClasses = size === 'large' ? 'w-full h-48' : 'w-16 h-16';
     
-    if (module.thumbnailUrl && !imageError) {
+    if (module.thumbnailImagePath && !imageError) {
       return (
         <img
-          src={module.thumbnailUrl}
+          src={module.thumbnailImagePath}
           alt={`Thumbnail de ${module.title}`}
           className={`${sizeClasses} object-cover rounded-lg group-hover:scale-105 transition-transform duration-300`}
           onError={() => setImageError(true)}

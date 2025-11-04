@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Plus, Trash2, GripVertical, FileText, MessageSquare, ClipboardList, HelpCircle, BarChart3, Activity, Search, X } from "lucide-react";
-import { ModuleItemData } from "~/routes/modules/course/$courseId/create";
+import { ModuleItemData } from "~/routes/modules/create";
 import { ContentItem } from "~/api/types/content.types";
 
 interface ModuleItemsManagerProps {

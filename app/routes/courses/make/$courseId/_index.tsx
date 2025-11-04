@@ -214,9 +214,11 @@ export default function CourseIndex() {
     }
 
     const getModuleProgress = (module: CourseModuleCard) => {
-        const progress = module.stats.totalItems > 0
-            ? Math.round((module.stats.completedItems / module.stats.totalItems) * 100)
-            : 0;
+        const completed = module.stats?.completedItems || 0;
+        const total = module.stats?.totalItems || 0;
+
+        const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
+
         return progress;
     };
 
@@ -463,11 +465,11 @@ export default function CourseIndex() {
                                             <div className={`space-y-1 ${isLocked ? 'text-gray-400' : 'text-gray-500'}`}>
                                                 <div className="flex items-center">
                                                     <FileText className="h-4 w-4 mr-1" />
-                                                    {module.stats.totalItems} elementos
+                                                    {module.stats?.totalItems ?? 0} elementos
                                                 </div>
                                                 <div className="flex items-center">
                                                     <Clock className="h-4 w-4 mr-1" />
-                                                    {module.stats.totalDuration}min
+                                                    {module.stats?.totalDuration}min
                                                 </div>
                                             </div>
 
@@ -475,7 +477,7 @@ export default function CourseIndex() {
                                                 progress === 100 ? 'text-green-600' :
                                                     progress > 0 ? 'text-blue-600' : 'text-gray-600'
                                                 }`}>
-                                                <div className="font-bold text-lg">{module.stats.completedItems}/{module.stats.totalItems}</div>
+                                                <div className="font-bold text-lg">{module.stats?.completedItems ?? 0 }/{module.stats?.totalItems ?? 0}</div>
                                                 <div className="text-xs">completado</div>
                                             </div>
                                         </div>

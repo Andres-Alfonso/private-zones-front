@@ -65,7 +65,7 @@ export const action: ActionFunction = async ({ request }) => {
     name: formData.get('first-name') as string,
     lastName: formData.get('last-name') as string,
     phone: formData.get('phone') as string || undefined,
-    documentType: formData.get('document-type') as string || undefined,
+    type_document: formData.get('type_document') as string || undefined,
     document: formData.get('document') as string || undefined,
     organization: formData.get('organization') as string || undefined,
     position: formData.get('position') as string || undefined,
@@ -252,11 +252,11 @@ export default function RegisterPage() {
           }`}>
             {config.requireDocumentType && (
               <Select
-                id="document-type"
+                id="type_document"
                 name="type_document"
                 label="Tipo de identificación"
                 required={config.requireDocumentType}
-                error={getErrorByField(errors, 'document-type')}
+                error={getErrorByField(errors, 'type_document')}
                 disabled={isSubmitting}
                 options={documentTypes}
                 placeholder="Selecciona el tipo"

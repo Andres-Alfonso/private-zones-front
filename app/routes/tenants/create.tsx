@@ -267,6 +267,7 @@ export default function CreateTenant() {
       showPrivateCourses: false,
       showSections: false,
       selectedSections: [],
+      textColor: '#000000',
       enableBanner: false,
       bannerType: 'image',
       bannerImageUrl: '',

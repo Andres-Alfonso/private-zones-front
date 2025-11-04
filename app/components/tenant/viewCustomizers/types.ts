@@ -41,6 +41,8 @@ export interface HomeAdditionalSettings {
   // Configuración de secciones
   showSections?: boolean;
   selectedSections?: string[];
+
+  textColor?: string;
   
   // Configuración de banner
   enableBanner?: boolean;

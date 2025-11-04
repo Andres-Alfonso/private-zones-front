@@ -13,6 +13,8 @@ export interface HomeAdditionalSettings {
     showSections?: boolean;
     selectedSections?: string[]; // IDs de secciones seleccionadas
 
+    textColor?: string;
+
     // Configuración de banner
     enableBanner?: boolean;
     bannerType?: 'image' | 'video';
@@ -60,6 +62,7 @@ export const HomeViewCustomizer: React.FC<HomeViewCustomizerProps> = ({
         showPrivateCourses: false,
         showSections: false,
         selectedSections: [],
+        textColor: '#000000',
         enableBanner: false,
         bannerType: 'image',
         bannerImageUrl: '',
@@ -184,6 +187,19 @@ export const HomeViewCustomizer: React.FC<HomeViewCustomizerProps> = ({
                                 />
                             </div>
                         </div>
+                    </div>
+
+                    <div className="mb-8 pt-6 border-t border-gray-200 ">
+                        <h4 className="text-sm text-gray-600 mb-4">Color de texto del Home</h4>
+                        <input
+                            type="color"
+                            id="textColor"
+                            name="textColor"
+                            disabled={isSubmitting}
+                            value={homeSettings?.additionalSettings?.textColor || '#000000'}
+                            onChange={(e) => onChange('textColor', e.target.value)}
+                            className="w-12 h-10 border border-gray-300 rounded cursor-pointer disabled:opacity-50"
+                        />
                     </div>
 
                     {/* Configuración de Banner */}

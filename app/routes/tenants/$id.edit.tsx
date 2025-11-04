@@ -463,10 +463,12 @@ export default function EditTenant() {
 
         if (videoCallView) {
           setVideoCallSettings({
-            // mapear propiedades específicas del videoCall
             title: videoCallView.title,
             description: videoCallView.description,
-            // ... otras propiedades específicas
+            allowBackground: videoCallView.allowBackground,
+            backgroundType: videoCallView.backgroundType,
+            backgroundImagePath: videoCallView.backgroundImagePath,
+            backgroundColor: videoCallView.backgroundColor,
           });
         }
 

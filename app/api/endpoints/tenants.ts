@@ -26,6 +26,71 @@ function getCurrentDomain(): string {
 }
 
 export const TenantsAPI = {
+  update: async (tenantId: string, updateData: Partial<Tenant>): Promise<Tenant | TenantErrorResponse> => {
+    try {
+      const apiClient = createApiClient(getCurrentDomain());
+      console.log(`Updating tenant ${tenantId} with data:`, updateData);
+      
+      const response = await apiClient.put(
+        `${API_CONFIG.ENDPOINTS.TENANTS.BASE}/${tenantId}`,
+        updateData
+      );
+      
+      console.log("Tenant updated successfully:", response.data);
+      return response.data;
+    } catch (error: any) {
+      // Manejo más específico de errores
+      if (error.response) {
+        const status = error.response.status;
+        const errorData = error.response.data;
+        
+        // Log del error completo para debug
+        console.error("API Error Details:", {
+          status,
+          data: errorData,
+          headers: error.response.headers
+        });
+        
+        switch (status) {
+          case 400:
+            return {
+              error: errorData?.error || TenantError.INVALID_REQUEST,
+              message: errorData?.message || "Datos inválidos para actualizar el cliente",
+              field: errorData?.field,
+              value: errorData?.value,
+              details: errorData?.details
+            };
+          case 404:
+            return {
+              error: TenantError.TENANT_NOT_FOUND,
+              message: "El cliente no fue encontrado",
+            };
+          case 403:
+            return {
+              error: TenantError.UNAUTHORIZED,
+              message: "No tienes permisos para modificar este cliente",
+            };
+          case 500:
+            return {
+              error: TenantError.NETWORK_ERROR,
+              message: errorData?.message || "Error interno del servidor",
+            };
+          default:
+            return {
+              error: TenantError.NETWORK_ERROR,
+              message: errorData?.message || "Error del servidor",
+            };
+        }
+      }
+      
+      // Error de red o conexión
+      console.error("Network Error:", error.message);
+      return {
+        error: TenantError.NETWORK_ERROR,
+        message: "Error de conexión al actualizar el cliente",
+      };
+    }
+  },
 
   // Función adicional para obtener el estado actual si lo necesitas
   getStatus: async (tenantId: string): Promise<{ status: boolean } | TenantErrorResponse> => {

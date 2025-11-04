@@ -141,7 +141,11 @@ export interface TenantConfig {
   requireDocument: boolean;
   requireOrganization: boolean;
   requirePosition: boolean;
-  requireGender: boolean
+  requireGender: boolean;
+  requireCity: boolean;
+  requireAddress: boolean;
+
+  enableEmailNotifications: boolean;
 }
 
 export interface TenantContactInfo {

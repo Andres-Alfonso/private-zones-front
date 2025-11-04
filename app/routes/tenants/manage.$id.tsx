@@ -418,24 +418,24 @@ export default function ManageTenant() {
   const [configActiveTab, setConfigActiveTab] = useState('registration');
 
   const [registrationSettings, setRegistrationSettings] = useState({
-    allowSelfRegistration: tenant.allowSelfRegistration || true,
-    allowGoogleLogin: tenant.allowGoogleLogin || false,
-    allowFacebookLogin: tenant.allowFacebookLogin || false,
-    loginMethod: tenant.loginMethod || LoginMethod.EMAIL,
-    allowValidationStatusUsers: tenant.allowValidationStatusUsers || true,
-    requireLastName: tenant.requireLastName || true,
-    requirePhone: tenant.requirePhone || true,
-    requireDocumentType: tenant.requireDocumentType || true,
-    requireDocument: tenant.requireDocument || true,  
-    requireOrganization: tenant.requireOrganization || false,
-    requirePosition: tenant.requirePosition || false,
-    requireGender: tenant.requireGender || false,
-    requireCity: tenant.requireCity || false,
-    requireAddress: tenant.requireAddress || false
+    allowSelfRegistration: tenant.config?.allowSelfRegistration || true,
+    allowGoogleLogin: tenant.config?.allowGoogleLogin || false,
+    allowFacebookLogin: tenant.config?.allowFacebookLogin || false,
+    loginMethod: tenant.config?.loginMethod || LoginMethod.EMAIL,
+    allowValidationStatusUsers: tenant.config?.allowValidationStatusUsers || true,
+    requireLastName: tenant.config?.requireLastName || true,
+    requirePhone: tenant.config?.requirePhone || true,
+    requireDocumentType: tenant.config?.requireDocumentType || true,
+    requireDocument: tenant.config?.requireDocument || true,  
+    requireOrganization: tenant.config?.requireOrganization || false,
+    requirePosition: tenant.config?.requirePosition || false,
+    requireGender: tenant.config?.requireGender || false,
+    requireCity: tenant.config?.requireCity || false,
+    requireAddress: tenant.config?.requireAddress || false
   });
 
   const [notificationSettings, setNotificationSettings] = useState({
-    enableEmailNotifications: tenant.enableEmailNotifications || true
+    enableEmailNotifications: tenant.config?.enableEmailNotifications || true
   });
 
   const [logoSettings, setLogoSettings] = useState({

@@ -27,6 +27,18 @@ export default function AuthLayout() {
 
   // Obtener configuración de auto-registro del tenant
   const allowSelfRegistration = tenant?.config?.allowSelfRegistration ?? true;
+  
+  // Obtener la ruta de la imagen de fondo personalizada
+  const rawLoginBackgroundPath = tenant?.config?.loginBackgroundPath;
+  
+  // Codificar correctamente la URL para manejar espacios y caracteres especiales
+  const loginBackgroundPath = rawLoginBackgroundPath 
+    ? encodeURI(rawLoginBackgroundPath) 
+    : undefined;
+
+  // Debug: verificar si se está obteniendo la ruta
+  console.log('Raw Login background path:', rawLoginBackgroundPath);
+  console.log('Encoded Login background path:', loginBackgroundPath);
 
   // Determinar el ancho máximo basado en la página
   const getMaxWidth = () => {
@@ -37,8 +49,46 @@ export default function AuthLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex flex-col">
-      <main className="flex-grow container mx-auto px-4 py-8">
+    <div className="min-h-screen flex flex-col relative">
+      {/* DEBUG: Visualización temporal */}
+      {/* {loginBackgroundPath && (
+        <div 
+          className="fixed top-4 right-4 bg-yellow-400 text-black px-4 py-2 rounded shadow-lg text-xs"
+          style={{ zIndex: 9999 }}
+        >
+          ✓ Background URL loaded
+        </div>
+      )} */}
+      
+      {/* Fondo personalizado o gradiente por defecto */}
+      {loginBackgroundPath ? (
+        <div 
+          className="fixed inset-0 w-full h-full"
+          style={{
+            backgroundImage: `url("${loginBackgroundPath}")`,
+            backgroundColor: '#ff0000', // Color rojo temporal para debug
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            zIndex: -1
+          }}
+        />
+      ) : (
+        <div 
+          className="fixed inset-0 w-full h-full bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50"
+          style={{ zIndex: -1 }}
+        />
+      )}
+      
+      {/* Overlay muy sutil cuando hay imagen de fondo */}
+      {loginBackgroundPath && (
+        <div 
+          className="fixed inset-0 w-full h-full bg-black/10"
+          style={{ zIndex: 0 }}
+        />
+      )}
+      
+      <main className="flex-grow container mx-auto px-4 py-8 relative" style={{ zIndex: 1 }}>
         <div className="flex items-center justify-center min-h-[calc(100vh-160px)]">
           <div className={`w-full ${getMaxWidth()}`}>
             {/* Tarjeta principal del formulario */}
@@ -101,7 +151,7 @@ export default function AuthLayout() {
               </div>
 
               {/* Contenido del formulario */}
-              <div className={`${isRegisterPage ? 'p-6' : 'p-8'}`}>
+              <div className={`${isRegisterPage ? 'p-6' : 'p-8'} bg-white/60 backdrop-blur-sm`}>
                 <Outlet />
               </div>
             </div>
@@ -109,7 +159,7 @@ export default function AuthLayout() {
             {/* Enlaces adicionales - Solo mostrar si NO es página de registro para evitar duplicación */}
             {!isRegisterPage && (
               <div className="mt-6 text-center">
-                <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 shadow-md border border-gray-200/50">
+                <div className="bg-white rounded-xl p-4 shadow-md border border-gray-200/50">
                   {isLoginPage && (
                     <div className="space-y-2">
                       <NavLink
@@ -153,7 +203,7 @@ export default function AuthLayout() {
       </main>
 
       {/* Footer del módulo */}
-      <footer className="bg-white/80 backdrop-blur-sm border-t border-gray-200/50 shadow-lg">
+      <footer className="bg-white/80 backdrop-blur-sm border-t border-gray-200/50 shadow-lg relative" style={{ zIndex: 1 }}>
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center space-x-2">

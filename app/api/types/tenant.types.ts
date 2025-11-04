@@ -126,6 +126,8 @@ export interface TenantConfig {
   currency: string;
   customCss?: string;
   loginMethod: 'email' | 'document' | 'both';
+  loginBackgroundPath?: string;
+  iconPath?: string;
   allowSelfRegistration: boolean;
   allowGoogleLogin: boolean;
   allowFacebookLogin: boolean;

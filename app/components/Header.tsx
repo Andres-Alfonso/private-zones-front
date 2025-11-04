@@ -63,22 +63,39 @@ export default function Header() {
               {/* Logo y nombre de la app */}
               <Link to="/home" className="flex items-center space-x-3 group">
                 <div className="relative">
-                  <div className="w-12 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105">
-                    <span className="text-white font-bold text-sm">K&LM</span>
-                  </div>
-                  <div className="absolute -inset-1 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
+                  {tenant?.config?.logoPath ? (
+                    // Logo personalizado - 64px
+                    <div className="relative w-32 h-13 rounded-xl overflow-hidden transition-all duration-300 group-hover:scale-105">
+                      <img 
+                        src={tenant?.config?.logoPath}
+                        alt={tenant?.name || 'Logo'}
+                        className="w-full h-full object-contain p-1.5"
+                        style={{ backgroundColor: 'transparent' }}
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          console.error('Error loading logo:', tenant?.config?.logoPath);
+                        }}
+                      />
+                    </div>
+
+                  ) : (
+                    // Logo por defecto
+                    <>
+                      <div className="w-16 h-14 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105">
+                        <span className="text-white font-bold text-lg">K&LM</span>
+                      </div>
+                      <div className="absolute -inset-1 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
+                    </>
+                  )}
                 </div>
                 <div className="hidden sm:block">
-                  <span className="text-xl font-bold bg-gradient-to-r bg-clip-text text-transparent"
-                  style={{
-                    color: navbarConfig?.textColor || '#ffffff'
-                  }}
+                  {/* <span className="text-xl font-bold bg-gradient-to-r bg-clip-text text-transparent"
+                    style={{
+                      color: navbarConfig?.textColor || '#ffffff'
+                    }}
                   >
                     {tenant?.name || 'KalmSystem'}
-                  </span>
-                  {/* <div className="text-xs text-blue-200/70 -mt-1">
-                    Sistema de Gestión
-                  </div> */}
+                  </span> */}
                 </div>
               </Link>
               
@@ -170,11 +187,28 @@ export default function Header() {
                       </div> */}
 
                       {/* Roles del usuario */}
-                      <div className="text-xs" style={{color: navbarConfig?.textColor || '#ffffff'}}>
+                      <div
+                        className="text-xs"
+                        style={{ color: navbarConfig?.textColor || '#ffffff' }}
+                      >
                         {user?.roles
-                          .map(role => role.charAt(0).toUpperCase() + role.slice(1))
+                          ?.map((role: any) => {
+                            // si el rol es string
+                            if (typeof role === 'string') {
+                              return role.charAt(0).toUpperCase() + role.slice(1);
+                            }
+                            // si es objeto con propiedad name
+                            if (typeof role === 'object' && role?.name) {
+                              const name = role.name;
+                              return name.charAt(0).toUpperCase() + name.slice(1);
+                            }
+                            return ''; // si no aplica
+                          })
+                          .filter(Boolean)
                           .join(', ')}
                       </div>
+
+
 
                       {/* Ícono del rol principal (o compuesto) */}
                       <div className="relative inline-flex items-center justify-center w-5 h-5 bg-white/90 rounded-full shadow-lg">

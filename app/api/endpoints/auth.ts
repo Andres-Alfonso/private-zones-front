@@ -66,7 +66,7 @@ export const AuthAPI = {
 
   // Obtener perfil del usuario
   getProfile: async (): Promise<UserProfileResponse> => {
-    const response = await apiClient.get(API_CONFIG.ENDPOINTS.AUTH.ME);
+    const response = await apiClient.get(API_CONFIG.ENDPOINTS.AUTH.PROFILE);
     return response.data;
   },
 

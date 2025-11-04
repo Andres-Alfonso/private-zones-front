@@ -29,12 +29,8 @@ export const TenantsAPI = {
   update: async (tenantId: string, updateData: Partial<Tenant>): Promise<Tenant | TenantErrorResponse> => {
     try {
       const apiClient = createApiClient(getCurrentDomain());
-      console.log(`Updating tenant ${tenantId} with data:`, updateData);
       
-      const response = await apiClient.put(
-        `${API_CONFIG.ENDPOINTS.TENANTS.BASE}/${tenantId}`,
-        updateData
-      );
+      const response = await apiClient.put(`${API_CONFIG.ENDPOINTS.TENANTS.BASE}/${tenantId}`, updateData);
       
       console.log("Tenant updated successfully:", response.data);
       return response.data;
@@ -43,6 +39,8 @@ export const TenantsAPI = {
       if (error.response) {
         const status = error.response.status;
         const errorData = error.response.data;
+
+        console.error('Error al actualizar el cliente:', error);
         
         // Log del error completo para debug
         console.error("API Error Details:", {

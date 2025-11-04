@@ -110,7 +110,7 @@ export const action: ActionFunction = async ({ request, params }) => {
       storageLimit: Number(formData.get('storageLimit')),
       billingEmail: formData.get('billingEmail') as string || undefined,
       expiresAt: formData.get('expiresAt') as string || undefined,
-      features: formData.getAll('features') as string[],
+      // features: formData.getAll('features') as string[],
       isActive: formData.get('isActive') === 'on',
       
       // Información de contacto
@@ -119,7 +119,7 @@ export const action: ActionFunction = async ({ request, params }) => {
       address: formData.get('address') as string,
       city: formData.get('city') as string,
       country: formData.get('country') as string,
-      postalCode: formData.get('postalCode') as string,
+      // postalCode: formData.get('postalCode') as string,
       url_portal: formData.get('url_portal') as string,
       nit: formData.get('nit') as string,
       
@@ -128,7 +128,7 @@ export const action: ActionFunction = async ({ request, params }) => {
       secondaryColor: formData.get('secondaryColor') as string || '#ffffff',
       timezone: formData.get('timezone') as string || 'America/Bogota',
       language: formData.get('language') as string || 'es',
-      currency: formData.get('currency') as string || 'USD',
+      // currency: formData.get('currency') as string || 'USD',
 
       // Navbar
       backgroundColorNavbar: formData.get('backgroundColorNavbar') as string || '#0052cc',
@@ -184,6 +184,7 @@ export const action: ActionFunction = async ({ request, params }) => {
       }
     };
 
+    console.log('Update Data:', updateData);
     const result = await TenantsAPI.update(tenantId, updateData);
     
     if (isTenantErrorResponse(result)) {
@@ -400,14 +401,14 @@ export default function EditTenant() {
         billingEmail: tenant.billingEmail || '',
         expiresAt: formatDate(tenant.expiresAt),
         status: tenant.config?.status,
-        features: tenant.features || [],
+        // features: tenant.features || [],
         
         contactPerson: tenant.contactInfo?.contactPerson || '',
         phone: tenant.contactInfo?.phone || '',
         address: tenant.contactInfo?.address || '',
         city: tenant.contactInfo?.city || '',
         country: tenant.contactInfo?.country || '',
-        postalCode: tenant.contactInfo?.postalCode || '',
+        // postalCode: tenant.contactInfo?.postalCode || '',
         url_portal: tenant.contactInfo?.url_portal || '',
         nit: tenant.contactInfo?.nit || '',
         
@@ -415,7 +416,7 @@ export default function EditTenant() {
         secondaryColor: tenant.config?.secondaryColor || '#ffffff',
         timezone: tenant.config?.timezone || 'America/Bogota',
         language: tenant.config?.language || 'es',
-        currency: tenant.config?.currency || 'USD',
+        // currency: tenant.config?.currency || 'USD',
 
         // Navbar
         backgroundColorNavbar: tenant.componentConfigs?.[0]?.backgroundColor || tenant.config?.primaryColor || '#484848',
@@ -950,7 +951,7 @@ export default function EditTenant() {
                   )}
                 </div>
 
-                <Input
+                {/* <Input
                   type="text"
                   id="postalCode"
                   name="postalCode"
@@ -960,7 +961,7 @@ export default function EditTenant() {
                   placeholder="11001"
                   value={formData.postalCode || ''}
                   onChange={(e) => handleChange('postalCode', e.target.value)}
-                />
+                /> */}
               </div>
             </div>
           </div>
@@ -1136,6 +1137,7 @@ export default function EditTenant() {
           <input type="hidden" name="logoNavbar" value={formData.logoNavbar} />
           <input type="hidden" name="showNotifications" value={formData.showNotifications ? 'on' : ''} />
           <input type="hidden" name="showProfile" value={formData.showProfile ? 'on' : ''} />
+          <input type="hidden" name='slug' value={formData.slug} />
 
           {/* Campos hidden para configuraciones de vistas */}
           <input type="hidden" name="homeCustomBackground" value={homeSettings.customBackground ? 'true' : 'false'} />

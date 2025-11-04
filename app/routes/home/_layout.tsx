@@ -35,28 +35,53 @@ export default function HomeLayout() {
 function HomeLayoutContent() {
     const location = useLocation();
     const { user } = useCurrentUser();
+    const { state: tenantState } = useTenant();
+    const { tenant } = tenantState;
     
     const data = useLoaderData<{ timestamp: string }>();
 
+    // Obtener la configuración de vista de tipo 'home'
+    const homeViewConfig = tenant?.viewConfigs?.find(
+        (config) => config.viewType === 'home'
+    );
+
+    // Verificar si el background está activo
+    const isBackgroundActive = homeViewConfig?.allowBackground && homeViewConfig?.isActive;
+    const backgroundType = homeViewConfig?.backgroundType;
+
+    // Obtener el background según el tipo
+    let backgroundImage: string | undefined = undefined;
+    let backgroundColor: string | undefined = undefined;
+    
+    if (isBackgroundActive) {
+        if (backgroundType === 'image' && homeViewConfig?.backgroundImagePath) {
+            // NO codificar - la URL ya viene codificada desde la BD
+            backgroundImage = homeViewConfig.backgroundImagePath;
+        } else if (backgroundType === 'color' && homeViewConfig?.backgroundColor) {
+            backgroundColor = homeViewConfig.backgroundColor;
+        }
+    }
+
+    // Determinar si hay background activo
+    const hasBackground = !!(backgroundImage || backgroundColor);
+
     return (
-        <div className="min-h-screen bg-gradient-to-br bg-[#f2f8ff]">
-            <div className="backdrop-blur-sm shadow-lg border-b border-gray-200/50">
+        <div 
+            className="min-h-screen"
+            style={{
+                backgroundImage: backgroundImage ? `url(${backgroundImage})` : undefined,
+                backgroundColor: backgroundColor || undefined,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+                backgroundAttachment: 'fixed'
+            }}
+        >
+            <div className={`shadow-lg border-b border-gray-200/50 ${!hasBackground ? 'backdrop-blur-sm' : ''}`}>
                 <div className="container mx-auto px-4">
                     {/* Breadcrumb y título */}
                     <div className="py-6 border-b border-gray-200/50">
                         <div className="flex flex-col space-y-4">
-                            {/* <div className="flex items-center space-x-4">
-                                <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg">
-                                    <Building2 className="h-8 w-8 text-white" />
-                                </div>
-                                <div>
-                                    <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                                        aaa
-                                    </h1>
-                                    <p className="text-gray-600 mt-1 text-lg">bb</p>
-                                </div>
-                            </div> */}
-
                             {/* Bienvenida y botones */}
                             <div className="mt-4">
                                 <p className="mb-4 text-xl font-semibold text-gray-800">Bienvenido {user?.name} {user?.lastName}</p>

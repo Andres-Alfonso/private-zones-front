@@ -13,6 +13,23 @@ export const meta: MetaFunction = () => {
   ];
 };
 
+// Función para codificar URL solo si es necesario
+function safeEncodeURI(url: string): string {
+  try {
+    // Intentar decodificar la URL
+    const decoded = decodeURI(url);
+    // Si la URL decodificada es diferente a la original, ya estaba codificada
+    if (decoded !== url) {
+      return url; // Ya está codificada, devolverla tal cual
+    }
+    // Si no estaba codificada, codificarla
+    return encodeURI(url);
+  } catch (e) {
+    // Si hay error al decodificar, asumir que necesita codificación
+    return encodeURI(url);
+  }
+}
+
 export default function AuthLayout() {
   const location = useLocation();
   const { state: tenantState } = useTenant();
@@ -33,7 +50,7 @@ export default function AuthLayout() {
   
   // Codificar correctamente la URL para manejar espacios y caracteres especiales
   const loginBackgroundPath = rawLoginBackgroundPath 
-    ? encodeURI(rawLoginBackgroundPath) 
+    ? safeEncodeURI(rawLoginBackgroundPath) 
     : undefined;
 
   // Debug: verificar si se está obteniendo la ruta
@@ -66,7 +83,6 @@ export default function AuthLayout() {
           className="fixed inset-0 w-full h-full"
           style={{
             backgroundImage: `url("${loginBackgroundPath}")`,
-            backgroundColor: '#ff0000', // Color rojo temporal para debug
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat',

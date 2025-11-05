@@ -27,7 +27,7 @@ export interface LoginRegisterAdditionalSettings {
 interface LoginRegisterCustomizerProps extends SpecificViewCustomizerProps {
     loginRegisterSettings?: {
         customBackground?: boolean;
-        backgroundType?: 'imagen' | 'color';
+        backgroundType?: 'image' | 'color';
         backgroundImage?: string;
         backgroundColor?: string;
         additionalSettings?: LoginRegisterAdditionalSettings;

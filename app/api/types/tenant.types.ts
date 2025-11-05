@@ -483,7 +483,7 @@ export interface NotificationSettings {
 export interface ViewConfiguration {
   type: string;
   customBackground: boolean;
-  backgroundType: 'imagen' | 'color';
+  backgroundType: 'image' | 'color';
   backgroundImage: string;
   backgroundColor: string;
   additionalSettings?: HomeAdditionalSettings;

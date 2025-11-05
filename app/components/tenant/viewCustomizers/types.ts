@@ -1,7 +1,7 @@
 export interface ViewSettings {
     type?: string;
     customBackground?: boolean;
-    backgroundType?: 'imagen' | 'color';
+    backgroundType?: 'image' | 'color';
     backgroundImage?: string;
     backgroundColor?: string;
     backgroundImageFile?: File;
@@ -15,7 +15,7 @@ export interface ViewCustomizerProps {
     isSubmitting?: boolean;
     errors?: Record<string, string>;
     initialCustomBackground?: boolean;
-    initialBackgroundType?: 'imagen' | 'color';
+    initialBackgroundType?: 'image' | 'color';
     initialBackgroundImage?: string;
     initialBackgroundColor?: string;
     settings?: ViewSettings;
@@ -26,7 +26,7 @@ export interface SpecificViewCustomizerProps {
     isSubmitting?: boolean;
     errors?: Record<string, string>;
     initialCustomBackground?: boolean;
-    initialBackgroundType?: 'imagen' | 'color';
+    initialBackgroundType?: 'image' | 'color';
     initialBackgroundImage?: string;
     initialBackgroundColor?: string;
     settings?: ViewSettings;

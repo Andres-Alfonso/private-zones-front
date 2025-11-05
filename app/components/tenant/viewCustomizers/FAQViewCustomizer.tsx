@@ -46,7 +46,7 @@ export interface FAQAdditionalSettings {
 interface FAQViewCustomizerProps extends SpecificViewCustomizerProps {
     faqSettings?: {
         customBackground?: boolean;
-        backgroundType?: 'imagen' | 'color';
+        backgroundType?: 'image' | 'color';
         backgroundImage?: string;
         backgroundColor?: string;
         additionalSettings?: FAQAdditionalSettings;

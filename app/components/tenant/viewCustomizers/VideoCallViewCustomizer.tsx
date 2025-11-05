@@ -51,7 +51,7 @@ interface VideoCallViewCustomizerProps extends SpecificViewCustomizerProps {
     availableUsers?: Array<{ id: string; name: string; email: string; }>;
     videoCallSettings?: {
         customBackground?: boolean;
-        backgroundType?: 'imagen' | 'color';
+        backgroundType?: 'image' | 'color';
         backgroundImage?: string;
         backgroundColor?: string;
         additionalSettings?: VideoCallAdditionalSettings;

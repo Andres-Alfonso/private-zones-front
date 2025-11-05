@@ -8,13 +8,13 @@ export interface ViewCustomizerProps {
     isSubmitting?: boolean;
     errors?: Record<string, string>;
     initialCustomBackground?: boolean;
-    initialBackgroundType?: 'imagen' | 'color';
+    initialBackgroundType?: 'image' | 'color';
     initialBackgroundImage?: string;
     initialBackgroundColor?: string;
     // Configuraciones actuales desde el estado padre
     settings?: {
         allowBackground?: boolean;
-        backgroundType?: 'imagen' | 'color';
+        backgroundType?: 'image' | 'color';
         backgroundImage?: string;
         backgroundColor?: string;
         allowCoursesHome?: boolean; // Solo para Home
@@ -37,7 +37,7 @@ const ViewCustomizer: React.FC<ViewCustomizerProps> = ({
     const [customBackground, setCustomBackground] = useState(
         settings.allowBackground ?? initialCustomBackground
     );
-    const [backgroundType, setBackgroundType] = useState<'imagen' | 'color'>(
+    const [backgroundType, setBackgroundType] = useState<'image' | 'color'>(
         settings.backgroundType ?? initialBackgroundType
     );
     const [backgroundImage, setBackgroundImage] = useState(
@@ -79,12 +79,12 @@ const ViewCustomizer: React.FC<ViewCustomizerProps> = ({
     };
 
     // Manejador para cambio de tipo de fondo
-    const handleBackgroundTypeChange = (type: 'imagen' | 'color') => {
+    const handleBackgroundTypeChange = (type: 'image' | 'color') => {
         setBackgroundType(type);
         onChange('backgroundType', type);
         
         // Limpiar el valor contrario
-        if (type === 'imagen') {
+        if (type === 'image') {
             setBackgroundColor('#ffffff');
             onChange('backgroundColor', '#ffffff');
         } else {
@@ -165,17 +165,17 @@ const ViewCustomizer: React.FC<ViewCustomizerProps> = ({
                                     </label>
                                     <select
                                         value={backgroundType}
-                                        onChange={(e) => handleBackgroundTypeChange(e.target.value as 'imagen' | 'color')}
+                                        onChange={(e) => handleBackgroundTypeChange(e.target.value as 'image' | 'color')}
                                         className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
                                         disabled={isSubmitting}
                                     >
                                         <option value="color">Color sólido</option>
-                                        <option value="imagen">Imagen de fondo</option>
+                                        <option value="image">Imagen de fondo</option>
                                     </select>
                                 </div>
 
                                 {/* Sección para imagen de fondo */}
-                                {backgroundType === 'imagen' && (
+                                {backgroundType === 'image' && (
                                     <div className="space-y-3">
                                         <label 
                                             htmlFor={`backgroundImage-${uniqueId}`}

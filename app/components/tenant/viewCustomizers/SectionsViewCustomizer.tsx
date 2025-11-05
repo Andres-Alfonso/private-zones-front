@@ -9,7 +9,7 @@ interface SectionsViewCustomizerProps extends SpecificViewCustomizerProps {
   // Props adicionales específicas de VideoCall
   sectionsSettings?: {
     customBackground?: boolean;
-    backgroundType?: 'imagen' | 'color';
+    backgroundType?: 'image' | 'color';
     backgroundImage?: string;
     backgroundColor?: string;
     additionalSettings?: SectionsAdditionalSettings;

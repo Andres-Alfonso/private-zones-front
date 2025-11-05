@@ -16,7 +16,7 @@ export interface GroupsAdditionalSettings {
 interface GroupsViewCustomizerProps extends SpecificViewCustomizerProps {
     groupsSettings?: {
         customBackground?: boolean;
-        backgroundType?: 'imagen' | 'color';
+        backgroundType?: 'image' | 'color';
         backgroundImage?: string;
         backgroundColor?: string;
         additionalSettings?: GroupsAdditionalSettings;

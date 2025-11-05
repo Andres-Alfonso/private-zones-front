@@ -40,7 +40,7 @@ interface HomeViewCustomizerProps extends SpecificViewCustomizerProps {
     availableSections?: Array<{ id: string; name: string; }>;
     homeSettings?: {
         customBackground?: boolean;
-        backgroundType?: 'imagen' | 'color';
+        backgroundType?: 'image' | 'color';
         backgroundImage?: string;
         backgroundColor?: string;
         additionalSettings?: HomeAdditionalSettings;

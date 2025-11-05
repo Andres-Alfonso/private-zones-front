@@ -105,7 +105,7 @@ export const action: ActionFunction = async ({ request }) => {
       loginRegisterSettings: {
         type: 'login',
         customBackground: formData.get('loginRegisterCustomBackground') === 'true',
-        backgroundType: formData.get('loginRegisterBackgroundType') as 'imagen' | 'color' || 'color',
+        backgroundType: formData.get('loginRegisterBackgroundType') as 'image' | 'color' || 'color',
         backgroundImage: formData.get('loginRegisterBackgroundImage') as string || '',
         backgroundColor: formData.get('loginRegisterBackgroundColor') as string || '#eff4ff',
         additionalSettings: JSON.parse(formData.get('loginRegisterAdditionalSettings') as string || '{}')
@@ -113,7 +113,7 @@ export const action: ActionFunction = async ({ request }) => {
       homeSettings: {
         type: 'home',
         customBackground: formData.get('homeCustomBackground') === 'true',
-        backgroundType: formData.get('homeBackgroundType') as 'imagen' | 'color' || 'color',
+        backgroundType: formData.get('homeBackgroundType') as 'image' | 'color' || 'color',
         backgroundImage: formData.get('homeBackgroundImage') as string || '',
         backgroundColor: formData.get('homeBackgroundColor') as string || '#eff4ff',
         additionalSettings: JSON.parse(formData.get('homeAdditionalSettings') as string || '{}')
@@ -121,7 +121,7 @@ export const action: ActionFunction = async ({ request }) => {
       videoCallSettings: {
         type: 'videocalls',
         customBackground: formData.get('videoCallCustomBackground') === 'true',
-        backgroundType: formData.get('videoCallBackgroundType') as 'imagen' | 'color' || 'color',
+        backgroundType: formData.get('videoCallBackgroundType') as 'image' | 'color' || 'color',
         backgroundImage: formData.get('videoCallBackgroundImage') as string || '',
         backgroundColor: formData.get('videoCallBackgroundColor') as string || '#eff4ff',
         additionalSettings: JSON.parse(formData.get('videoCallAdditionalSettings') as string || '{}')
@@ -129,7 +129,7 @@ export const action: ActionFunction = async ({ request }) => {
       metricsSettings: {
         type: 'metrics',
         customBackground: formData.get('metricsCustomBackground') === 'true',
-        backgroundType: formData.get('metricsBackgroundType') as 'imagen' | 'color' || 'color',
+        backgroundType: formData.get('metricsBackgroundType') as 'image' | 'color' || 'color',
         backgroundImage: formData.get('metricsBackgroundImage') as string || '',
         backgroundColor: formData.get('metricsBackgroundColor') as string || '#eff4ff',
         additionalSettings: JSON.parse(formData.get('metricsAdditionalSettings') as string || '{}')
@@ -137,7 +137,7 @@ export const action: ActionFunction = async ({ request }) => {
       groupsSettings:{
         type: 'courses',
         customBackground: formData.get('groupsCustomBackground') === 'true',
-        backgroundType: formData.get('groupsBackgroundType') as 'imagen' | 'color' || 'color',
+        backgroundType: formData.get('groupsBackgroundType') as 'image' | 'color' || 'color',
         backgroundImage: formData.get('groupsBackgroundImage') as string || '',
         backgroundColor: formData.get('groupsBackgroundColor') as string || '#eff4ff',
         additionalSettings: JSON.parse(formData.get('groupsAdditionalSettings') as string || '{}')
@@ -145,7 +145,7 @@ export const action: ActionFunction = async ({ request }) => {
       sectionsSettings: {
         type: 'sections',
         customBackground: formData.get('sectionsCustomBackground') === 'true',
-        backgroundType: formData.get('sectionsBackgroundType') as 'imagen' | 'color' || 'color',
+        backgroundType: formData.get('sectionsBackgroundType') as 'image' | 'color' || 'color',
         backgroundImage: formData.get('sectionsBackgroundImage') as string || '',
         backgroundColor: formData.get('sectionsBackgroundColor') as string || '#eff4ff',
         additionalSettings: JSON.parse(formData.get('SectionsAdditionalSettings') as string || '{}')
@@ -153,7 +153,7 @@ export const action: ActionFunction = async ({ request }) => {
       faqSettings: {
         type: 'frequentlyask',
         customBackground: formData.get('faqCustomBackground') === 'true',
-        backgroundType: formData.get('faqBackgroundType') as 'imagen' | 'color' || 'color',
+        backgroundType: formData.get('faqBackgroundType') as 'image' | 'color' || 'color',
         backgroundImage: formData.get('faqBackgroundImage') as string || '',
         backgroundColor: formData.get('faqBackgroundColor') as string || '#eff4ff',
         additionalSettings: JSON.parse(formData.get('faqAdditionalSettings') as string || '{}')

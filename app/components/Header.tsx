@@ -531,7 +531,7 @@ function CourseDropdown({ textColor, navbarColor }: CourseDropdownProps) {
       <div className="absolute top-full left-0 mt-2 w-56 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
         <div className="backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 overflow-hidden" style={{backgroundColor: navbarColor || '#484848'}}>
           <div className="p-2">
-            <DropdownLink 
+            {/* <DropdownLink 
               to="/courses" 
               icon={<BookOpen className="h-4 w-4" />}
               title="Catálogo"
@@ -545,10 +545,10 @@ function CourseDropdown({ textColor, navbarColor }: CourseDropdownProps) {
               title="Mis Cursos"
               description="Cursos en progreso"
               textColor={textColor}
-            />
+            /> */}
             
             {/* RoleGuard component aquí */}
-            <div className="border-t border-gray-200/50 my-2"></div>
+            {/* <div className="border-t border-gray-200/50 my-2"></div> */}
             <DropdownLink 
               to="/courses/create" 
               icon={<div className="text-green-600 font-bold">+</div>}

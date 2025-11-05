@@ -68,9 +68,9 @@ export default function SectionsSection({ sections, textColor }: SectionsSection
                     >
                         {/* Thumbnail */}
                         <div className="relative aspect-video overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100">
-                            {section.thumbnail ? (
+                            {section.thumbnailImagePath ? (
                                 <img 
-                                    src={section.thumbnail} 
+                                    src={section.thumbnailImagePath} 
                                     alt={section.name}
                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                 />

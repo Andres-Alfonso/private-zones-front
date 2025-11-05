@@ -326,6 +326,7 @@ export interface CreateTenantRequest {
   language?: string;
   currency?: string;
 
+  loginRegisterSettings?: ViewConfiguration;
   homeSettings?: ViewConfiguration;
   videoCallSettings?: ViewConfiguration;
   metricsSettings?: ViewConfiguration;

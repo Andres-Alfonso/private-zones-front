@@ -31,6 +31,7 @@ import {
 } from '~/components/tenant/viewCustomizers';
 import TermsPrivacyConfig from '~/components/tenant/RichTextEditor';
 import { LoginMethod } from '~/components/tenant/viewCustomizers/RegistrationViewCustomizer';
+import { LoginRegisterCustomizer } from '~/components/tenant/viewCustomizers/LoginRegisterViewCustomizer';
 
 interface ActionData {
   errors?: Record<string, string>;
@@ -101,6 +102,14 @@ export const action: ActionFunction = async ({ request }) => {
       language: formData.get('language') as string || 'es',
 
       // Configuraciones de vistas
+      loginRegisterSettings: {
+        type: 'login',
+        customBackground: formData.get('loginRegisterCustomBackground') === 'true',
+        backgroundType: formData.get('loginRegisterBackgroundType') as 'imagen' | 'color' || 'color',
+        backgroundImage: formData.get('loginRegisterBackgroundImage') as string || '',
+        backgroundColor: formData.get('loginRegisterBackgroundColor') as string || '#eff4ff',
+        additionalSettings: JSON.parse(formData.get('loginRegisterAdditionalSettings') as string || '{}')
+      },
       homeSettings: {
         type: 'home',
         customBackground: formData.get('homeCustomBackground') === 'true',
@@ -316,6 +325,25 @@ export default function CreateTenant() {
     { id: '3', name: 'Carlos López', email: 'carlos@empresa.com' },
     { id: '4', name: 'Ana Rodríguez', email: 'ana@empresa.com' }
   ]);
+
+  const [loginRegisterSettings, setLoginRegisterSettings] = useState<ViewSettings>({
+    type: 'login',
+    customBackground: false,
+    backgroundType: 'color',
+    backgroundImage: '',
+    backgroundColor: '#eff4ff',
+    additionalSettings: {
+      customTitles: {
+        en: 'Login and Registration',
+        es: 'Login y Registro'
+      },
+      showSocialLoginButtons: true,
+      socialLoginProviders: {
+        google: false,
+        facebook: false
+      },
+    }
+  });
   
   const [videoCallSettings, setVideoCallSettings] = useState<ViewSettings>({
     type: 'videocalls',
@@ -454,6 +482,17 @@ export default function CreateTenant() {
       }));
     } else {
       setHomeSettings(prev => ({ ...prev, [field]: value }));
+    }
+  };
+
+  const handleLoginRegisterChange = (field: string, value: string | boolean | File | any) => {
+    if (field === 'additionalSettings') {
+      setLoginRegisterSettings(prev => ({
+        ...prev,
+        additionalSettings: { ...prev.additionalSettings, ...value }
+      }));
+    } else {
+      setLoginRegisterSettings(prev => ({ ...prev, [field]: value }));
     }
   };
 
@@ -598,6 +637,17 @@ export default function CreateTenant() {
         faqSettings: faqSettings
       }
     },
+    {
+      id: 'login', 
+      label: 'Login y Registro', 
+      component: LoginRegisterCustomizer, 
+      handler: handleLoginRegisterChange,
+      settings: loginRegisterSettings,
+      // Props adicionales específicos para LoginRegister
+      extraProps: {
+        loginRegisterSettings: loginRegisterSettings
+      }
+    }
   ];
 
   const currentTab = tabs.find(tab => tab.id === activeTab);
@@ -1011,133 +1061,6 @@ export default function CreateTenant() {
           </div>
         </div>
 
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex items-center space-x-3">
-              <User className="h-5 w-5 text-blue-600" />
-              <h2 className="text-lg font-medium text-gray-900">Configuración de Registro y Notificaciones</h2>
-            </div>
-          </div>
-
-          {/* Tabs para configuración */}
-          <div className="border-b border-gray-200">
-            <div className="flex overflow-x-auto px-6">
-              {configTabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setConfigActiveTab(tab.id)}
-                  className={`whitespace-nowrap py-3 px-4 text-sm font-medium border-b-2 transition-colors ${
-                    configActiveTab === tab.id
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Contenido del tab activo */}
-          <div className="p-0">
-            {CurrentConfigComponent && currentConfigTab && (
-              <CurrentConfigComponent
-                onChange={currentConfigTab.handler}
-                isSubmitting={isSubmitting}
-                errors={allErrors}
-                settings={currentConfigTab.settings}
-              />
-            )}
-          </div>
-        </div>
-
-        {/* Configuracion de terminos y condiciones */}
-        <div className='bg-white shadow rounded-lg'>
-          <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex items-center space-x-3">
-              <User className="h-5 w-5 text-blue-600" />
-              <h2 className="text-lg font-medium text-gray-900">Configuracion de terminos y condiciones, politica de privacidad</h2>
-            </div>
-          </div>
-          
-          <div className="px-6 py-6 space-y-6">
-            <TermsPrivacyConfig
-              formData={formData}
-              handleChange={handleChange}
-              getErrorByField={getErrorByField}
-              isSubmitting={isSubmitting}
-            />
-          </div>
-        </div>
-
-
-        {/* Creacion usuario administrador */}
-        <div className='bg-white shadow rounded-lg'>
-          <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex items-center space-x-3">
-              <User className="h-5 w-5 text-blue-600" />
-              <h2 className="text-lg font-medium text-gray-900">Creación de Usuario Administrador</h2>
-            </div>
-          </div>
-          
-          <div className="px-6 py-6 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Input
-                type="text"
-                id="adminFirstName"
-                name="adminFirstName"
-                label="Nombre"
-                required
-                error={getErrorByField('adminFirstName')}
-                disabled={isSubmitting}
-                placeholder="Administrador"
-                value={formData.adminFirstName || 'Administrador'}
-                onChange={(e) => handleChange('adminFirstName', e.target.value)}
-              />
-
-              <Input
-                type="text"
-                id="adminLastName"
-                name="adminLastName"
-                label="Apellido"
-                required
-                error={getErrorByField('adminLastName')}
-                disabled={isSubmitting}
-                placeholder="Zona"
-                value={formData.adminLastName || 'Zona'}
-                onChange={(e) => handleChange('adminLastName', e.target.value)}
-              />
-            </div>
-
-            <Input
-              type="email"
-              id="adminEmail"
-              name="adminEmail"
-              label="Email"
-              required
-              error={getErrorByField('adminEmail')}
-              disabled={isSubmitting}
-              placeholder="adminzone@klmsystem.com"
-              value={formData.adminEmail || 'adminzone@klmsystem.com'}
-              onChange={(e) => handleChange('adminEmail', e.target.value)}
-            />
-
-            <Input
-              type="password"
-              id="adminPassword"
-              name="adminPassword"
-              label="Contraseña"
-              required
-              error={getErrorByField('adminPassword')}
-              disabled={isSubmitting}
-              placeholder="••••••••••••"
-              value={formData.adminPassword || 'adminZone123@'}
-              onChange={(e) => handleChange('adminPassword', e.target.value)}
-            />
-          </div>
-        </div>
-
         {/* Información de contacto */}
         <div className="bg-white shadow rounded-lg">
           <div className="px-6 py-4 border-b border-gray-200">
@@ -1216,6 +1139,132 @@ export default function CreateTenant() {
                 onChange={(e) => handleChange('nit', e.target.value)}
               />
             </div>
+          </div>
+        </div>
+
+        {/* Creacion usuario administrador */}
+        <div className='bg-white shadow rounded-lg'>
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center space-x-3">
+              <User className="h-5 w-5 text-blue-600" />
+              <h2 className="text-lg font-medium text-gray-900">Creación de Usuario Administrador</h2>
+            </div>
+          </div>
+          
+          <div className="px-6 py-6 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Input
+                type="text"
+                id="adminFirstName"
+                name="adminFirstName"
+                label="Nombre"
+                required
+                error={getErrorByField('adminFirstName')}
+                disabled={isSubmitting}
+                placeholder="Administrador"
+                value={formData.adminFirstName || 'Administrador'}
+                onChange={(e) => handleChange('adminFirstName', e.target.value)}
+              />
+
+              <Input
+                type="text"
+                id="adminLastName"
+                name="adminLastName"
+                label="Apellido"
+                required
+                error={getErrorByField('adminLastName')}
+                disabled={isSubmitting}
+                placeholder="Zona"
+                value={formData.adminLastName || 'Zona'}
+                onChange={(e) => handleChange('adminLastName', e.target.value)}
+              />
+            </div>
+
+            <Input
+              type="email"
+              id="adminEmail"
+              name="adminEmail"
+              label="Email"
+              required
+              error={getErrorByField('adminEmail')}
+              disabled={isSubmitting}
+              placeholder="adminzone@klmsystem.com"
+              value={formData.adminEmail || 'adminzone@klmsystem.com'}
+              onChange={(e) => handleChange('adminEmail', e.target.value)}
+            />
+
+            <Input
+              type="password"
+              id="adminPassword"
+              name="adminPassword"
+              label="Contraseña"
+              required
+              error={getErrorByField('adminPassword')}
+              disabled={isSubmitting}
+              placeholder="••••••••••••"
+              value={formData.adminPassword || 'adminZone123@'}
+              onChange={(e) => handleChange('adminPassword', e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="bg-white shadow rounded-lg">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center space-x-3">
+              <User className="h-5 w-5 text-blue-600" />
+              <h2 className="text-lg font-medium text-gray-900">Configuración de Registro y Notificaciones</h2>
+            </div>
+          </div>
+
+          {/* Tabs para configuración */}
+          <div className="border-b border-gray-200">
+            <div className="flex overflow-x-auto px-6">
+              {configTabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setConfigActiveTab(tab.id)}
+                  className={`whitespace-nowrap py-3 px-4 text-sm font-medium border-b-2 transition-colors ${
+                    configActiveTab === tab.id
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Contenido del tab activo */}
+          <div className="p-0">
+            {CurrentConfigComponent && currentConfigTab && (
+              <CurrentConfigComponent
+                onChange={currentConfigTab.handler}
+                isSubmitting={isSubmitting}
+                errors={allErrors}
+                settings={currentConfigTab.settings}
+              />
+            )}
+          </div>
+        </div>
+
+        {/* Configuracion de terminos y condiciones */}
+        <div className='bg-white shadow rounded-lg'>
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center space-x-3">
+              <User className="h-5 w-5 text-blue-600" />
+              <h2 className="text-lg font-medium text-gray-900">Configuracion de terminos y condiciones, politica de privacidad</h2>
+            </div>
+          </div>
+          
+          <div className="px-6 py-6 space-y-6">
+            <TermsPrivacyConfig
+              formData={formData}
+              handleChange={handleChange}
+              getErrorByField={getErrorByField}
+              isSubmitting={isSubmitting}
+            />
           </div>
         </div>
 
@@ -1340,6 +1389,15 @@ export default function CreateTenant() {
         <input type="hidden" name="logoAdditionalSettings" value={JSON.stringify(logoSettings.additionalSettings)} />
 
         {/* Campos hidden para configuraciones de vistas */}
+        {/* LoginRegister Settings */}
+        <input type="hidden" name="loginRegisterCustomBackground" value={loginRegisterSettings.customBackground ? 'true' : 'false'} />
+        <input type="hidden" name="loginRegisterBackgroundType" value={loginRegisterSettings.backgroundType || 'color'} />
+        <input type="hidden" name="loginRegisterBackgroundImage" value={loginRegisterSettings.backgroundImage || ''} />
+        <input type="hidden" name="loginRegisterBackgroundColor" value={loginRegisterSettings.backgroundColor || '#eff4ff'} />
+
+        <input type="hidden" name="loginRegisterAdditionalSettings" value={JSON.stringify(loginRegisterSettings.additionalSettings)} />
+
+
         {/* Home Settings */}
         <input type="hidden" name="homeCustomBackground" value={homeSettings.customBackground ? 'true' : 'false'} />
         <input type="hidden" name="homeBackgroundType" value={homeSettings.backgroundType || 'color'} />

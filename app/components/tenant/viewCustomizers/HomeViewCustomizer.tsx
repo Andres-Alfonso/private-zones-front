@@ -236,22 +236,6 @@ export const HomeViewCustomizer: React.FC<HomeViewCustomizerProps> = ({
                                     </select>
                                 </div>
 
-                                {/* Posición del banner */}
-                                {/* <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Posición del Banner
-                                    </label>
-                                    <select
-                                        value={homeConfig.bannerPosition || 'top'}
-                                        onChange={(e) => handleHomeConfigChange('bannerPosition', e.target.value)}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        disabled={isSubmitting}
-                                    >
-                                        <option value="top">Superior</option>
-                                        <option value="center">Centro</option>
-                                        <option value="bottom">Inferior</option>
-                                    </select>
-                                </div> */}
 
                                 {/* Upload de archivo según tipo */}
                                 {homeConfig.bannerType === 'image' ? (
@@ -379,60 +363,8 @@ export const HomeViewCustomizer: React.FC<HomeViewCustomizerProps> = ({
                             </div>
                         )}
 
-                        {/* {homeConfig.allowSectionsHome && availableSections.length === 0 && (
-                            <div className="ml-6 text-sm text-gray-500 italic">
-                                No hay secciones disponibles
-                            </div>
-                        )} */}
                     </div>
 
-                    {/* Configuraciones adicionales de elementos del Home */}
-                    {/* <div className="p-4 bg-gray-50 rounded-lg">
-                        <h5 className="text-sm font-medium text-gray-800 mb-3">Elementos Adicionales</h5>
-                        <div className="space-y-3">
-                            <div className="flex items-center">
-                                <input
-                                    id="showWelcomeMessage"
-                                    type="checkbox"
-                                    checked={homeConfig.showWelcomeMessage || false}
-                                    onChange={(e) => handleHomeConfigChange('showWelcomeMessage', e.target.checked)}
-                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                                    disabled={isSubmitting}
-                                />
-                                <label htmlFor="showWelcomeMessage" className="ml-2 text-sm text-gray-700">
-                                    Mostrar mensaje de bienvenida
-                                </label>
-                            </div>
-
-                            <div className="flex items-center">
-                                <input
-                                    id="showQuickActions"
-                                    type="checkbox"
-                                    checked={homeConfig.showQuickActions || false}
-                                    onChange={(e) => handleHomeConfigChange('showQuickActions', e.target.checked)}
-                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                                    disabled={isSubmitting}
-                                />
-                                <label htmlFor="showQuickActions" className="ml-2 text-sm text-gray-700">
-                                    Mostrar acciones rápidas
-                                </label>
-                            </div>
-
-                            <div className="flex items-center">
-                                <input
-                                    id="showRecentActivity"
-                                    type="checkbox"
-                                    checked={homeConfig.showRecentActivity || false}
-                                    onChange={(e) => handleHomeConfigChange('showRecentActivity', e.target.checked)}
-                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                                    disabled={isSubmitting}
-                                />
-                                <label htmlFor="showRecentActivity" className="ml-2 text-sm text-gray-700">
-                                    Mostrar actividad reciente
-                                </label>
-                            </div>
-                        </div>
-                    </div> */}
                 </div>
             </div>
         </div>

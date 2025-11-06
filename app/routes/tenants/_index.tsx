@@ -379,7 +379,7 @@ export default function TenantsIndex() {
             </div>
           </div>
 
-          <div className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 backdrop-blur-sm bg-white/80 group">
+          {/* <div className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 backdrop-blur-sm bg-white/80 group">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600 mb-1">Ingresos Totales</p>
@@ -394,7 +394,7 @@ export default function TenantsIndex() {
                 <TrendingUp className="h-8 w-8 text-yellow-600" />
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Controles y filtros */}

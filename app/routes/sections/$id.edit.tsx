@@ -37,7 +37,7 @@ interface LoaderData {
   section: Section | null;
   error: string | null;
   availableCourses: Array<{ id: string; title: string; slug: string; isActive: boolean }>;
-  sectionCourses: string[]; // IDs de cursos ya asociados
+  sectionCourses: string[];
 }
 
 interface ActionData {
@@ -58,7 +58,6 @@ interface SectionFormData {
   courseIds: string[];
 }
 
-
 function isSectinoErrorResponse(result: Section | SectionErrorResponse): result is SectionErrorResponse {
   return 'error' in result && 'message' in result;
 }
@@ -68,17 +67,14 @@ function processCourseTranslations(
   preferredLanguage: string = 'es'
 ): CourseBasic[] {
   return courses.map(course => {
-    // Buscar traducción en el idioma preferido
     let selectedTranslation = course.translations.find(
       t => t.languageCode === preferredLanguage
     );
     
-    // Si no existe en el idioma preferido, usar la primera disponible
     if (!selectedTranslation && course.translations.length > 0) {
       selectedTranslation = course.translations[0];
     }
     
-    // Si no hay traducciones, crear valores por defecto
     if (!selectedTranslation) {
       selectedTranslation = {
         id: '',
@@ -126,7 +122,6 @@ export const loader: LoaderFunction = async ({ params, request }) => {
       });
     }
 
-    // Cargar cursos disponibles del tenant
     let availableCourses: Array<{ id: string; title: string; slug: string; isActive: boolean }> = [];
     let sectionCourses: string[] = [];
 
@@ -134,27 +129,17 @@ export const loader: LoaderFunction = async ({ params, request }) => {
       const requestApiClient = createApiClientFromRequest(request);
       const coursesResult = await CoursesAPI.getByTenant(requestApiClient);
       
-      console.log('Courses Result:', coursesResult); // Debug
-
-      // Verificar si es un error o datos válidos
       if (coursesResult && !('error' in coursesResult)) {
         if (Array.isArray(coursesResult)) {
-          // Si ya es un array, procesarlo
           availableCourses = processCourseTranslations(coursesResult, 'es');
-        } else {
-          console.warn('coursesResult no es un array:', coursesResult);
         }
-      } else {
-        console.error('Error al cargar cursos:', coursesResult);
       }
 
-      // Obtener IDs de cursos ya asociados a la sección
       if (result.courses && Array.isArray(result.courses)) {
         sectionCourses = result.courses.map(course => course.id);
       }
     } catch (error) {
       console.error('Error loading courses:', error);
-      // Continuar con arrays vacíos
     }
     
     return json<LoaderData>({ 
@@ -182,7 +167,6 @@ export const action: ActionFunction = async ({ request, params }) => {
   try {
     switch (intent) {
       case 'update':
-        // Validar formulario
         const validation = validateSectionForm(formData);
         
         if (!validation.isValid) {
@@ -199,17 +183,15 @@ export const action: ActionFunction = async ({ request, params }) => {
           order: parseInt(formData.get('order') as string) || null,
           allowBanner: formData.get('allowBanner') === 'on',
           bannerPath: formData.get('bannerPath') as string,
-          // tenantId: formData.get('tenantId') as string,
           courseIds: formData.getAll('courseIds') as string[],
         };
 
         const requestApiClient = createApiClientFromRequest(request);
 
-        // Llamar al API para actualizar la sección incluyendo cursos
         const updateResult = await SectionApi.update(
           sectionId, 
           updateData,
-          requestApiClient  // ⬅️ Pasar el cliente de API
+          requestApiClient
         );
 
         if ('error' in updateResult) {
@@ -218,8 +200,6 @@ export const action: ActionFunction = async ({ request, params }) => {
           }, { status: 400 });
         }
         
-        // return json<ActionData>({ success: true });
-        
         if (!updateResult) {
           return json<ActionData>({
             errors: { general: "Error al actualizar la seccion. Intente nuevamente." },
@@ -227,13 +207,10 @@ export const action: ActionFunction = async ({ request, params }) => {
           }, { status: 500 });
         }
                 
-        // Simular éxito
         return redirect(`/sections?updated=true`);
 
       case 'delete':
-        // Aquí se llamaría al API para eliminar la sección
         console.log('Eliminar sección:', sectionId);
-        
         return redirect('/sections?deleted=true');
 
       default:
@@ -269,7 +246,6 @@ export default function EditSection() {
     courseIds: [],
   });
   
-  const [currentStep, setCurrentStep] = useState(1);
   const [hasChanges, setHasChanges] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [previewBanner, setPreviewBanner] = useState<string | null>(null);
@@ -278,7 +254,6 @@ export default function EditSection() {
   const isSubmitting = navigation.state === 'submitting';
   const errors = actionData?.errors || [];
 
-  // Inicializar datos del formulario
   useEffect(() => {
     if (section) {
       setFormData({
@@ -297,12 +272,9 @@ export default function EditSection() {
     }
   }, [section, sectionCourses]);
 
-  // Mostrar mensaje de éxito
   useEffect(() => {
     if (actionData?.success) {
-      const timer = setTimeout(() => {
-        // El mensaje se ocultará automáticamente
-      }, 3000);
+      const timer = setTimeout(() => {}, 3000);
       return () => clearTimeout(timer);
     }
   }, [actionData?.success]);
@@ -371,512 +343,12 @@ export default function EditSection() {
     }
   };
 
-  const steps = [
-    { id: 1, name: 'Información Básica', icon: Layers3 },
-    { id: 2, name: 'Configuración', icon: Settings },
-    { id: 3, name: 'Cursos', icon: BookOpen },
-    { id: 4, name: 'Imágenes', icon: Image },
-    { id: 5, name: 'Revisión', icon: Eye }
-  ];
-
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 1:
-        return (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <Input
-                  id="name"
-                  name="name"
-                  label="Nombre de la Sección *"
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={(e) => updateField('name', e.target.value)}
-                  error={getErrorByField(errors, 'name')}
-                  placeholder="Ej: Colaboradores, Medicina General"
-                />
-              </div>
-              <div>
-                <Input
-                  id="slug"
-                  name="slug"
-                  label="Slug (URL amigable) *"
-                  type="text"
-                  required
-                  value={formData.slug}
-                  onChange={(e) => updateField('slug', e.target.value)}
-                  error={getErrorByField(errors, 'slug')}
-                  placeholder="colaboradores, medicina-general"
-                />
-                <p className="text-sm text-gray-500 mt-1">
-                  URL actual: /{formData.slug}
-                </p>
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-                Descripción
-              </label>
-              <textarea
-                id="description"
-                name="description"
-                rows={4}
-                value={formData.description}
-                onChange={(e) => updateField('description', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
-                placeholder="Describe el contenido y propósito de esta sección..."
-              />
-              {getErrorByField(errors, 'description') && (
-                <p className="mt-1 text-sm text-red-600">{getErrorByField(errors, 'description')}</p>
-              )}
-            </div>
-
-            <div>
-              <Input
-                id="order"
-                name="order"
-                label="Orden de visualización"
-                type="number"
-                value={formData.order}
-                onChange={(e) => updateField('order', parseInt(e.target.value) || 1)}
-                error={getErrorByField(errors, 'order')}
-                placeholder="1"
-                min="1"
-              />
-              <p className="text-sm text-gray-500 mt-1">
-                Determina el orden en que se mostrará la sección (menor número = primera posición)
-              </p>
-            </div>
-          </div>
-        );
-
-      case 2:
-        return (
-          <div className="space-y-6">
-            <div className="bg-gray-50 rounded-lg p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Configuración de Banner</h3>
-              
-              <div className="space-y-4">
-                <Checkbox
-                  id="allowBanner"
-                  name="allowBanner"
-                  label="Permitir banner en esta sección"
-                  checked={formData.allowBanner}
-                  onChange={(checked) => updateField('allowBanner', checked)}
-                />
-                
-                <p className="text-sm text-gray-600">
-                  Los banners se muestran en la parte superior de la sección para destacar contenido importante
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-blue-50 rounded-lg p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Información de la sección</h3>
-              
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700">ID:</span>
-                  <span className="text-sm text-gray-900 font-mono">{section.id}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700">Creada:</span>
-                  <span className="text-sm text-gray-900">
-                    {new Date(section.createdAt).toLocaleDateString('es-ES')}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700">Última actualización:</span>
-                  <span className="text-sm text-gray-900">
-                    {new Date(section.updatedAt).toLocaleDateString('es-ES')}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700">Cursos asociados:</span>
-                  <span className="text-sm text-gray-900">{section.courseCount || 0}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      case 3:
-        return (
-            <div className="space-y-6">
-                <div className="flex items-center space-x-3 mb-6">
-                    <BookOpen className="h-6 w-6 text-purple-600" />
-                    <h2 className="text-xl font-semibold text-gray-900">Cursos Asociados</h2>
-                </div>
-
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                    <div className="flex items-center">
-                        <AlertCircle className="h-5 w-5 text-blue-400 mr-2" />
-                        <p className="text-sm text-blue-800">
-                            Selecciona los cursos que aparecerán en esta sección. Los usuarios podrán ver todos los cursos asociados.
-                        </p>
-                    </div>
-                </div>
-
-                {availableCourses.length === 0 ? (
-                    <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
-                        <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                        <p className="text-gray-600 mb-2">No hay cursos disponibles</p>
-                        <p className="text-sm text-gray-500">Crea cursos primero para poder asociarlos a esta sección</p>
-                    </div>
-                ) : (
-                    <div className="space-y-3">
-                        <div className="flex items-center justify-between mb-4">
-                            <p className="text-sm text-gray-600">
-                                {formData.courseIds.length} de {availableCourses.length} cursos seleccionados
-                            </p>
-                            <div className="flex gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setFormData(prev => ({
-                                            ...prev,
-                                            courseIds: availableCourses.map(c => c.id)
-                                        }));
-                                        setHasChanges(true);
-                                    }}
-                                    className="text-sm text-purple-600 hover:text-purple-700 font-medium"
-                                >
-                                    Seleccionar todos
-                                </button>
-                                <span className="text-gray-300">|</span>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setFormData(prev => ({
-                                            ...prev,
-                                            courseIds: []
-                                        }));
-                                        setHasChanges(true);
-                                    }}
-                                    className="text-sm text-gray-600 hover:text-gray-700 font-medium"
-                                >
-                                    Deseleccionar todos
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto">
-                            {availableCourses.map((course) => {
-                                const isSelected = formData.courseIds.includes(course.id);
-                                return (
-                                    <label
-                                        key={course.id}
-                                        className={`flex items-start p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                                            isSelected
-                                                ? 'border-purple-500 bg-purple-50'
-                                                : 'border-gray-200 bg-white hover:border-purple-200 hover:bg-purple-50/50'
-                                        }`}
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            checked={isSelected}
-                                            onChange={(e) => {
-                                                const checked = e.target.checked;
-                                                setFormData(prev => ({
-                                                    ...prev,
-                                                    courseIds: checked
-                                                        ? [...prev.courseIds, course.id]
-                                                        : prev.courseIds.filter(id => id !== course.id)
-                                                }));
-                                                setHasChanges(true);
-                                            }}
-                                            className="mt-1 h-4 w-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
-                                        />
-                                        <div className="ml-3 flex-1">
-                                            <p className="font-medium text-gray-900">{course.title}</p>
-                                            <p className="text-sm text-gray-500">{course.slug}</p>
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                                                    course.isActive
-                                                        ? 'bg-green-100 text-green-800'
-                                                        : 'bg-gray-100 text-gray-800'
-                                                }`}>
-                                                    {course.isActive ? 'Activo' : 'Inactivo'}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </label>
-                                );
-                            })}
-                        </div>
-                    </div>
-                )}
-            </div>
-        );
-      case 4:
-        return (
-          <div className="space-y-6">
-            {/* Imagen thumbnail */}
-            <div className="bg-gray-50 rounded-lg p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Imagen de la Sección</h3>
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-center w-full">
-                  <label 
-                    htmlFor="thumbnailUpload" 
-                    className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors"
-                  >
-                    {previewImage ? (
-                      <div className="relative w-full h-full">
-                        <img 
-                          src={previewImage} 
-                          alt="Vista previa" 
-                          className="w-full h-full object-cover rounded-lg"
-                        />
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setPreviewImage(null);
-                            updateField('thumbnailImagePath', '');
-                          }}
-                          className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                        <Upload className="w-10 h-10 mb-3 text-gray-400" />
-                        <p className="mb-2 text-sm text-gray-500">
-                          <span className="font-semibold">Clic para subir</span> o arrastra y suelta
-                        </p>
-                        <p className="text-xs text-gray-500">PNG, JPG hasta 10MB</p>
-                      </div>
-                    )}
-                    <input 
-                      id="thumbnailUpload" 
-                      type="file" 
-                      className="hidden" 
-                      accept="image/*"
-                      onChange={(e) => handleImageUpload(e, 'thumbnail')}
-                    />
-                  </label>
-                </div>
-                
-                <Input
-                  id="thumbnailImagePath"
-                  name="thumbnailImagePath"
-                  label="URL de la imagen (opcional)"
-                  type="url"
-                  value={formData.thumbnailImagePath}
-                  onChange={(e) => {
-                    updateField('thumbnailImagePath', e.target.value);
-                    setPreviewImage(e.target.value);
-                  }}
-                  placeholder="https://ejemplo.com/imagen.jpg"
-                />
-              </div>
-            </div>
-
-            {/* Banner image */}
-            {formData.allowBanner && (
-              <div className="bg-gray-50 rounded-lg p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Imagen del Banner</h3>
-                
-                <div className="space-y-4">
-                  <div className="flex items-center justify-center w-full">
-                    <label 
-                      htmlFor="bannerUpload" 
-                      className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors"
-                    >
-                      {previewBanner ? (
-                        <div className="relative w-full h-full">
-                          <img 
-                            src={previewBanner} 
-                            alt="Vista previa del banner" 
-                            className="w-full h-full object-cover rounded-lg"
-                          />
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              setPreviewBanner(null);
-                              updateField('bannerPath', '');
-                            }}
-                            className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                          <Upload className="w-8 h-8 mb-2 text-gray-400" />
-                          <p className="text-sm text-gray-500">
-                            <span className="font-semibold">Clic para subir banner</span>
-                          </p>
-                        </div>
-                      )}
-                      <input 
-                        id="bannerUpload" 
-                        type="file" 
-                        className="hidden" 
-                        accept="image/*"
-                        onChange={(e) => handleImageUpload(e, 'banner')}
-                      />
-                    </label>
-                  </div>
-                  
-                  <Input
-                    id="bannerPath"
-                    name="bannerPath"
-                    label="URL del banner (opcional)"
-                    type="url"
-                    value={formData.bannerPath}
-                    onChange={(e) => {
-                      updateField('bannerPath', e.target.value);
-                      setPreviewBanner(e.target.value);
-                    }}
-                    placeholder="https://ejemplo.com/banner.jpg"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        );
-
-      case 5:
-        return (
-          <div className="space-y-6">
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Revisión de Cambios</h3>
-              
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Nombre</label>
-                    <p className="mt-1 text-sm text-gray-900">{formData.name}</p>
-                    {formData.name !== section.name && (
-                      <p className="text-xs text-amber-600">Cambiado de: {section.name}</p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Slug</label>
-                    <p className="mt-1 text-sm text-gray-900">/{formData.slug}</p>
-                    {formData.slug !== section.slug && (
-                      <p className="text-xs text-amber-600">Cambiado de: /{section.slug}</p>
-                    )}
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Descripción</label>
-                  <p className="mt-1 text-sm text-gray-900">
-                    {formData.description || <span className="text-gray-400 italic">Sin descripción</span>}
-                  </p>
-                  {formData.description !== (section.description || '') && (
-                    <p className="text-xs text-amber-600">
-                      Cambiado de: {section.description || 'Sin descripción'}
-                    </p>
-                  )}
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Orden</label>
-                    <p className="mt-1 text-sm text-gray-900">#{formData.order}</p>
-                    {formData.order !== (section.order || 1) && (
-                      <p className="text-xs text-amber-600">Cambiado de: #{section.order}</p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Banner</label>
-                    <p className="mt-1 text-sm text-gray-900">
-                      {formData.allowBanner ? 'Permitido' : 'No permitido'}
-                    </p>
-                    {formData.allowBanner !== section.allowBanner && (
-                      <p className="text-xs text-amber-600">
-                        Cambiado de: {section.allowBanner ? 'Permitido' : 'No permitido'}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                
-                {(formData.thumbnailImagePath || previewImage) && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Imagen de la sección</label>
-                    <img 
-                      src={previewImage || formData.thumbnailImagePath} 
-                      alt="Vista previa" 
-                      className="mt-2 w-32 h-32 object-cover rounded-lg"
-                    />
-                  </div>
-                )}
-                
-                {formData.allowBanner && (formData.bannerPath || previewBanner) && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Banner</label>
-                    <img 
-                      src={previewBanner || formData.bannerPath} 
-                      alt="Vista previa del banner" 
-                      className="mt-2 w-full h-24 object-cover rounded-lg"
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {hasChanges ? (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                <div className="flex items-center">
-                  <AlertCircle className="h-5 w-5 text-amber-400 mr-2" />
-                  <p className="text-sm text-amber-800">
-                    Se han detectado cambios. Revisa cuidadosamente antes de guardar.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <div className="flex items-center">
-                  <Eye className="h-5 w-5 text-green-400 mr-2" />
-                  <p className="text-sm text-green-800">
-                    No se han realizado cambios en esta sección.
-                  </p>
-                </div>
-              </div>
-            )}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Cursos Asociados</label>
-              {formData.courseIds.length === 0 ? (
-                  <p className="text-sm text-gray-500 italic">No hay cursos asociados</p>
-              ) : (
-                  <div className="space-y-2">
-                      {formData.courseIds.map(courseId => {
-                          const course = availableCourses.find(c => c.id === courseId);
-                          return course ? (
-                              <div key={courseId} className="flex items-center p-2 bg-purple-50 rounded-lg">
-                                  <BookOpen className="h-4 w-4 text-purple-600 mr-2" />
-                                  <span className="text-sm text-gray-900">{course.title}</span>
-                              </div>
-                          ) : null;
-                      })}
-                      <p className="text-sm text-gray-500 mt-2">
-                          {formData.courseIds.length} curso{formData.courseIds.length !== 1 ? 's' : ''} seleccionado{formData.courseIds.length !== 1 ? 's' : ''}
-                      </p>
-                  </div>
-                )}
-            </div>
-          </div>
-        );
-
-      default:
-        return null;
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <div className="max-w-4xl mx-auto p-6 space-y-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-8">
+      <div className="container mx-auto px-4">
         
         {/* Header */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-6">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-6 mb-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="bg-gradient-to-r from-purple-500 to-purple-600 p-3 rounded-2xl shadow-lg">
@@ -887,130 +359,421 @@ export default function EditSection() {
                 <p className="text-gray-600">{section.name} • /{section.slug}</p>
               </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <div className="text-sm text-gray-500">
-                Paso {currentStep} de {steps.length}
-              </div>
-              <button
-                onClick={() => setShowDeleteConfirm(true)}
-                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                title="Eliminar sección"
-              >
-                <Trash2 className="h-5 w-5" />
-              </button>
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              title="Eliminar sección"
+            >
+              <Trash2 className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Error general */}
+        {actionData?.generalError && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center">
+              <AlertCircle className="h-5 w-5 text-red-400 mr-2" />
+              <p className="text-red-800">{actionData.generalError}</p>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Indicador de pasos */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-gray-200/50">
-          <div className="flex justify-between items-center">
-            {steps.map((step, index) => {
-              const Icon = step.icon;
-              const isActive = currentStep === step.id;
-              const isCompleted = currentStep > step.id;
-              
-              return (
-                <div key={step.id} className="flex items-center">
-                  <button
-                    onClick={() => setCurrentStep(step.id)}
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all duration-200 ${
-                      isActive 
-                        ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg' 
-                        : isCompleted
-                        ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    <Icon className="h-5 w-5" />
-                    <span className="hidden md:block font-medium">{step.name}</span>
-                  </button>
-                  
-                  {index < steps.length - 1 && (
-                    <div className={`w-8 h-0.5 mx-2 ${
-                      currentStep > step.id ? 'bg-green-300' : 'bg-gray-300'
-                    }`} />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Formulario */}
+        {/* Formulario completo */}
         <Form method="post" className="space-y-6">
           <input type="hidden" name="intent" value="update" />
-          
-          {/* Campos ocultos para persistir datos */}
-          <input type="hidden" name="name" value={formData.name} />
-          <input type="hidden" name="slug" value={formData.slug} />
-          <input type="hidden" name="description" value={formData.description} />
-          <input type="hidden" name="thumbnailImagePath" value={formData.thumbnailImagePath} />
-          <input type="hidden" name="order" value={formData.order} />
-          <input type="hidden" name="allowBanner" value={formData.allowBanner ? 'on' : ''} />
-          <input type="hidden" name="bannerPath" value={formData.bannerPath} />
           <input type="hidden" name="tenantId" value={formData.tenantId} />
           {formData.courseIds.map((courseId) => (
             <input key={courseId} type="hidden" name="courseIds" value={courseId} />
           ))}
 
-          {/* Contenido del paso actual */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-6">
-            {renderStepContent()}
-          </div>
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            
+            {/* Columna izquierda - Información principal */}
+            <div className="xl:col-span-2 space-y-6">
+              
+              {/* Información Básica */}
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-6">
+                <div className="flex items-center space-x-2 mb-6">
+                  <Layers3 className="h-6 w-6 text-purple-600" />
+                  <h2 className="text-xl font-semibold text-gray-900">Información Básica</h2>
+                </div>
 
-          {/* Error general */}
-          {actionData?.generalError && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <div className="flex items-center">
-                <AlertCircle className="h-5 w-5 text-red-400 mr-2" />
-                <p className="text-red-800">{actionData.generalError}</p>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Input
+                      id="name"
+                      name="name"
+                      label="Nombre de la Sección *"
+                      type="text"
+                      required
+                      value={formData.name}
+                      onChange={(e) => updateField('name', e.target.value)}
+                      error={getErrorByField(errors, 'name')}
+                      placeholder="Ej: Colaboradores, Medicina General"
+                    />
+                    <Input
+                      id="slug"
+                      name="slug"
+                      label="Slug (URL amigable) *"
+                      type="text"
+                      required
+                      disabled
+                      value={formData.slug}
+                      onChange={(e) => updateField('slug', e.target.value)}
+                      error={getErrorByField(errors, 'slug')}
+                      placeholder="colaboradores, medicina-general"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                      Descripción
+                    </label>
+                    <textarea
+                      id="description"
+                      name="description"
+                      rows={4}
+                      value={formData.description}
+                      onChange={(e) => updateField('description', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                      placeholder="Describe el contenido y propósito de esta sección..."
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Input
+                      id="order"
+                      name="order"
+                      label="Orden de visualización"
+                      type="number"
+                      value={formData.order}
+                      onChange={(e) => updateField('order', parseInt(e.target.value) || 1)}
+                      error={getErrorByField(errors, 'order')}
+                      placeholder="1"
+                      min="1"
+                    />
+                    <div className="flex items-end">
+                      <Checkbox
+                        id="allowBanner"
+                        name="allowBanner"
+                        label="Permitir banner en esta sección"
+                        checked={formData.allowBanner}
+                        onChange={(checked) => updateField('allowBanner', checked)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Cursos Asociados */}
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-6">
+                <div className="flex items-center space-x-2 mb-6">
+                  <BookOpen className="h-6 w-6 text-purple-600" />
+                  <h2 className="text-xl font-semibold text-gray-900">Cursos Asociados</h2>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                  <div className="flex items-center">
+                    <AlertCircle className="h-5 w-5 text-blue-400 mr-2" />
+                    <p className="text-sm text-blue-800">
+                      Selecciona los cursos que aparecerán en esta sección
+                    </p>
+                  </div>
+                </div>
+
+                {availableCourses.length === 0 ? (
+                  <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
+                    <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                    <p className="text-gray-600 mb-2">No hay cursos disponibles</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between mb-4">
+                      <p className="text-sm text-gray-600">
+                        {formData.courseIds.length} de {availableCourses.length} cursos seleccionados
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFormData(prev => ({
+                              ...prev,
+                              courseIds: availableCourses.map(c => c.id)
+                            }));
+                            setHasChanges(true);
+                          }}
+                          className="text-sm text-purple-600 hover:text-purple-700 font-medium"
+                        >
+                          Seleccionar todos
+                        </button>
+                        <span className="text-gray-300">|</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFormData(prev => ({ ...prev, courseIds: [] }));
+                            setHasChanges(true);
+                          }}
+                          className="text-sm text-gray-600 hover:text-gray-700 font-medium"
+                        >
+                          Deseleccionar todos
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto">
+                      {availableCourses.map((course) => {
+                        const isSelected = formData.courseIds.includes(course.id);
+                        return (
+                          <label
+                            key={course.id}
+                            className={`flex items-start p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                              isSelected
+                                ? 'border-purple-500 bg-purple-50'
+                                : 'border-gray-200 bg-white hover:border-purple-200 hover:bg-purple-50/50'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={(e) => {
+                                const checked = e.target.checked;
+                                setFormData(prev => ({
+                                  ...prev,
+                                  courseIds: checked
+                                    ? [...prev.courseIds, course.id]
+                                    : prev.courseIds.filter(id => id !== course.id)
+                                }));
+                                setHasChanges(true);
+                              }}
+                              className="mt-1 h-4 w-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                            />
+                            <div className="ml-3 flex-1">
+                              <p className="font-medium text-gray-900">{course.title}</p>
+                              <p className="text-sm text-gray-500">{course.slug}</p>
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium mt-1 ${
+                                course.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                              }`}>
+                                {course.isActive ? 'Activo' : 'Inactivo'}
+                              </span>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Imágenes */}
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-6">
+                <div className="flex items-center space-x-2 mb-6">
+                  <Image className="h-6 w-6 text-purple-600" />
+                  <h2 className="text-xl font-semibold text-gray-900">Imágenes</h2>
+                </div>
+
+                <div className="space-y-6">
+                  {/* Imagen principal */}
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 mb-3">Imagen de la Sección</h3>
+                    <div className="flex items-center justify-center w-full">
+                      <label 
+                        htmlFor="thumbnailUpload" 
+                        className="relative flex flex-col items-center justify-center w-full h-48 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors"
+                      >
+                        {previewImage ? (
+                          <div className="relative w-full h-full">
+                            <img 
+                              src={previewImage} 
+                              alt="Vista previa" 
+                              className="w-full h-full object-cover rounded-lg"
+                            />
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setPreviewImage(null);
+                                updateField('thumbnailImagePath', '');
+                              }}
+                              className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                            <Upload className="w-10 h-10 mb-3 text-gray-400" />
+                            <p className="mb-2 text-sm text-gray-500">
+                              <span className="font-semibold">Clic para subir</span> o arrastra
+                            </p>
+                            <p className="text-xs text-gray-500">PNG, JPG hasta 10MB</p>
+                          </div>
+                        )}
+                        <input 
+                          id="thumbnailUpload" 
+                          type="file" 
+                          className="hidden" 
+                          accept="image/*"
+                          onChange={(e) => handleImageUpload(e, 'thumbnail')}
+                        />
+                      </label>
+                    </div>
+                    
+                    <div className="mt-3">
+                      <Input
+                        id="thumbnailImagePath"
+                        name="thumbnailImagePath"
+                        label="O ingresa una URL"
+                        type="url"
+                        value={formData.thumbnailImagePath}
+                        onChange={(e) => {
+                          updateField('thumbnailImagePath', e.target.value);
+                          setPreviewImage(e.target.value);
+                        }}
+                        placeholder="https://ejemplo.com/imagen.jpg"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Banner */}
+                  {formData.allowBanner && (
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700 mb-3">Banner</h3>
+                      <div className="flex items-center justify-center w-full">
+                        <label 
+                          htmlFor="bannerUpload" 
+                          className="relative flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors"
+                        >
+                          {previewBanner ? (
+                            <div className="relative w-full h-full">
+                              <img 
+                                src={previewBanner} 
+                                alt="Vista previa del banner" 
+                                className="w-full h-full object-cover rounded-lg"
+                              />
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  setPreviewBanner(null);
+                                  updateField('bannerPath', '');
+                                }}
+                                className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                              <Upload className="w-8 h-8 mb-2 text-gray-400" />
+                              <p className="text-sm text-gray-500">
+                                <span className="font-semibold">Clic para subir banner</span>
+                              </p>
+                            </div>
+                          )}
+                          <input 
+                            id="bannerUpload" 
+                            type="file" 
+                            className="hidden" 
+                            accept="image/*"
+                            onChange={(e) => handleImageUpload(e, 'banner')}
+                          />
+                        </label>
+                      </div>
+                      
+                      <div className="mt-3">
+                        <Input
+                          id="bannerPath"
+                          name="bannerPath"
+                          label="O ingresa una URL del banner"
+                          type="url"
+                          value={formData.bannerPath}
+                          onChange={(e) => {
+                            updateField('bannerPath', e.target.value);
+                            setPreviewBanner(e.target.value);
+                          }}
+                          placeholder="https://ejemplo.com/banner.jpg"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          )}
 
-          {/* Botones de navegación */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <button
-                type="button"
-                onClick={handleCancel}
-                className="flex items-center space-x-2 px-6 py-3 text-gray-600 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors"
-              >
-                <X className="h-5 w-5" />
-                <span>Cancelar</span>
-              </button>
+            {/* Columna derecha - Panel lateral */}
+            <div className="space-y-6">
               
-              {currentStep > 1 && (
-                <button
-                  type="button"
-                  onClick={() => setCurrentStep(currentStep - 1)}
-                  className="px-6 py-3 text-purple-600 border border-purple-300 rounded-xl hover:bg-purple-50 transition-colors"
-                >
-                  Anterior
-                </button>
-              )}
-            </div>
+              {/* Información de la sección */}
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-6 sticky top-6">
+                <div className="flex items-center space-x-2 mb-6">
+                  <Settings className="h-6 w-6 text-purple-600" />
+                  <h2 className="text-lg font-semibold text-gray-900">Información</h2>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <span className="text-sm font-medium text-gray-700">ID:</span>
+                    <p className="text-sm text-gray-900 font-mono mt-1 break-all">{section.id}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-gray-700">Creada:</span>
+                    <p className="text-sm text-gray-900 mt-1">
+                      {new Date(section.createdAt).toLocaleDateString('es-ES', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-gray-700">Última actualización:</span>
+                    <p className="text-sm text-gray-900 mt-1">
+                      {new Date(section.updatedAt).toLocaleDateString('es-ES', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-gray-700">Cursos asociados:</span>
+                    <p className="text-sm text-gray-900 mt-1">{formData.courseIds.length}</p>
+                  </div>
+                </div>
 
-            <div className="flex items-center space-x-3">
-              {currentStep < steps.length ? (
-                <button
-                  type="button"
-                  onClick={() => setCurrentStep(currentStep + 1)}
-                  className="px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
-                >
-                  Siguiente
-                </button>
-              ) : (
-                <button
-                  type="submit"
-                  disabled={isSubmitting || !hasChanges}
-                  className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                >
-                  <Save className="h-5 w-5" />
-                  <span>{isSubmitting ? 'Guardando...' : 'Guardar Cambios'}</span>
-                </button>
-              )}
+                {hasChanges && (
+                  <div className="mt-6 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                    <div className="flex items-center">
+                      <AlertCircle className="h-4 w-4 text-amber-400 mr-2 flex-shrink-0" />
+                      <p className="text-xs text-amber-800">
+                        Tienes cambios sin guardar
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Botones de acción */}
+                <div className="mt-6 space-y-3">
+                  <button
+                    type="submit"
+                    disabled={isSubmitting || !hasChanges}
+                    className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                  >
+                    <Save className="h-5 w-5" />
+                    <span>{isSubmitting ? 'Guardando...' : 'Guardar Cambios'}</span>
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={handleCancel}
+                    className="w-full flex items-center justify-center space-x-2 px-4 py-3 text-gray-600 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+                  >
+                    <X className="h-5 w-5" />
+                    <span>Cancelar</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </Form>
@@ -1029,7 +792,7 @@ export default function EditSection() {
                   ¿Eliminar sección?
                 </h3>
                 <p className="text-sm text-gray-500 mb-6">
-                  Esta acción no se puede deshacer. La sección "{section.name}" y todos sus datos asociados serán eliminados permanentemente.
+                  Esta acción no se puede deshacer. La sección "{section.name}" será eliminada permanentemente.
                 </p>
                 <div className="flex space-x-3">
                   <button
@@ -1055,7 +818,7 @@ export default function EditSection() {
 
         {/* Mensaje de éxito */}
         {actionData?.success && (
-          <div className="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-xl shadow-lg">
+          <div className="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-xl shadow-lg z-50">
             Sección actualizada con éxito
           </div>
         )}

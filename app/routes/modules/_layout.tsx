@@ -207,13 +207,6 @@ function ModulesLayoutContent() {
                         </div>
                     </div>
 
-                    {/* Navigation Menu para módulos de curso */}
-                    {course && isCourseModulesPage && (
-                        <div className="py-4">
-                            <NavigationMenu course={course} />
-                        </div>
-                    )}
-
                     {/* Navegación general para módulos */}
                     {!course && !isCreatePage && !isEditPage && !isDetailPage && (
                         <div className="py-6">
@@ -289,6 +282,12 @@ function ModulesLayoutContent() {
                         </div>
                     )} */}
                 </div>
+                {/* Navigation Menu para módulos de curso */}
+                {course && isCourseModulesPage && (
+                    <div className="">
+                        <NavigationMenu course={course} />
+                    </div>
+                )}
             </div>
 
             {/* Contenido principal */}

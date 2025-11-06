@@ -165,13 +165,6 @@ function ForumsLayoutContent() {
             </div>
           </div>
 
-          {/* Navigation Menu para foros de curso */}
-          {course && isCourseForumsPage && (
-            <div className="py-4">
-              <NavigationMenu course={course} />
-            </div>
-          )}
-
           {/* Navegación general para otros casos */}
           {!course && !isCreatePage && !isEditPage && !isDetailPage && (
             <div className="py-6">
@@ -206,6 +199,12 @@ function ForumsLayoutContent() {
             </div>
           )}
         </div>
+        {/* Navigation Menu para foros de curso */}
+        {course && isCourseForumsPage && (
+          <div className="">
+            <NavigationMenu course={course} />
+          </div>
+        )}
       </div>
 
       {/* Contenido principal */}

@@ -160,9 +160,9 @@ export default function Header() {
                       Productos
                     </NavLink> */}
                     
-                    <NavLink to="/dashboard" textColor={navbarConfig?.textColor || '#ffffff'} icon={<LayoutDashboard className="h-4 w-4" />}>
+                    {/* <NavLink to="/dashboard" textColor={navbarConfig?.textColor || '#ffffff'} icon={<LayoutDashboard className="h-4 w-4" />}>
                       Dashboard
-                    </NavLink>
+                    </NavLink> */}
                     
                   </>
                 )}
@@ -290,13 +290,13 @@ export default function Header() {
                   Productos
                 </MobileNavLink>
                 
-                <MobileNavLink 
+                {/* <MobileNavLink 
                   to="/dashboard" 
                   icon={<LayoutDashboard className="h-5 w-5" />}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Dashboard
-                </MobileNavLink>
+                </MobileNavLink> */}
                 
                 <RoleGuard requiredRoles={['admin', 'instructor']} requireAll={false}>
                   <MobileNavLink 

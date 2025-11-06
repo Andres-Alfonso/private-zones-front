@@ -182,8 +182,6 @@ export const action: ActionFunction = async ({ request }) => {
     };
 
     const tenantResult = await TenantsAPI.create(tenantData);
-
-    console.log('Tenant creation result:', tenantResult);
     
     if ('error' in tenantResult) {
       const errorMessage = getSpecificErrorMessage(tenantResult);
@@ -199,8 +197,7 @@ export const action: ActionFunction = async ({ request }) => {
     return json<ActionData>({ 
       success: true,
       tenantId: tenantResult.id
-    });
-    
+    });    
   } catch (error: any) {
     console.error('Error creating tenant:', error);
     

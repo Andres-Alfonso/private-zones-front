@@ -77,7 +77,7 @@ export default function LogoCustomizer({ onChange, isSubmitting, errors, setting
       {/* Logo Principal */}
       <div className="space-y-3">
         <label className="block text-sm font-medium text-gray-700">
-          Logo Principal (Navbar)
+          Logo Principal (Barra de Navegacion)
         </label>
         <div className="flex items-start space-x-4">
           <div className="flex-shrink-0 w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50">

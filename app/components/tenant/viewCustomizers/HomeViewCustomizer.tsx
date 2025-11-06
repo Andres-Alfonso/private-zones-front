@@ -78,15 +78,34 @@ export const HomeViewCustomizer: React.FC<HomeViewCustomizerProps> = ({
         ...homeSettings?.additionalSettings
     });
 
-    // Sincronizar con cambios del padre
+    // Sincronizar cuando cambien las props
     useEffect(() => {
         if (homeSettings?.additionalSettings) {
-            setHomeConfig(prev => ({
-                ...prev,
-                ...homeSettings.additionalSettings
-            }));
+            console.log("🔄 Sincronizando homeConfig con homeSettings:", homeSettings.additionalSettings);
+            
+            setHomeConfig({
+                allowCoursesHome: homeSettings.additionalSettings.allowCoursesHome ?? false,
+                showPrivateCourses: homeSettings.additionalSettings.showPrivateCourses ?? false,
+                allowSectionsHome: homeSettings.additionalSettings.allowSectionsHome ?? false,
+                selectedSections: homeSettings.additionalSettings.selectedSections || [],
+                textColor: homeSettings.additionalSettings.textColor || '#000000',
+                enableBanner: homeSettings.additionalSettings.enableBanner ?? false,
+                bannerType: homeSettings.additionalSettings.bannerType || 'image',
+                bannerImageUrl: homeSettings.additionalSettings.bannerImageUrl || '',
+                bannerVideoUrl: homeSettings.additionalSettings.bannerVideoUrl || '',
+                bannerPosition: homeSettings.additionalSettings.bannerPosition || 'top',
+                customTitles: {
+                    en: homeSettings.additionalSettings.customTitles?.en || 'Home',
+                    es: homeSettings.additionalSettings.customTitles?.es || 'Inicio',
+                },
+                showWelcomeMessage: homeSettings.additionalSettings.showWelcomeMessage ?? true,
+                showQuickActions: homeSettings.additionalSettings.showQuickActions ?? true,
+                showRecentActivity: homeSettings.additionalSettings.showRecentActivity ?? true,
+            });
         }
-    }, [homeSettings?.additionalSettings]);
+    }, [JSON.stringify(homeSettings?.additionalSettings)]);  // ← Cambiar la dependencia a string
+
+
 
     // Manejador para cambios en configuraciones específicas del Home
     const handleHomeConfigChange = (field: keyof HomeAdditionalSettings, value: any) => {
@@ -197,7 +216,7 @@ export const HomeViewCustomizer: React.FC<HomeViewCustomizerProps> = ({
                             name="textColor"
                             disabled={isSubmitting}
                             value={homeSettings?.additionalSettings?.textColor || '#000000'}
-                            onChange={(e) => onChange('textColor', e.target.value)}
+                            onChange={(e) => handleHomeConfigChange('textColor', e.target.value)}
                             className="w-12 h-10 border border-gray-300 rounded cursor-pointer disabled:opacity-50"
                         />
                     </div>

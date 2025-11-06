@@ -5,6 +5,9 @@ import { SpecificViewCustomizerProps } from './types';
 
 // Interfaz específica para configuraciones del Login/Register
 export interface LoginRegisterAdditionalSettings {
+    // Configuración de layout/posición del formulario
+    formPosition?: 'left' | 'center' | 'right';
+    
     // Títulos personalizados multiidioma
     customTitles?: {
         en?: string;
@@ -44,6 +47,7 @@ export const LoginRegisterCustomizer: React.FC<LoginRegisterCustomizerProps> = (
 }) => {
     // Estados locales para configuraciones específicas del Login/Register
     const [loginConfig, setLoginConfig] = useState<LoginRegisterAdditionalSettings>({
+        formPosition: 'left',
         customTitles: {
             en: 'Login and Registration',
             es: 'Login y Registro'
@@ -110,10 +114,23 @@ export const LoginRegisterCustomizer: React.FC<LoginRegisterCustomizerProps> = (
         }
     };
 
+    // Función para obtener las clases de justificación según la posición
+    const getJustifyClass = () => {
+        switch (loginConfig.formPosition) {
+            case 'left':
+                return 'justify-start';
+            case 'right':
+                return 'justify-end';
+            case 'center':
+            default:
+                return 'justify-center';
+        }
+    };
+
     return (
         <div className="space-y-6">
             {/* Configuración básica de fondo */}
-            <ViewCustomizer
+            {/* <ViewCustomizer
                 title="Configuración de Vista Login/Registro"
                 description="Personaliza la apariencia de la página de inicio de sesión y registro"
                 onChange={onChange}
@@ -121,7 +138,7 @@ export const LoginRegisterCustomizer: React.FC<LoginRegisterCustomizerProps> = (
                 errors={errors}
                 settings={settings}
                 {...props}
-            />
+            /> */}
 
             {/* Configuraciones específicas del Login/Register */}
             <div className="px-6 py-6 space-y-8 border-t border-gray-200">
@@ -129,6 +146,70 @@ export const LoginRegisterCustomizer: React.FC<LoginRegisterCustomizerProps> = (
                     <h4 className="text-md font-semibold text-gray-900 mb-4">
                         Configuraciones Específicas de Login/Registro
                     </h4>
+
+                    {/* Posición del formulario */}
+                    <div className="mb-8 p-4 bg-gray-50 rounded-lg">
+                        <h5 className="text-sm font-medium text-gray-800 mb-3">Posición del Formulario</h5>
+                        <div className="flex gap-4 mb-4">
+                            <label className="flex items-center cursor-pointer">
+                                <input
+                                    type="radio"
+                                    name="formPosition"
+                                    value="left"
+                                    checked={loginConfig.formPosition === 'left'}
+                                    onChange={(e) => handleLoginConfigChange('formPosition', e.target.value)}
+                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                                    disabled={isSubmitting}
+                                />
+                                <span className="ml-2 text-sm text-gray-700">Izquierda</span>
+                            </label>
+                            <label className="flex items-center cursor-pointer">
+                                <input
+                                    type="radio"
+                                    name="formPosition"
+                                    value="center"
+                                    checked={loginConfig.formPosition === 'center'}
+                                    onChange={(e) => handleLoginConfigChange('formPosition', e.target.value)}
+                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                                    disabled={isSubmitting}
+                                />
+                                <span className="ml-2 text-sm text-gray-700">Centro</span>
+                            </label>
+                            <label className="flex items-center cursor-pointer">
+                                <input
+                                    type="radio"
+                                    name="formPosition"
+                                    value="right"
+                                    checked={loginConfig.formPosition === 'right'}
+                                    onChange={(e) => handleLoginConfigChange('formPosition', e.target.value)}
+                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                                    disabled={isSubmitting}
+                                />
+                                <span className="ml-2 text-sm text-gray-700">Derecha</span>
+                            </label>
+                        </div>
+
+                        {/* Vista Previa */}
+                        <div className="mt-4 p-4 bg-white rounded-lg border-2 border-gray-200">
+                            <p className="text-xs font-medium text-gray-600 mb-3">Vista Previa:</p>
+                            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-md p-6 min-h-[200px]">
+                                <div className={`flex ${getJustifyClass()} items-center h-full`}>
+                                    {/* Formulario simulado */}
+                                    <div className="bg-white rounded-lg shadow-lg p-6 w-80">
+                                        <div className="text-center mb-4">
+                                            <div className="w-16 h-16 bg-gray-200 rounded-full mx-auto mb-2"></div>
+                                            <div className="h-6 bg-gray-300 rounded w-32 mx-auto"></div>
+                                        </div>
+                                        <div className="space-y-3">
+                                            <div className="h-10 bg-gray-100 rounded"></div>
+                                            <div className="h-10 bg-gray-100 rounded"></div>
+                                            <div className="h-10 bg-blue-500 rounded"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     {/* Títulos personalizados */}
                     {/* <div className="mb-8 p-4 bg-blue-50 rounded-lg">
@@ -164,7 +245,7 @@ export const LoginRegisterCustomizer: React.FC<LoginRegisterCustomizerProps> = (
                     </div> */}
 
                     {/* Logo de Login */}
-                    <div className="mb-8 p-4 bg-green-50 rounded-lg">
+                    {/* <div className="mb-8 p-4 bg-green-50 rounded-lg">
                         <h5 className="text-sm font-medium text-gray-800 mb-3">Logo para Pantalla de Login</h5>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -195,10 +276,10 @@ export const LoginRegisterCustomizer: React.FC<LoginRegisterCustomizerProps> = (
                                 </div>
                             )}
                         </div>
-                    </div>
+                    </div> */}
 
                     {/* Fondo de Login */}
-                    <div className="mb-8 p-4 bg-purple-50 rounded-lg">
+                    {/* <div className="mb-8 p-4 bg-purple-50 rounded-lg">
                         <h5 className="text-sm font-medium text-gray-800 mb-3">Fondo de Pantalla de Login</h5>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -229,7 +310,7 @@ export const LoginRegisterCustomizer: React.FC<LoginRegisterCustomizerProps> = (
                                 </div>
                             )}
                         </div>
-                    </div>
+                    </div> */}
 
                     {/* Configuración de Login Social */}
                     {/* <div className="mb-8 p-4 bg-yellow-50 rounded-lg">

@@ -206,7 +206,7 @@ export const action: ActionFunction = async ({ request }) => {
       description,
       type: contentType,
       contentUrl: file ? `uploaded-files/${file.name}` : contentUrl,
-      // courseId,
+      courseId,
       metadata
     };
 
@@ -259,7 +259,7 @@ export default function CreateContent() {
     description: actionData?.fields?.description || '',
     contentType: actionData?.fields?.contentType || ('' as any),
     contentUrl: actionData?.fields?.contentUrl || '',
-    courseId: actionData?.fields?.courseId || '',
+    courseId: course || '',
     metadata: actionData?.fields?.metadata || {}
   });
 

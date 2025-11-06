@@ -54,8 +54,8 @@ export default function AuthLayout() {
     : undefined;
 
   // Debug: verificar si se está obteniendo la ruta
-  console.log('Raw Login background path:', rawLoginBackgroundPath);
-  console.log('Encoded Login background path:', loginBackgroundPath);
+  // console.log('Raw Login background path:', rawLoginBackgroundPath);
+  // console.log('Encoded Login background path:', loginBackgroundPath);
 
   // Determinar el ancho máximo basado en la página
   const getMaxWidth = () => {
@@ -109,71 +109,67 @@ export default function AuthLayout() {
           <div className={`w-full ${getMaxWidth()}`}>
             {/* Tarjeta principal del formulario */}
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 overflow-hidden transform hover:scale-[1.01] transition-all duration-200">
-
-              {/* Navegación de pestañas login/register dentro de la card */}
-              {(isLoginPage || isRegisterPage) && (
-                <div className="flex justify-center border-b border-gray-200/50 bg-white/60 backdrop-blur-sm">
-                  <nav className="flex space-x-2 p-2">
-                    <NavLink
-                      to="/auth/login"
-                      className={({ isActive }) =>
-                        `flex items-center space-x-2 px-6 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${
-                          isActive
-                            ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md transform scale-105'
-                            : 'text-gray-600 hover:text-gray-900 hover:bg-white/80 hover:shadow-md hover:scale-105'
-                        }`
-                      }
-                    >
-                      <User className="h-4 w-4" />
-                      <span>Iniciar Sesión</span>
-                    </NavLink>
-                    
-                    {/* Solo mostrar pestaña de registro si está habilitado */}
-                    {allowSelfRegistration && (
-                      <NavLink
-                        to="/auth/register"
-                        className={({ isActive }) =>
-                          `flex items-center space-x-2 px-6 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${
-                            isActive
-                              ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-md transform scale-105'
-                              : 'text-gray-600 hover:text-gray-900 hover:bg-white/80 hover:shadow-md hover:scale-105'
-                          }`
-                        }
-                      >
-                        <UserPlus className="h-4 w-4" />
-                        <span>Registrarse</span>
-                      </NavLink>
-                    )}
-                  </nav>
+              {tenant?.config?.logoPath && (
+                <div className="bg-white/90 backdrop-blur-sm border-b border-gray-200/50 py-6 px-8">
+                  <div className="flex justify-center">
+                    <img
+                      src={safeEncodeURI(tenant.config.logoPath)}
+                      alt={`Logo de ${tenant.name || 'la organización'}`}
+                      className="h-16 w-auto object-contain"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                  {/* {tenant.name && (
+                    <h1 className="text-center mt-3 text-xl font-semibold text-gray-800">
+                      {tenant.name}
+                    </h1>
+                  )} */}
                 </div>
               )}
-
-              {/* Header de la tarjeta */}
-              <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-8 py-4 border-b border-gray-200/50 text-center">
-                <h2 className="text-xl font-bold text-gray-900">
-                  {isLoginPage ? 'Iniciar Sesión' :
-                    isRegisterPage ? 'Crear Cuenta' :
-                    isForgotPasswordPage ? 'Recuperar Contraseña' :
-                    isResetPasswordPage ? 'Nueva Contraseña' :
-                    'Autenticación'}
-                </h2>
-                <p className="text-sm text-gray-600 mt-1">
-                  {isLoginPage ? 'Ingresa tus credenciales' :
-                    isRegisterPage ? 'Completa tu información' :
-                    isForgotPasswordPage ? 'Ingresa tu correo electrónico' :
-                    isResetPasswordPage ? 'Crea una contraseña segura' :
-                    'Portal de acceso'}
-                </p>
-              </div>
 
               {/* Contenido del formulario */}
               <div className={`${isRegisterPage ? 'p-6' : 'p-8'} bg-white/60 backdrop-blur-sm`}>
                 <Outlet />
               </div>
+
+              {/* Footer dentro de la tarjeta */}
+              <div className="flex items-center justify-between text-sm px-6 py-4 border-t border-gray-200/50 bg-white/70 backdrop-blur-sm">
+                <div className="flex items-center space-x-2">
+                  <span className="font-medium text-gray-700">
+                    © {new Date().getFullYear()} Windows Channel
+                  </span>
+                </div>
+                <div className="flex space-x-6">
+                  {/* <a
+                    href="/help/auth"
+                    className="text-gray-600 hover:text-blue-600 transition-colors font-medium hover:underline"
+                  >
+                    Ayuda
+                  </a> */}
+                  <a
+                    href="/privacy"
+                    className="text-gray-600 hover:text-blue-600 transition-colors font-medium hover:underline"
+                  >
+                    Privacidad
+                  </a>
+                  <a
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setShowTerms(true);
+                    }}
+                    className="text-gray-600 hover:text-blue-600 transition-colors font-medium hover:underline"
+                  >
+                    Términos
+                  </a>
+                </div>
+              </div>
             </div>
 
-            {/* Enlaces adicionales - Solo mostrar si NO es página de registro para evitar duplicación */}
-            {!isRegisterPage && (
+            {/* Enlaces adicionales - Solo mostrar si NO es página de registro */}
+            {/* {!isRegisterPage && (
               <div className="mt-6 text-center">
                 <div className="bg-white rounded-xl p-4 shadow-md border border-gray-200/50">
                   {isLoginPage && (
@@ -184,8 +180,6 @@ export default function AuthLayout() {
                       >
                         ¿Olvidaste tu contraseña?
                       </NavLink>
-                      
-                      {/* Solo mostrar enlace de registro si está habilitado */}
                       {allowSelfRegistration && (
                         <div className="text-sm text-gray-600">
                           ¿No tienes cuenta?{' '}
@@ -213,13 +207,30 @@ export default function AuthLayout() {
                   )}
                 </div>
               </div>
-            )}
+            )} */}
           </div>
         </div>
+
+        {/* Footer global del formulario */}
+        {/* <footer className="mt-12 text-center text-sm text-gray-500">
+          <p>
+            Desarrollado con 💙 por <span className="font-medium text-blue-600">Windows Channel</span>
+          </p>
+          <p className="mt-1">
+            <a href="/about" className="hover:text-blue-600 transition-colors hover:underline">
+              Sobre Nosotros
+            </a>{' '}
+            •{' '}
+            <a href="/contact" className="hover:text-blue-600 transition-colors hover:underline">
+              Contacto
+            </a>
+          </p>
+        </footer> */}
       </main>
 
+
       {/* Footer del módulo */}
-      <footer className="bg-white/80 backdrop-blur-sm border-t border-gray-200/50 shadow-lg relative" style={{ zIndex: 1 }}>
+      {/* <footer className="bg-white/80 backdrop-blur-sm border-t border-gray-200/50 shadow-lg relative" style={{ zIndex: 1 }}>
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center space-x-2">
@@ -257,7 +268,7 @@ export default function AuthLayout() {
           </div>
         </div>
       </footer>
-      
+       */}
       {/* Modal de términos del layout - con z-index alto para evitar conflictos */}
       <Modal
         title="Términos y condiciones"

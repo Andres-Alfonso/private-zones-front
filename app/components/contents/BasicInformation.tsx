@@ -24,7 +24,7 @@ interface FormErrors {
 interface BasicInformationProps {
   formData: ContentFormData;
   onFormChange: (field: string, value: any) => void;
-  courses: CourseBasic[];
+  courses: CourseBasic[] | { error: string };
   errors: FormErrors;
 }
 
@@ -85,7 +85,7 @@ export const BasicInformation = ({
       </div>
 
       {/* Curso */}
-      <div>
+      {/* <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Curso de Destino *
         </label>
@@ -97,7 +97,8 @@ export const BasicInformation = ({
           }`}
         >
           <option value="">Selecciona un curso</option>
-          {courses.map((course) => (
+          {Array.isArray(courses) &&
+          courses.map((course: CourseBasic) => (
             <option key={course.id} value={course.id}>
               {course.translations[0].title}
             </option>
@@ -109,7 +110,7 @@ export const BasicInformation = ({
             <span>{errors.courseId}</span>
           </div>
         )}
-      </div>
+      </div> */}
     </div>
   );
 };

@@ -49,12 +49,12 @@ function TenantsLayoutContent() {
       icon: Grid,
       active: isIndexPage
     },
-    {
-      name: 'Estadísticas',
-      href: '/tenants/stats',
-      icon: BarChart3,
-      active: isStatsPage
-    }
+    // {
+    //   name: 'Estadísticas',
+    //   href: '/tenants/stats',
+    //   icon: BarChart3,
+    //   active: isStatsPage
+    // }
   ];
 
   // Navegación administrativa

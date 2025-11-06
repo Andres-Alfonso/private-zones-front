@@ -57,7 +57,7 @@ export default function Header() {
         
         {/* Contenido del header */}
         <div className="relative">
-          <div className="container mx-auto px-4 lg:px-8">
+          <div className="w-full px-4 lg:px-6">
             <div className="flex items-center justify-between h-16">
               
               {/* Logo y nombre de la app */}
@@ -264,7 +264,7 @@ export default function Header() {
           isMobileMenuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'
         }`}>
           <div className="bg-[#484848]/98 backdrop-blur-xl border-b border-white/10">
-            <div className="container mx-auto px-4 py-6">
+            <div className="w-full px-4 py-6">
               <div className="grid grid-cols-2 gap-3">
                 <MobileNavLink 
                   to="/courses" 

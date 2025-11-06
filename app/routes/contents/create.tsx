@@ -93,7 +93,7 @@ interface FormErrors {
 // };
 
 type LoaderData = {
-  coursesResult: CourseBasic[];
+  coursesResult: CourseBasic[] | { error: string };
   course: string | null;
 }
 
@@ -298,7 +298,6 @@ export default function CreateContent() {
   // Determinar si el formulario es válido
   const isValid = formData.title && 
                  formData.contentType && 
-                 formData.courseId && 
                  (formData.contentUrl || selectedFile);
 
   // Manejar cambios en el formulario
@@ -340,7 +339,13 @@ export default function CreateContent() {
   };
 
   // Encontrar curso seleccionado
-  const selectedCourse = coursesResult.find(course => course.id === formData.courseId);
+  let selectedCourse: CourseBasic | undefined = undefined;
+
+  if (Array.isArray(coursesResult)) {
+    selectedCourse = coursesResult.find(
+      (course: CourseBasic) => course.id === formData.courseId
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">

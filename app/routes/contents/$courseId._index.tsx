@@ -197,16 +197,15 @@ export const loader: LoaderFunction = async ({ request, params }) => {
       search: url.searchParams.get('search') || '',
       contentType: url.searchParams.get('contentType') || '',
       page: parseInt(url.searchParams.get('page') || '1'),
-      limit: parseInt(url.searchParams.get('limit') || ''),
+      limit: parseInt(url.searchParams.get('limit') || '12'),
     };
 
     const authenticatedApiClient = createApiClientFromRequest(request);
     
-    // 🔥 USAR LA API REAL (reemplaza todo el mock data)
     const apiResponse = await ContentAPI.getAllContents(courseId, filters, authenticatedApiClient);
 
     return json({
-      contents: apiResponse, // Ahora incluye { data: [], pagination: { ... } }
+      contents: apiResponse,
       contentTypes: ['video', 'document', 'image', 'embed', 'scorm'],
       courseId,
       error: null

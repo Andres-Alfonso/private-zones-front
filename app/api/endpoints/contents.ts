@@ -88,6 +88,7 @@ export const ContentAPI = {
     async getById(
         contentId: string,
         options?: GetContentOptions,
+        fromModule?: boolean,
         client?: AxiosInstance
     ): Promise<ContentResponse> {
         const apiClientToUse = client || apiClient;

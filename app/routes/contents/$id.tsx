@@ -348,7 +348,7 @@ export const loader = async ({ params, request }: LoaderFunctionArgs) => {
     }
 
     const authenticatedApiClient = createApiClientFromRequest(request);
-    const content = await ContentAPI.getById(contentId, undefined, authenticatedApiClient);
+    const content = await ContentAPI.getById(contentId, undefined, false, authenticatedApiClient);
     
     if (!content) {
       throw new Response("Contenido no encontrado", { 
@@ -377,6 +377,7 @@ export default function ContentDetails() {
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto">
+
         <div className="py-4">
             <div className="flex items-center justify-between">
                 <NavLink
@@ -457,31 +458,34 @@ export default function ContentDetails() {
       </div> */}
 
       {/* Información del módulo y curso */}
-      <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/60 p-6 hover:bg-white/90 hover:shadow-xl transition-all duration-300">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Módulo</h3>
-            <p className="text-gray-600">{content.module.title}</p>
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Curso</h3>
-            <p className="text-gray-600">{content.course.title}</p>
-          </div>
-        </div>
-        
-        <div className="mt-6 pt-4 border-t border-gray-200/30">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-500">
-            <div className="flex items-center space-x-2">
-              <Calendar className="h-4 w-4" />
-              <span>Creado: {new Date(content.metadata.createdAt).toLocaleDateString()}</span>
+
+      {content?.module && (
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/60 p-6 hover:bg-white/90 hover:shadow-xl transition-all duration-300">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Módulo</h3>
+              <p className="text-gray-600">{content.module.title}</p>
             </div>
-            <div className="flex items-center space-x-2">
-              <Calendar className="h-4 w-4" />
-              <span>Actualizado: {new Date(content.metadata.updatedAt).toLocaleDateString()}</span>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Curso</h3>
+              <p className="text-gray-600">{content.course.title}</p>
             </div>
           </div>
+          
+          <div className="mt-6 pt-4 border-t border-gray-200/30">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-500">
+              <div className="flex items-center space-x-2">
+                <Calendar className="h-4 w-4" />
+                <span>Creado: {new Date(content.metadata.createdAt).toLocaleDateString()}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Calendar className="h-4 w-4" />
+                <span>Actualizado: {new Date(content.metadata.updatedAt).toLocaleDateString()}</span>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

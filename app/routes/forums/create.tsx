@@ -47,6 +47,13 @@ export const loader: LoaderFunction = async ({ request }) => {
     const urlParams = new URLSearchParams(url.search);
     const courseId = urlParams.get('course');
 
+    if(courseId == null){
+      throw new Response("Error interno del servidor", { 
+        status: 500,
+        statusText: "Internal Server Error"
+      });
+    }
+
     return json<LoaderData>({ courseId: courseId || null });
     
   } catch (error) {
@@ -69,7 +76,7 @@ export const action: ActionFunction = async ({ request }) => {
   try {
     const url = new URL(request.url);
     const urlParams = new URLSearchParams(url.search);
-    const courseId = urlParams.get('course');
+    const courseId = urlParams.get('course') ?? 'not_id';
 
     // Obtener datos del formulario
     const title = formData.get('title') as string;
@@ -125,6 +132,7 @@ export const action: ActionFunction = async ({ request }) => {
       isPinned,
       expirationDate: expirationDate ? new Date(expirationDate) : undefined,
       tags: tags.length > 0 ? tags : undefined,
+      courseId: courseId
     };
 
     // Simular delay de creación

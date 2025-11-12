@@ -5,6 +5,7 @@ import apiClient from '~/api/client';
 import ProfileHeader from './ProfileHeader';
 import ProfileInfo from './ProfileInfo';
 import ProfileEditForm from './ProfileEditForm';
+import PasswordChangeModal from './PasswordChangeModal';
 import { ProfileData } from '../../api/types/user.types';
 
 export default function ProfileContent() {
@@ -14,6 +15,7 @@ export default function ProfileContent() {
     const [error, setError] = useState<string | null>(null);
     const [isEditing, setIsEditing] = useState(false);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
     // Cargar datos del perfil
     useEffect(() => {
@@ -88,28 +90,51 @@ export default function ProfileContent() {
                     <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 overflow-hidden mb-6">
                         {/* Header con información del usuario */}
                         <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-8 py-6">
-                            <div className="flex items-center space-x-4">
-                                <div className="h-20 w-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                                    <div className="text-white text-2xl font-bold">
-                                        {profileData.name.charAt(0)}{profileData.lastName.charAt(0)}
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-4">
+                                    <div className="h-20 w-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                                        <div className="text-white text-2xl font-bold">
+                                            {profileData.name.charAt(0)}{profileData.lastName.charAt(0)}
+                                        </div>
+                                    </div>
+                                    <div className="text-white">
+                                        <h2 className="text-2xl font-bold">
+                                            {profileData.name} {profileData.lastName}
+                                        </h2>
+                                        <p className="text-blue-100">{profileData.email}</p>
+                                        <div className="flex gap-2 mt-2">
+                                            {profileData.roles.map((role) => (
+                                                <span
+                                                    key={role.id}
+                                                    className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-medium"
+                                                >
+                                                    {role.name}
+                                                </span>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="text-white">
-                                    <h2 className="text-2xl font-bold">
-                                        {profileData.name} {profileData.lastName}
-                                    </h2>
-                                    <p className="text-blue-100">{profileData.email}</p>
-                                    <div className="flex gap-2 mt-2">
-                                        {profileData.roles.map((role) => (
-                                            <span
-                                                key={role.id}
-                                                className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-medium"
-                                            >
-                                                {role.name}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
+                                
+                                {/* Botón para cambiar contraseña */}
+                                <button
+                                    onClick={() => setIsPasswordModalOpen(true)}
+                                    className="px-4 py-2 bg-white/20 backdrop-blur-sm text-white rounded-lg hover:bg-white/30 transition-colors text-sm font-medium flex items-center gap-2 border border-white/30"
+                                >
+                                    <svg 
+                                        className="w-4 h-4" 
+                                        fill="none" 
+                                        stroke="currentColor" 
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path 
+                                            strokeLinecap="round" 
+                                            strokeLinejoin="round" 
+                                            strokeWidth={2} 
+                                            d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" 
+                                        />
+                                    </svg>
+                                    Cambiar Contraseña
+                                </button>
                             </div>
                         </div>
 
@@ -152,6 +177,16 @@ export default function ProfileContent() {
                     )}
                 </div>
             </div>
+
+            {/* Modal de cambio de contraseña */}
+            <PasswordChangeModal
+                isOpen={isPasswordModalOpen}
+                onClose={() => setIsPasswordModalOpen(false)}
+                onSuccess={() => {
+                    setSuccessMessage('Contraseña cambiada exitosamente');
+                    setTimeout(() => setSuccessMessage(null), 3000);
+                }}
+            />
         </div>
     );
 }

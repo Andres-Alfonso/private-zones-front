@@ -1,5 +1,6 @@
 // app/api/endpoints/users.ts
 
+import { AxiosInstance } from 'axios';
 import apiClient from '../client';
 import { API_CONFIG } from '../config';
 import { 
@@ -14,6 +15,24 @@ import {
   BackendUser
 } from '../types/user.types';
 
+export interface ChangePasswordDto {
+  oldPass: string;
+  newPass: string;
+  confirmPass: string;
+}
+
+export interface ChangePasswordResponse {
+  success: boolean;
+  message: string;
+}
+
+export interface PasswordChangeError {
+  message: string;
+  code?: string;
+  field?: string;
+  statusCode?: number;
+}
+
 export const USERS_ENDPOINTS = {
   BASE: '/v1/users',
   BY_ID: (id: string) => `/v1/users/${id}`,
@@ -24,6 +43,7 @@ export const USERS_ENDPOINTS = {
   ASSIGN_ROLES: (id: string) => `/v1/users/${id}/roles`,
   ACTIVITIES: (id: string) => `/v1/users/${id}/activities`,
   SESSIONS: (id: string) => `/v1/users/${id}/sessions`,
+  CHANGE_PASSWORD_PROFILE: '/v1/users/change-password',
   BULK_ACTIONS: '/v1/users/bulk',
   EXPORT: '/v1/users/export',
   STATS: '/v1/users/stats',
@@ -108,6 +128,137 @@ export const UsersAPI = {
       forceChange
     });
     return response.data;
+  },
+
+  async changePasswordProfile(
+    data: ChangePasswordDto,
+    client?: AxiosInstance
+  ): Promise<ChangePasswordResponse> {
+    const apiClientToUse = client || apiClient;
+    
+    try {
+      const response = await apiClientToUse.post<ChangePasswordResponse>(
+        USERS_ENDPOINTS.CHANGE_PASSWORD_PROFILE,
+        data
+      );
+      return response.data;
+    } catch (error: any) {
+      // Manejar diferentes tipos de errores
+      
+      // 1. Error de respuesta del servidor (4xx, 5xx)
+      if (error.response) {
+        const status = error.response.status;
+        const backendMessage = error.response.data?.message;
+        const backendError = error.response.data?.error;
+        const backendErrors = error.response.data?.errors; // Para errores de validación múltiples
+
+        // Errores específicos según el código de estado
+        switch (status) {
+          case 400:
+            // Bad Request - Error de validación
+            if (backendErrors && Array.isArray(backendErrors)) {
+              // Si hay múltiples errores de validación
+              const errorMessages = backendErrors.map((err: any) => err.message || err).join(', ');
+              throw {
+                message: errorMessages || 'Los datos ingresados no son válidos',
+                code: 'VALIDATION_ERROR',
+                statusCode: 400,
+                details: backendErrors
+              } as PasswordChangeError;
+            }
+            throw {
+              message: backendMessage || backendError || 'Los datos ingresados no son válidos',
+              code: 'BAD_REQUEST',
+              statusCode: 400
+            } as PasswordChangeError;
+
+          case 401:
+            // Unauthorized - Contraseña actual incorrecta
+            throw {
+              message: backendMessage || 'La contraseña actual es incorrecta',
+              code: 'INVALID_CURRENT_PASSWORD',
+              field: 'oldPass',
+              statusCode: 401
+            } as PasswordChangeError;
+
+          case 403:
+            // Forbidden
+            throw {
+              message: backendMessage || 'No tienes permisos para realizar esta acción',
+              code: 'FORBIDDEN',
+              statusCode: 403
+            } as PasswordChangeError;
+
+          case 404:
+            // Not Found
+            throw {
+              message: backendMessage || 'Usuario no encontrado',
+              code: 'USER_NOT_FOUND',
+              statusCode: 404
+            } as PasswordChangeError;
+
+          case 422:
+            // Unprocessable Entity - Validación fallida
+            throw {
+              message: backendMessage || 'La nueva contraseña no cumple con los requisitos de seguridad',
+              code: 'INVALID_PASSWORD_FORMAT',
+              field: 'newPass',
+              statusCode: 422
+            } as PasswordChangeError;
+
+          case 429:
+            // Too Many Requests
+            throw {
+              message: backendMessage || 'Demasiados intentos. Por favor, intenta más tarde',
+              code: 'RATE_LIMIT_EXCEEDED',
+              statusCode: 429
+            } as PasswordChangeError;
+
+          case 500:
+          case 502:
+          case 503:
+            // Server Error
+            throw {
+              message: backendMessage || 'Error en el servidor. Por favor, intenta más tarde',
+              code: 'SERVER_ERROR',
+              statusCode: status
+            } as PasswordChangeError;
+
+          default:
+            // Otros errores del servidor
+            throw {
+              message: backendMessage || backendError || 'Error al cambiar la contraseña',
+              code: 'UNKNOWN_SERVER_ERROR',
+              statusCode: status
+            } as PasswordChangeError;
+        }
+      }
+
+      // 2. Error de red (sin respuesta del servidor)
+      if (error.request) {
+        throw {
+          message: 'No se pudo conectar con el servidor. Verifica tu conexión a internet',
+          code: 'NETWORK_ERROR',
+          statusCode: 0
+        } as PasswordChangeError;
+      }
+
+      // 3. Error en la configuración de la petición
+      if (error.message) {
+        throw {
+          message: `Error en la petición: ${error.message}`,
+          code: 'REQUEST_ERROR',
+          statusCode: 0
+        } as PasswordChangeError;
+      }
+
+      // 4. Error desconocido
+      throw {
+        message: 'Ocurrió un error inesperado. Por favor, intenta nuevamente',
+        code: 'UNKNOWN_ERROR',
+        statusCode: 0
+      } as PasswordChangeError;
+    }
   },
 
   // Resetear contraseña

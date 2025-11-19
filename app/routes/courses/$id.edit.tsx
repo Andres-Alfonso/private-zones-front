@@ -3,7 +3,7 @@
 import { json, redirect, LoaderFunction, ActionFunction } from '@remix-run/node';
 import { useLoaderData, useActionData, Form, useNavigation, useNavigate } from '@remix-run/react';
 import { useState, useEffect } from 'react';
-import { BookOpen, DollarSign, Calendar, Image, AlertCircle, Settings, Users, Palette } from 'lucide-react';
+import { BookOpen, DollarSign, Calendar, Image, AlertCircle, Settings, Users, Palette, Tag } from 'lucide-react';
 import { Course, CourseLevel, UpdateCourseRequest, CourseFormData } from '~/api/types/course.types';
 import { CoursesAPI } from '~/api/endpoints/courses';
 import { RoleGuard } from '~/components/AuthGuard';
@@ -19,6 +19,7 @@ import { CourseImageField } from '~/components/courses/CourseImageField';
 import { CourseFormActions } from '~/components/courses/CourseFormActions';
 import { CourseVisibilityFields } from '~/components/courses/CourseVisibilityFields';
 import { CourseImageFields } from '~/components/courses/CourseImageFields';
+import { CourseAcademicFields } from '~/components/courses/CourseAcademicFields';
 
 interface LoaderData {
   course: Course | null;
@@ -211,9 +212,18 @@ function EditCourseContent() {
         coverImage: course.configuration?.coverImage || "",
         menuImage: course.configuration?.menuImage || "",
         allowSelfEnrollment: course.configuration?.allowSelfEnrollment ? true : false,
+        requiresApproval: course.configuration?.requiresApproval ? true : false,
         enrollmentStartDate: formatDate(course.configuration?.enrollmentStartDate),
         enrollmentEndDate: formatDate(course.configuration?.enrollmentEndDate),
         invitationLink: course.configuration?.invitationLink || "",
+        acronym: course.configuration?.acronym || "",
+        colorTitle: course.configuration?.colorTitle || "#1e40af",
+        order: course.configuration?.order || 0,
+        isActive: course.isActive ?? true,
+        estimatedHours: course.configuration?.estimatedHours || 0,
+        status: course.configuration?.status || 'draft',
+        visibility: course.configuration?.visibility || 'private',
+        code: course.configuration?.code || '',
       });
     }
   }, [course]);
@@ -343,6 +353,19 @@ function EditCourseContent() {
             formData={formData}
             errors={errors}
             categories={categories}
+            isSubmitting={isSubmitting}
+            onChange={handleChange}
+          />
+        </CourseFormSection>
+
+        <CourseFormSection
+          title="Configuración Académica"
+          description="Configura los aspectos académicos y organizacionales"
+          icon={<Tag className="h-6 w-6" />}
+        >
+          <CourseAcademicFields
+            formData={formData}
+            errors={errors}
             isSubmitting={isSubmitting}
             onChange={handleChange}
           />

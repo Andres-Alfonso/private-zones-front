@@ -57,6 +57,12 @@ export default defineConfig({
             // route(":id/edit", "routes/contents/$id.edit.tsx");
           });
 
+          // Rutas de gestion de tareas
+          route("tasks", "routes/tasks/_layout.tsx", () => {
+            route("", "routes/tasks/_index.tsx", { index: true });
+            route("courses/:courseId", "routes/tasks/$courseId._index.tsx");
+          });
+
           // Rutas de gestion de módulos
           route("modules", "routes/modules/_layout.tsx", () => {
             route("", "routes/modules/_index.tsx", { index: true });

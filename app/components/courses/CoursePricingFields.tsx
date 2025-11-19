@@ -25,7 +25,7 @@ export function CoursePricingFields({
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {/* Precio */}
-      <Input
+      {/* <Input
         type="number"
         id="price"
         name="price"
@@ -39,7 +39,7 @@ export function CoursePricingFields({
         value={formData.price || ''}
         onChange={(e) => onChange('price', e.target.value)}
         icon={<DollarSign className="h-5 w-5" />}
-      />
+      /> */}
 
       {/* Máximo estudiantes */}
       <Input

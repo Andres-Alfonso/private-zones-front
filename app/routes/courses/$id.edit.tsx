@@ -3,10 +3,11 @@
 import { json, redirect, LoaderFunction, ActionFunction } from '@remix-run/node';
 import { useLoaderData, useActionData, Form, useNavigation, useNavigate } from '@remix-run/react';
 import { useState, useEffect } from 'react';
-import { BookOpen, DollarSign, Calendar, Image, AlertCircle, Settings } from 'lucide-react';
+import { BookOpen, DollarSign, Calendar, Image, AlertCircle, Settings, Users, Palette } from 'lucide-react';
 import { Course, CourseLevel, UpdateCourseRequest, CourseFormData } from '~/api/types/course.types';
-// import { CoursesAPI } from '~/api/endpoints/courses';
+import { CoursesAPI } from '~/api/endpoints/courses';
 import { RoleGuard } from '~/components/AuthGuard';
+import { createApiClientFromRequest } from '~/api/client';
 
 // Componentes del formulario
 import { CourseFormHeader } from '~/components/courses/CourseFormHeader';
@@ -16,6 +17,8 @@ import { CoursePricingFields } from '~/components/courses/CoursePricingFields';
 import { CourseDateFields } from '~/components/courses/CourseDateFields';
 import { CourseImageField } from '~/components/courses/CourseImageField';
 import { CourseFormActions } from '~/components/courses/CourseFormActions';
+import { CourseVisibilityFields } from '~/components/courses/CourseVisibilityFields';
+import { CourseImageFields } from '~/components/courses/CourseImageFields';
 
 interface LoaderData {
   course: Course | null;
@@ -88,7 +91,7 @@ function validateCourseForm(formData: FormData) {
   };
 }
 
-export const loader: LoaderFunction = async ({ params }) => {
+export const loader: LoaderFunction = async ({ params, request }) => {
   try {
     const courseId = params.id as string;
     
@@ -96,42 +99,11 @@ export const loader: LoaderFunction = async ({ params }) => {
       throw new Error('ID de curso no proporcionado');
     }
 
-    // En producción: const course = await CoursesAPI.getById(courseId);
-    
-    // Datos simulados para edición
-    const mockCourse: Course = {
-      id: courseId,
-      title: 'Introducción a React',
-      description: `Este curso está diseñado para desarrolladores que quieren aprender React desde cero. 
-
-Aprenderás los conceptos fundamentales de React, incluyendo componentes, estado, props, hooks, y el ecosistema de React. Al final del curso, serás capaz de construir aplicaciones web modernas utilizando React.
-
-El curso incluye:
-- Fundamentos de React y su ecosistema
-- Componentes funcionales y de clase  
-- Hooks (useState, useEffect, useContext)
-- Manejo de formularios
-- React Router
-- Estado global con Context API
-- Mejores prácticas
-- Proyecto final`,
-      instructor: 'Juan Pérez',
-      duration: 40,
-      level: CourseLevel.BEGINNER,
-      category: 'Frontend',
-      price: 99.99,
-      thumbnail: 'https://via.placeholder.com/800x400/4F46E5/ffffff?text=React+Course',
-      isActive: true,
-      maxStudents: 50,
-      currentStudents: 23,
-      startDate: '2024-02-01T00:00:00Z',
-      endDate: '2024-04-01T00:00:00Z',
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-01T00:00:00Z'
-    };
+    const requestApiClient = createApiClientFromRequest(request);
+    const course = await CoursesAPI.getById(courseId, requestApiClient);
 
     return json<LoaderData>({ 
-      course: mockCourse, 
+      course: course as any, 
       error: null 
     });
   } catch (error: any) {
@@ -172,7 +144,8 @@ export const action: ActionFunction = async ({ request, params }) => {
       isActive: formData.get('isActive') === 'true',
     };
 
-    // En producción: const course = await CoursesAPI.update(courseId, updateData);
+    const requestApiClient = createApiClientFromRequest(request);
+    const course = await CoursesAPI.update(courseId, updateData, requestApiClient);
     
     return json<ActionData>({ 
       success: true
@@ -207,28 +180,44 @@ function EditCourseContent() {
   const isSubmitting = navigation.state === 'submitting';
   const errors = actionData?.errors || [];
 
+  const [imageFiles, setImageFiles] = useState<{
+    coverImage?: File;
+    menuImage?: File;
+    thumbnailImage?: File;
+  }>({});
+
   // Cargar datos del curso en el formulario
   useEffect(() => {
     if (course) {
-      const formatDate = (dateString: string) => {
-        return new Date(dateString).toISOString().split('T')[0];
+      const translation = course.translations.find(t => t.languageCode === "es") 
+        || course.translations[0];
+
+      const formatDate = (date: Date | string | undefined) => {
+        if (!date) return "";
+        const d = new Date(date);
+        return isNaN(d.getTime()) ? "" : d.toISOString().split("T")[0];
       };
 
       setFormData({
-        title: course.title,
-        description: course.description,
-        instructor: course.instructor,
-        duration: course.duration.toString(),
-        level: course.level,
-        category: course.category,
-        price: course.price.toString(),
-        maxStudents: course.maxStudents.toString(),
-        startDate: formatDate(course.startDate),
-        endDate: formatDate(course.endDate),
-        thumbnail: course.thumbnail || ''
+        title: translation?.title || "",
+        description: translation?.description || "",
+        instructor: course.metadata?.instructor || "",
+        level: course.configuration?.metadata?.level || "",
+        category: course.configuration?.category || "",
+        maxEnrollments: course.configuration?.maxEnrollments || 1500,
+        startDate: formatDate(course.configuration?.startDate),
+        endDate: formatDate(course.configuration?.endDate),
+        thumbnailImage: course.configuration?.thumbnailImage || "",
+        coverImage: course.configuration?.coverImage || "",
+        menuImage: course.configuration?.menuImage || "",
+        allowSelfEnrollment: course.configuration?.allowSelfEnrollment ? true : false,
+        enrollmentStartDate: formatDate(course.configuration?.enrollmentStartDate),
+        enrollmentEndDate: formatDate(course.configuration?.enrollmentEndDate),
+        invitationLink: course.configuration?.invitationLink || "",
       });
     }
   }, [course]);
+
 
   // Redirigir si se actualizó exitosamente
   useEffect(() => {
@@ -243,14 +232,30 @@ function EditCourseContent() {
     setHasChanges(true);
   };
 
+  // Manejar carga de archivos de imagen
+  // const handleImageUpload = (field: string, file: File | null) => {
+  //   if (file) {
+  //     setImageFiles(prev => ({ ...prev, [field]: file }));
+  //     // Crear URL temporal para preview
+  //     const imageUrl = URL.createObjectURL(file);
+  //     handleChange(`${field}Url`, imageUrl);
+  //   } else {
+  //     setImageFiles(prev => ({ ...prev, [field]: undefined }));
+  //     handleChange(`${field}Url`, '');
+  //   }
+  //   setHasChanges(true);
+  // };
+
   // Manejar cancelación
   const handleCancel = () => {
     if (hasChanges) {
       if (confirm('¿Estás seguro de que quieres cancelar? Se perderán todos los cambios.')) {
-        navigate(`/courses/${course?.id}`);
+        // navigate(`/courses/${course?.id}`);
+        navigate(`/courses/manage`);
       }
     } else {
-      navigate(`/courses/${course?.id}`);
+      // navigate(`/courses/${course?.id}`);
+      navigate(`/courses/manage`);
     }
   };
 
@@ -287,7 +292,7 @@ function EditCourseContent() {
         isEditing={true}
         hasChanges={hasChanges}
         isSubmitting={isSubmitting}
-        cancelLink={`/courses/${course.id}`}
+        cancelLink={`/courses/manage`}
       />
 
       {/* Mensajes de estado */}
@@ -344,9 +349,9 @@ function EditCourseContent() {
         </CourseFormSection>
 
         {/* Pricing y capacidad */}
-        <CourseFormSection
-          title="Precio y Capacidad"
-          description="Modifica el precio y número máximo de estudiantes"
+        {/* <CourseFormSection
+          title="Capacidad"
+          description="Número máximo de estudiantes"
           icon={<DollarSign className="h-6 w-6" />}
         >
           <CoursePricingFields
@@ -356,7 +361,7 @@ function EditCourseContent() {
             onChange={handleChange}
             currentStudents={course.currentStudents}
           />
-        </CourseFormSection>
+        </CourseFormSection> */}
 
         {/* Fechas del curso */}
         <CourseFormSection
@@ -372,8 +377,21 @@ function EditCourseContent() {
           />
         </CourseFormSection>
 
-        {/* Imagen del curso */}
         <CourseFormSection
+          title="Configuración de Inscripciones"
+          description="Define cómo los estudiantes pueden inscribirse"
+          icon={<Users className="h-6 w-6" />}
+        >
+          <CourseVisibilityFields
+            formData={formData}
+            errors={errors}
+            isSubmitting={isSubmitting}
+            onChange={handleChange}
+          />
+        </CourseFormSection>
+
+        {/* Imagen del curso */}
+        {/* <CourseFormSection
           title="Imagen del Curso"
           description="Cambia la imagen que representa tu curso"
           icon={<Image className="h-6 w-6" />}
@@ -383,6 +401,55 @@ function EditCourseContent() {
             isSubmitting={isSubmitting}
             onChange={handleChange}
           />
+        </CourseFormSection> */}
+
+        <CourseFormSection
+          title="Imágenes del Curso"
+          description="Sube imágenes atractivas que representen tu curso"
+          icon={<Image className="h-6 w-6" />}
+        >
+          <CourseImageFields
+            formData={formData}
+            isSubmitting={isSubmitting}
+            onChange={handleChange}
+            // onImageUpload={handleImageUpload}
+          />
+        </CourseFormSection>
+
+        <CourseFormSection
+          title="Personalización de Diseño"
+          description="Personaliza los colores y apariencia del curso"
+          icon={<Palette className="h-6 w-6" />}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-3">
+                Color del Título
+              </label>
+              <input
+                type="color"
+                name="colorTitle"
+                value={formData.colorTitle || '#1e40af'}
+                onChange={(e) => handleChange('colorTitle', e.target.value)}
+                className="w-full h-12 rounded-xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-3">
+                Orden de Listado
+              </label>
+              <input
+                type="number"
+                name="order"
+                min="0"
+                value={formData.order || 0}
+                onChange={(e) => handleChange('order', Number(e.target.value))}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/80 backdrop-blur-sm"
+                placeholder="0"
+              />
+            </div>
+          </div>
         </CourseFormSection>
 
         {/* Botones de acción */}

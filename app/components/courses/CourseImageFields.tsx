@@ -53,7 +53,7 @@ export function CourseImageFields({
     description: string; 
     recommendedSize: string; 
   }) => {
-    const imageUrl = formData[`${field}Url`];
+    const imageUrl = formData[field];
     
     return (
       <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-gray-200/50 shadow-sm">

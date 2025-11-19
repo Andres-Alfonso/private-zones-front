@@ -11,7 +11,7 @@ interface CourseDateFieldsProps {
 
 export function CourseDateFields({ 
   formData, 
-  errors, 
+  errors = [],
   isSubmitting, 
   onChange 
 }: CourseDateFieldsProps) {

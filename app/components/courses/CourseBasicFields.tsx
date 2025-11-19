@@ -82,6 +82,7 @@ export function CourseBasicFields({
             <input
               type="text"
               value={formData.title || ''}
+              name="title"
               onChange={(e) => handleFieldChange('title', e.target.value)}
               placeholder="Introducción a React - Construye interfaces modernas"
               className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
@@ -102,6 +103,7 @@ export function CourseBasicFields({
             <input
               type="text"
               value={formData.titleEn || ''}
+              name="titleEn"
               onChange={(e) => handleFieldChange('titleEn', e.target.value)}
               placeholder="Introduction to React - Build Modern Interfaces"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -152,6 +154,7 @@ export function CourseBasicFields({
             </label>
             <input
               type="text"
+              name="tagsEs"
               value={formData.tagsEs || ''}
               onChange={(e) => handleFieldChange('tagsEs', e.target.value)}
               placeholder="react, javascript, frontend, desarrollo web"
@@ -167,6 +170,7 @@ export function CourseBasicFields({
             <input
               type="text"
               value={formData.tagsEn || ''}
+              name="tagsEn"
               onChange={(e) => handleFieldChange('tagsEn', e.target.value)}
               placeholder="react, javascript, frontend, web development"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"

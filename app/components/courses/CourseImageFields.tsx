@@ -70,6 +70,7 @@ export function CourseImageFields({
         {imageUrl && (
           <div className="relative mb-4 group">
             <img 
+              // name={field}
               src={imageUrl} 
               alt={`Preview ${title}`}
               className="w-full h-48 object-cover rounded-xl border-2 border-gray-200"
@@ -98,6 +99,7 @@ export function CourseImageFields({
           <label className="block">
             <input
               id={`${field}File`}
+              name={`${field}Url`}
               type="file"
               accept="image/*"
               onChange={(e) => handleFileUpload(field, e)}

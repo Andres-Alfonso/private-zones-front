@@ -4,7 +4,7 @@ import { json, redirect, LoaderFunction, ActionFunction } from '@remix-run/node'
 import { useLoaderData, useActionData, Form, useNavigation, useNavigate } from '@remix-run/react';
 import { useState, useEffect } from 'react';
 import { BookOpen, DollarSign, Calendar, Image, AlertCircle, Settings, Users, Palette, Tag } from 'lucide-react';
-import { Course, CourseLevel, UpdateCourseRequest, CourseFormData } from '~/api/types/course.types';
+import { Course, CourseLevel, UpdateCourseRequest, CourseFormData, CourseVisibility, CourseStatus } from '~/api/types/course.types';
 import { CoursesAPI } from '~/api/endpoints/courses';
 import { RoleGuard } from '~/components/AuthGuard';
 import { createApiClientFromRequest } from '~/api/client';
@@ -42,10 +42,11 @@ function validateCourseForm(formData: FormData) {
   const duration = formData.get('duration') as string;
   const category = formData.get('category') as string;
   const price = formData.get('price') as string;
-  const maxStudents = formData.get('maxStudents') as string;
+  const maxStudents = formData.get('maxEnrollments') as string;
   const startDate = formData.get('startDate') as string;
   const endDate = formData.get('endDate') as string;
-
+  
+  console.log(formData);
   if (!title || title.trim().length < 5) {
     errors.push({ field: 'title', message: 'El título debe tener al menos 5 caracteres' });
   }
@@ -54,21 +55,21 @@ function validateCourseForm(formData: FormData) {
     errors.push({ field: 'description', message: 'La descripción debe tener al menos 20 caracteres' });
   }
 
-  if (!instructor || instructor.trim().length < 2) {
-    errors.push({ field: 'instructor', message: 'El instructor es obligatorio' });
-  }
+  // if (!instructor || instructor.trim().length < 2) {
+  //   errors.push({ field: 'instructor', message: 'El instructor es obligatorio' });
+  // }
 
-  if (!duration || isNaN(Number(duration)) || Number(duration) <= 0) {
-    errors.push({ field: 'duration', message: 'La duración debe ser un número mayor a 0' });
-  }
+  // if (!duration || isNaN(Number(duration)) || Number(duration) <= 0) {
+  //   errors.push({ field: 'duration', message: 'La duración debe ser un número mayor a 0' });
+  // }
 
-  if (!category || category.trim().length < 2) {
-    errors.push({ field: 'category', message: 'La categoría es obligatoria' });
-  }
+  // if (!category || category.trim().length < 2) {
+  //   errors.push({ field: 'category', message: 'La categoría es obligatoria' });
+  // }
 
-  if (!price || isNaN(Number(price)) || Number(price) < 0) {
-    errors.push({ field: 'price', message: 'El precio debe ser un número válido' });
-  }
+  // if (!price || isNaN(Number(price)) || Number(price) < 0) {
+  //   errors.push({ field: 'price', message: 'El precio debe ser un número válido' });
+  // }
 
   if (!maxStudents || isNaN(Number(maxStudents)) || Number(maxStudents) <= 0) {
     errors.push({ field: 'maxStudents', message: 'El número máximo de estudiantes debe ser mayor a 0' });
@@ -138,11 +139,31 @@ export const action: ActionFunction = async ({ request, params }) => {
       level: formData.get('level') as CourseLevel,
       category: formData.get('category') as string,
       price: Number(formData.get('price')),
-      maxStudents: Number(formData.get('maxStudents')),
+      maxEnrollments: Number(formData.get('maxEnrollments')),
       startDate: formData.get('startDate') as string,
       endDate: formData.get('endDate') as string,
-      thumbnail: formData.get('thumbnail') as string || undefined,
-      isActive: formData.get('isActive') === 'true',
+      thumbnailImageUrl: (formData.get('thumbnailImageUrl') as string) || undefined,
+      coverImageUrl: (formData.get('coverImageUrl') as string) || undefined,
+      menuImageUrl: (formData.get('menuImageUrl') as string) || undefined,
+      isActive: formData.get('isActive') === 'on',
+      allowSelfEnrollment: formData.get('allowSelfEnrollment') === 'on',
+      requiresApproval: formData.get('requiresApproval') === 'on',
+
+      enrollmentStartDate: formData.get('enrollmentStartDate') as string,
+      enrollmentEndDate: formData.get('enrollmentEndDate') as string,
+      invitationLink: formData.get('invitationLink') as string,
+      acronym: formData.get('acronym') as string,
+      colorTitle: formData.get('colorTitle') as string,
+      order: Number(formData.get('order')),
+      estimatedHours: Number(formData.get('estimatedHours')),
+      status: formData.get('status') as CourseStatus,
+      visibility: formData.get('visibility') as CourseVisibility,
+      code: (formData.get('code') as string) || undefined,
+
+      titleEn: (formData.get('titleEn') as string) || undefined,
+      tagsEs: (formData.get('tagsEs') as string) || undefined,
+      tagsEn: (formData.get('tagsEn') as string) || undefined,
+      subcategory: (formData.get('subcategory') as string) || undefined,
     };
 
     const requestApiClient = createApiClientFromRequest(request);
@@ -154,7 +175,10 @@ export const action: ActionFunction = async ({ request, params }) => {
     
   } catch (error: any) {
     console.error('Error updating course:', error);
-    
+
+    console.error("BACKEND ERROR:", error.response?.data);
+    console.error("BACKEND ERROR MESSAGES:", error.response?.data?.message);
+
     return json<ActionData>({ 
       generalError: error.message || 'Error al actualizar el curso'
     }, { status: 500 });
@@ -232,7 +256,8 @@ function EditCourseContent() {
   // Redirigir si se actualizó exitosamente
   useEffect(() => {
     if (actionData?.success) {
-      navigate(`/courses/${course?.id}`);
+      // navigate(`/courses/${course?.id}`);
+      navigate(`/courses/manage`);
     }
   }, [actionData, navigate, course?.id]);
 

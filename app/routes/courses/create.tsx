@@ -69,9 +69,9 @@ function validateCourseForm(formData: FormData) {
     errors.push({ field: 'acronym', message: 'Las siglas no pueden exceder 10 caracteres' });
   }
 
-  if (estimatedHours && (isNaN(Number(estimatedHours)) || Number(estimatedHours) <= 0)) {
-    errors.push({ field: 'estimatedHours', message: 'Las horas estimadas deben ser un número mayor a 0' });
-  }
+  // if (estimatedHours && (isNaN(Number(estimatedHours)) || Number(estimatedHours) <= 0)) {
+  //   errors.push({ field: 'estimatedHours', message: 'Las horas estimadas deben ser un número mayor a 0' });
+  // }
 
   // Validaciones de fechas
   const startDate = formData.get('startDate') as string;

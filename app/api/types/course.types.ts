@@ -345,6 +345,8 @@ export interface CourseFormData {
   tagsEn?: string;
   keywordsEs?: string;
   keywordsEn?: string;
+
+  isActive: boolean;
 }
 
 export interface CourseValidationError {

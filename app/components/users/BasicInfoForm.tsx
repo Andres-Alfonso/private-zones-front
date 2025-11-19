@@ -158,7 +158,7 @@ export default function BasicInfoForm({
           </div>
 
           {/* Tenant */}
-          <div>
+          {/* <div>
             <label htmlFor="tenantId" className="block text-sm font-medium text-gray-700 mb-2">
               <Building2 className="h-4 w-4 inline mr-1" />
               Cliente *
@@ -186,7 +186,7 @@ export default function BasicInfoForm({
                 {errors.tenantId}
               </p>
             )}
-          </div>
+          </div> */}
 
           {/* Estado */}
           <div>

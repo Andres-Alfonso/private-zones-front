@@ -8,6 +8,7 @@ import { UsersAPI } from "~/api/endpoints/users";
 import { BackendUser, EditLoaderData, userToFormData } from "~/api/types/user.types";
 import UserForm from "~/components/users/UserForm";
 import type { LoaderData, ActionData, UserFormData } from "~/components/users/types/user-form.types";
+import { useTenant } from "~/context/TenantContext";
 
 export const meta: MetaFunction = () => {
   return [
@@ -77,6 +78,9 @@ export const action: ActionFunction = async ({ request, params }) => {
   const formData = await request.formData();
   const data = Object.fromEntries(formData);
 
+  const { state: tenantState } = useTenant();
+  const { tenant } = tenantState;
+
   if (!userId) {
     throw new Response("Usuario no encontrado", { status: 404 });
   }
@@ -117,7 +121,7 @@ export const action: ActionFunction = async ({ request, params }) => {
       email: String(data.email),
       name: String(data.name),
       lastName: String(data.lastName),
-      tenantId: String(data.tenantId),
+      tenantId: tenant?.id,
       isActive: data.isActive === 'true',
       roleIds: roles.map(r => String(r)),
 

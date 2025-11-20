@@ -63,7 +63,7 @@ export default function SectionsSection({ sections, textColor }: SectionsSection
                 {sections.data.slice(0, 8).map((section: any) => (
                     <Link 
                         key={section.id} 
-                        to={`/sections/${section.id}`}
+                        to={`/home/sections/${section.id}`}
                         className="group block bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200/50 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] hover:border-blue-200"
                     >
                         {/* Thumbnail */}

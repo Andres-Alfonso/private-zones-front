@@ -201,8 +201,7 @@ export default function SectionDetail() {
 
                     <button
                         onClick={() => navigate('/home')}
-                        className="flex items-center space-x-2 px-4 py-2 my-4 rounded-xl text-sm font-medium duration-200 bg-white/80 hover:bg-white shadow hover:shadow-md transition-all"
-                        style={{ color: customTextColor }}
+                        className="flex items-center space-x-2 px-4 py-2 my-4 rounded-xl text-sm font-medium duration-200 bg-white hover:bg-white shadow hover:shadow-md transition-all"
                     >
                         <ArrowLeft className="h-4 w-4" />
                         <span>Volver al Inicio</span>
@@ -306,13 +305,11 @@ export default function SectionDetail() {
                                 <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                                 <h3
                                     className="text-xl font-semibold mb-2"
-                                    style={{ color: customTextColor }}
                                 >
                                     No hay cursos disponibles
                                 </h3>
                                 <p
                                     className="opacity-70 mb-6"
-                                    style={{ color: customTextColor }}
                                 >
                                     Esta sección aún no tiene cursos asignados.
                                 </p>

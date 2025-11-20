@@ -607,18 +607,18 @@ export default function ManageTenant() {
     slug: tenant.slug || '',
     domain: tenant.domain || '',
     contactEmail: tenant.contactEmail || '',
-    plan: tenant.plan || TenantPlan.FREE,
-    maxUsers: tenant.maxUsers?.toString() || '5000',
-    storageLimit: tenant.storageLimit?.toString() || '150',
+    plan: tenant.plan || TenantPlan.PRO,
+    maxUsers: tenant.config?.maxUsers?.toString() || '5000',
+    storageLimit: tenant.config?.storageLimit?.toString() || '150',
     billingEmail: tenant.billingEmail || '',
     
-    contactPerson: tenant.contactPerson || '',
-    phone: tenant.phone || '',
-    address: tenant.address || '',
-    url_portal: tenant.url_portal || '',
-    nit: tenant.nit || '',
-    city: tenant.city || '',
-    country: tenant.country || '',
+    contactPerson: tenant.contactInfo?.contactEmail || '',
+    phone: tenant.contactInfo?.phone || '',
+    address: tenant.contactInfo?.address || '',
+    url_portal: tenant.contactInfo?.url_portal || '',
+    nit: tenant.contactInfo?.nit || '',
+    city: tenant.contactInfo?.city || '',
+    country: tenant.contactInfo?.country || '',
 
     backgroundColorNavbar: tenant.componentConfigs[0]?.backgroundColor || '#0052cc',
     textColorNavbar: tenant.componentConfigs[0]?.textColor || '#ffffff',
@@ -645,6 +645,8 @@ export default function ManageTenant() {
     logoAdditionalSettings: JSON.parse(tenant.logoAdditionalSettings || '{}'),
   });
 
+  // console.log('TENANT: ', tenant);
+
   const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false);
   const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
   
@@ -658,24 +660,24 @@ export default function ManageTenant() {
   const debouncedName = useDebounce(formData.name || '', 300);
 
   // Auto-generar slug cuando cambia el nombre
-  useEffect(() => {
-    if (debouncedName === previousNameRef.current) return;
+  // useEffect(() => {
+  //   if (debouncedName === previousNameRef.current) return;
     
-    if (debouncedName && !isSlugManuallyEdited) {
-      const generatedSlug = generateSlugFromName(debouncedName);
+  //   if (debouncedName && !isSlugManuallyEdited) {
+  //     const generatedSlug = generateSlugFromName(debouncedName);
       
-      if (generatedSlug !== formData.slug) {
-        isInternalUpdateRef.current = true;
-        setFormData(prev => ({ ...prev, slug: generatedSlug }));
+  //     if (generatedSlug !== formData.slug) {
+  //       isInternalUpdateRef.current = true;
+  //       setFormData(prev => ({ ...prev, slug: generatedSlug }));
         
-        setTimeout(() => {
-          isInternalUpdateRef.current = false;
-        }, 0);
-      }
-    }
+  //       setTimeout(() => {
+  //         isInternalUpdateRef.current = false;
+  //       }, 0);
+  //     }
+  //   }
     
-    previousNameRef.current = debouncedName;
-  }, [debouncedName, isSlugManuallyEdited, formData.slug]);
+  //   previousNameRef.current = debouncedName;
+  // }, [debouncedName, isSlugManuallyEdited, formData.slug]);
 
   // Validar slug en tiempo real
   useEffect(() => {
@@ -724,18 +726,18 @@ export default function ManageTenant() {
     }
   }, [allErrors]);
 
-  const handleRegenerateSlug = useCallback(() => {
-    if (formData.name) {
-      const newSlug = generateSlugFromName(formData.name);
-      isInternalUpdateRef.current = true;
-      setFormData(prev => ({ ...prev, slug: newSlug }));
-      setIsSlugManuallyEdited(false);
+  // const handleRegenerateSlug = useCallback(() => {
+  //   if (formData.name) {
+  //     const newSlug = generateSlugFromName(formData.name);
+  //     isInternalUpdateRef.current = true;
+  //     setFormData(prev => ({ ...prev, slug: newSlug }));
+  //     setIsSlugManuallyEdited(false);
       
-      setTimeout(() => {
-        isInternalUpdateRef.current = false;
-      }, 0);
-    }
-  }, [formData.name]);
+  //     setTimeout(() => {
+  //       isInternalUpdateRef.current = false;
+  //     }, 0);
+  //   }
+  // }, [formData.name]);
 
   // Lista de países
   const countries = [
@@ -826,7 +828,7 @@ export default function ManageTenant() {
           
           <div className="px-6 py-6 space-y-6">
             {/* Nombre y Slug */}
-            <div className="grid grid-cols-1 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Input
                 type="text"
                 id="name"
@@ -838,6 +840,20 @@ export default function ManageTenant() {
                 placeholder="Ej: Empresa ABC"
                 value={formData.name}
                 onChange={(e) => handleChange('name', e.target.value)}
+              />
+
+              <Input
+                type="text"
+                id="slug"
+                name="slug"
+                label="Slug (identificador único)"
+                required
+                error={getErrorByField('slug')}
+                disabled={true}
+                placeholder="empresa-abc"
+                value={formData.slug || ''}
+                onChange={(e) => handleChange('slug', e.target.value)}
+                helperText="El slug no puede ser modificado después de la creación"
               />
             </div>
 

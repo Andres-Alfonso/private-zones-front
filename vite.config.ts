@@ -23,6 +23,7 @@ export default defineConfig({
 
           route("home", "routes/home/_layout.tsx", () => {
             route("", "routes/home/_index.tsx", { index: true });
+            route("sections/:id", "routes/sections/$id.tsx");
           });
 
           route("courses", "routes/courses/_layout.tsx", () => {
@@ -108,7 +109,7 @@ export default defineConfig({
             route("", "routes/sections/_index.tsx", { index: true });
             route("create", "routes/sections/create.tsx");
             route(":id/edit", "routes/sections/$id.edit.tsx");
-            route(":id", "routes/sections/$id.tsx");
+            // route(":id", "routes/sections/$id.tsx");
           });
         });
       },

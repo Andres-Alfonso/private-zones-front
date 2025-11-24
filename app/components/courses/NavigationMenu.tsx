@@ -5,7 +5,7 @@ const NavigationMenu = ({ course, className = "" }) => {
   const menuItems = [
     { name: 'Contenidos', route: `/contents/course/${course?.id}`, icon: BookOpen, isActive: () => location.pathname.startsWith('/contents/course/') },
     { name: 'Foros', route: `/forums/course/${course?.id}`, icon: MessageSquare, isActive: () => location.pathname.startsWith('/forums/course/') },
-    { name: 'Tareas', route: `/tasks/course/${course?.id}`, icon: FileText, isActive: () => location.pathname.startsWith('/tasks/courses/') },
+    { name: 'Tareas', route: `/tasks/courses/${course?.id}`, icon: FileText, isActive: () => location.pathname.startsWith('/tasks/courses/') },
     { name: 'Evaluaciones', route: `/evaluations/course/${course?.id}`, icon: ClipboardCheck, isActive: () => location.pathname.startsWith('/evaluations/courses/') },
     { name: 'Actividades', route: `/activities/course/${course?.id}`, icon: Sparkles, isActive: () => location.pathname.startsWith('/activities/courses/') },
     { name: 'Módulos', route: `/make/courses/${course?.id || ''}`, icon: Layers, isActive: () => location.pathname.startsWith('/make/courses/') || location.pathname.startsWith('/modules/course/') },

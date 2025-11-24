@@ -108,9 +108,9 @@ export const action: ActionFunction = async ({ request, params }) => {
       url_portal: formData.get('url_portal') as string,
       nit: formData.get('nit') as string,
 
-      backgroundColorNavbar: formData.get('primaryColor') as string || '#0052cc',
-      textColorNavbar: formData.get('secondaryColor') as string || '#ffffff',
-      logoNavbar: formData.get('logo') as string || 'Mi App',
+      backgroundColorNavbar: formData.get('backgroundColorNavbar') as string || '#0052cc',
+      textColorNavbar: formData.get('textColorNavbar') as string || '#ffffff',
+      logoNavbar: formData.get('logoNavbar') as string || 'Mi App',
       showNotifications: formData.get('showNotifications') === 'on',
       showProfile: formData.get('showProfile') === 'on',
       
@@ -286,6 +286,9 @@ export default function ManageTenant() {
   const navigate = useNavigate();
   const params = useParams();
   const [activeTab, setActiveTab] = useState('home');
+
+  const [formData, setFormData] = useState<Partial<TenantFormData>>({});
+  const [hasChanges, setHasChanges] = useState(false);
     
   // Estado separado para cada vista con tipado correcto (inicializado con datos del tenant)
   const [homeSettings, setHomeSettings] = useState<ViewSettings>({
@@ -295,8 +298,8 @@ export default function ManageTenant() {
     backgroundImage: tenant.homeSettings?.backgroundImage || '',
     backgroundColor: tenant.homeSettings?.backgroundColor || '#eff4ff',
     additionalSettings: tenant.homeSettings?.additionalSettings || {
-      allowCoursesHome: false,
-      showPrivateCourses: false,
+      allowCoursesHome: tenant?.homeSettings?.additionalSettings?.allowCoursesHome ?? false,
+      showPrivateCourses: tenant?.homeSettings?.additionalSettings?.showPrivateCourses ?? false,
       allowSectionsHome: false,
       selectedSections: [],
       enableBanner: false,
@@ -449,16 +452,17 @@ export default function ManageTenant() {
   });
 
   // Handlers individuales mejorados
-  const handleHomeChange = (field: string, value: string | boolean | File | any) => {
-    if (field === 'additionalSettings') {
-      setHomeSettings(prev => ({
-        ...prev,
-        additionalSettings: { ...prev.additionalSettings, ...value }
-      }));
-    } else {
-      setHomeSettings(prev => ({ ...prev, [field]: value }));
-    }
-  };
+  // const handleHomeChange = (field: string, value: string | boolean | File | any) => {
+  //   if (field === 'additionalSettings') {
+  //     setHomeSettings(prev => ({
+  //       ...prev,
+  //       additionalSettings: { ...prev.additionalSettings, ...value }
+  //     }));
+  //   } else {
+  //     setHomeSettings(prev => ({ ...prev, [field]: value }));
+  //   }
+  // };
+  
 
   const handleVideoCallChange = (field: string, value: string | boolean | File | any) => {
     if (field === 'additionalSettings') {
@@ -544,6 +548,11 @@ export default function ManageTenant() {
     }
   ];
 
+  const handleHomeChange = (field: string, value: string | boolean | File) => {
+    setHomeSettings(prev => ({ ...prev, [field]: value }));
+    setHasChanges(true);
+  };
+
   const currentConfigTab = configTabs.find(tab => tab.id === configActiveTab);
   const CurrentConfigComponent = currentConfigTab?.component;
 
@@ -602,48 +611,338 @@ export default function ManageTenant() {
   const CurrentComponent = currentTab?.component;
 
   // Inicializar formData con datos del tenant cargado
-  const [formData, setFormData] = useState<Partial<TenantFormData>>({
-    name: tenant.name || '',
-    slug: tenant.slug || '',
-    domain: tenant.domain || '',
-    contactEmail: tenant.contactEmail || '',
-    plan: tenant.plan || TenantPlan.PRO,
-    maxUsers: tenant.config?.maxUsers?.toString() || '5000',
-    storageLimit: tenant.config?.storageLimit?.toString() || '150',
-    billingEmail: tenant.billingEmail || '',
+  // const [formData, setFormData] = useState<Partial<TenantFormData>>({
+  //   name: tenant.name || '',
+  //   slug: tenant.slug || '',
+  //   domain: tenant.domain || '',
+  //   contactEmail: tenant.contactEmail || '',
+  //   plan: tenant.plan || TenantPlan.PRO,
+  //   maxUsers: tenant.config?.maxUsers?.toString() || '5000',
+  //   storageLimit: tenant.config?.storageLimit?.toString() || '150',
+  //   billingEmail: tenant.billingEmail || '',
     
-    contactPerson: tenant.contactInfo?.contactEmail || '',
-    phone: tenant.contactInfo?.phone || '',
-    address: tenant.contactInfo?.address || '',
-    url_portal: tenant.contactInfo?.url_portal || '',
-    nit: tenant.contactInfo?.nit || '',
-    city: tenant.contactInfo?.city || '',
-    country: tenant.contactInfo?.country || '',
+  //   contactPerson: tenant.contactInfo?.contactEmail || '',
+  //   phone: tenant.contactInfo?.phone || '',
+  //   address: tenant.contactInfo?.address || '',
+  //   url_portal: tenant.contactInfo?.url_portal || '',
+  //   nit: tenant.contactInfo?.nit || '',
+  //   city: tenant.contactInfo?.city || '',
+  //   country: tenant.contactInfo?.country || '',
 
-    backgroundColorNavbar: tenant.componentConfigs[0]?.backgroundColor || '#0052cc',
-    textColorNavbar: tenant.componentConfigs[0]?.textColor || '#ffffff',
-    logoNavbar: tenant.config?.logoPath || 'K&LM',
-    showSearch: tenant.showSearch ?? true,
-    showNotifications: tenant.showNotifications ?? true,
-    showProfile: tenant.showProfile ?? true,
+  //   backgroundColorNavbar: tenant.componentConfigs[0]?.backgroundColor || '#0052cc',
+  //   textColorNavbar: tenant.componentConfigs[0]?.textColor || '#ffffff',
+  //   logoNavbar: tenant.config?.logoPath || 'K&LM',
+  //   showSearch: tenant.showSearch ?? true,
+  //   showNotifications: tenant.showNotifications ?? true,
+  //   showProfile: tenant.showProfile ?? true,
     
-    primaryColor: tenant.primaryColor || '#0052cc',
-    secondaryColor: tenant.secondaryColor || '#ffffff',
-    timezone: tenant.timezone || 'America/Bogota',
-    language: tenant.language || 'es',
-    currency: tenant.currency || 'USD',
+  //   primaryColor: tenant.primaryColor || '#0052cc',
+  //   secondaryColor: tenant.secondaryColor || '#ffffff',
+  //   timezone: tenant.timezone || 'America/Bogota',
+  //   language: tenant.language || 'es',
+  //   currency: tenant.currency || 'USD',
 
-    termsEs: tenant.termsEs || '',
-    termsEn: tenant.termsEn || '',
-    privacyEs: tenant.privacyEs || '',
-    privacyEn: tenant.privacyEn || '',
+  //   termsEs: tenant.termsEs || '',
+  //   termsEn: tenant.termsEn || '',
+  //   privacyEs: tenant.privacyEs || '',
+  //   privacyEn: tenant.privacyEn || '',
 
-    faviconPath: tenant.config?.favicon || '',
-    logoPath: tenant.config?.logoPath || '',
-    loginBackgroundPath: tenant.config?.loginBackgroundPath || '',
-    iconPath: tenant.config?.iconPath || '',
-    logoAdditionalSettings: JSON.parse(tenant.logoAdditionalSettings || '{}'),
-  });
+  //   faviconPath: tenant.config?.favicon || '',
+  //   logoPath: tenant.config?.logoPath || '',
+  //   loginBackgroundPath: tenant.config?.loginBackgroundPath || '',
+  //   iconPath: tenant.config?.iconPath || '',
+  //   logoAdditionalSettings: JSON.parse(tenant.logoAdditionalSettings || '{}'),
+  // });
+
+  // Sincronizar settings cuando cambie el tenant
+  useEffect(() => {
+
+    if (tenant.viewConfigs && tenant.viewConfigs.length > 0){
+      // Buscar cada tipo de vista específica
+      const homeView = tenant.viewConfigs.find(view => view.viewType === 'home');
+
+      // Home Settings
+      if(homeView){
+        setHomeSettings({
+          type: 'home',
+          customBackground: homeView.allowBackground ?? false,
+          backgroundType: (homeView.backgroundType as 'image' | 'color') || 'color',
+          backgroundImage: homeView.backgroundImagePath || '',
+          backgroundColor: homeView.backgroundColor || '#eff4ff',
+          additionalSettings: {
+            allowCoursesHome: homeView.additionalSettings?.allowCoursesHome ?? false,
+            showPrivateCourses: homeView.additionalSettings?.showPrivateCourses ?? false,
+            allowSectionsHome: homeView.additionalSettings?.allowSectionsHome ?? false,
+            selectedSections: homeView.additionalSettings?.selectedSections || [],
+            textColor: homeView.additionalSettings?.textColor || '#000000',
+            enableBanner: homeView.additionalSettings?.enableBanner ?? false,
+            bannerType: homeView.additionalSettings?.bannerType || 'image',
+            bannerImageUrl: homeView.additionalSettings?.bannerImageUrl || '',
+            bannerVideoUrl: homeView.additionalSettings?.bannerVideoUrl || '',
+            bannerPosition: homeView.additionalSettings?.bannerPosition || 'top',
+            customTitles: {
+              en: homeView.additionalSettings?.customTitles?.en || 'Home',
+              es: homeView.additionalSettings?.customTitles?.es || 'Inicio'
+            },
+            showWelcomeMessage: homeView.additionalSettings?.showWelcomeMessage ?? true,
+            showQuickActions: homeView.additionalSettings?.showQuickActions ?? true,
+            showRecentActivity: homeView.additionalSettings?.showRecentActivity ?? true,
+          }
+        });
+      }
+
+      const videocalls = tenant.viewConfigs.find(view => view.viewType === 'videocalls');
+
+      if(videocalls){
+        setVideoCallSettings({
+          type: 'videocalls',
+          customBackground: videocalls?.allowBackground || false,
+          backgroundType: (videocalls.backgroundType as 'image' | 'color') || 'color',
+          backgroundImage: videocalls?.backgroundImagePath || '',
+          backgroundColor: videocalls?.backgroundColor || '#eff4ff',
+          additionalSettings: videocalls?.additionalSettings || {
+            customTitles: {
+              en: 'Video Calls',
+              es: 'Video Llamadas'
+            },
+            enableInvitationLinks: true,
+            invitationLinkExpiration: 60,
+            allowGuestAccess: false,
+            enableAllUsersReservations: false,
+            requireApprovalForReservations: false,
+            maxReservationDuration: 120,
+            advanceBookingLimit: 30,
+            videoCallAdministrators: [],
+            enableAdminNotifications: true,
+            enableRecording: false,
+            enableScreenShare: true,
+            enableChat: true,
+            maxParticipants: 10,
+            autoJoinAudio: false,
+            autoJoinVideo: false,
+            allowedTimeSlots: {
+              enabled: false,
+              slots: []
+            }
+          }
+        });
+      }
+
+      const metrics = tenant.viewConfigs.find(view => view.viewType === 'metrics');
+
+      if(metrics){
+        setMetricsSettings({
+          type: 'metrics',
+          customBackground: metrics?.allowBackground || false,
+          backgroundType: (metrics.backgroundType as 'image' | 'color') || 'color',
+          backgroundImage: metrics?.backgroundImagePath || '',
+          backgroundColor: metrics?.backgroundColor || '#eff4ff',
+        });
+      }
+    }
+    // Home Settings
+    // setHomeSettings({
+    //   type: 'home',
+    //   customBackground: tenant.homeSettings?.customBackground || false,
+    //   backgroundType: tenant.homeSettings?.backgroundType || 'color',
+    //   backgroundImage: tenant.homeSettings?.backgroundImage || '',
+    //   backgroundColor: tenant.homeSettings?.backgroundColor || '#eff4ff',
+    //   additionalSettings: tenant.homeSettings?.additionalSettings || {
+    //     allowCoursesHome: tenant?.homeSettings?.additionalSettings?.allowCoursesHome ?? false,
+    //     showPrivateCourses: tenant?.homeSettings?.additionalSettings?.showPrivateCourses ?? false,
+    //     allowSectionsHome: tenant?.homeSettings?.additionalSettings?.allowSectionsHome ?? false,
+    //     selectedSections: [],
+    //     textColor: tenant?.homeSettings?.additionalSettings?.textColor || '#000000',
+    //     enableBanner: false,
+    //     bannerType: 'image',
+    //     bannerImageUrl: '',
+    //     bannerVideoUrl: '',
+    //     bannerPosition: 'top',
+    //     customTitles: {
+    //       en: 'Home',
+    //       es: 'Inicio'
+    //     }
+    //   }
+    // });
+
+    // VideoCall Settings
+    // setVideoCallSettings({
+    //   type: 'videocalls',
+    //   customBackground: tenant.videoCallSettings?.customBackground || false,
+    //   backgroundType: tenant.videoCallSettings?.backgroundType || 'color',
+    //   backgroundImage: tenant.videoCallSettings?.backgroundImage || '',
+    //   backgroundColor: tenant.videoCallSettings?.backgroundColor || '#eff4ff',
+    //   additionalSettings: tenant.videoCallSettings?.additionalSettings || {
+    //     customTitles: {
+    //       en: 'Video Calls',
+    //       es: 'Video Llamadas'
+    //     },
+    //     enableInvitationLinks: true,
+    //     invitationLinkExpiration: 60,
+    //     allowGuestAccess: false,
+    //     enableAllUsersReservations: false,
+    //     requireApprovalForReservations: false,
+    //     maxReservationDuration: 120,
+    //     advanceBookingLimit: 30,
+    //     videoCallAdministrators: [],
+    //     enableAdminNotifications: true,
+    //     enableRecording: false,
+    //     enableScreenShare: true,
+    //     enableChat: true,
+    //     maxParticipants: 10,
+    //     autoJoinAudio: false,
+    //     autoJoinVideo: false,
+    //     allowedTimeSlots: {
+    //       enabled: false,
+    //       slots: []
+    //     }
+    //   }
+    // });
+
+    // Metrics Settings
+    setMetricsSettings({
+      type: 'metrics',
+      customBackground: tenant.metricsSettings?.customBackground || false,
+      backgroundType: tenant.metricsSettings?.backgroundType || 'color',
+      backgroundImage: tenant.metricsSettings?.backgroundImage || '',
+      backgroundColor: tenant.metricsSettings?.backgroundColor || '#eff4ff',
+    });
+
+    // Groups Settings
+    setGroupsSettings({
+      type: 'courses',
+      customBackground: tenant.groupsSettings?.customBackground || false,
+      backgroundType: tenant.groupsSettings?.backgroundType || 'color',
+      backgroundImage: tenant.groupsSettings?.backgroundImage || '',
+      backgroundColor: tenant.groupsSettings?.backgroundColor || '#eff4ff',
+      additionalSettings: tenant.groupsSettings?.additionalSettings || {
+        customTitles: {
+          en: 'Groups',
+          es: 'Grupos'
+        },
+      }
+    });
+
+    // Sections Settings
+    setSectionsSettings({
+      type: 'sections',
+      customBackground: tenant.sectionsSettings?.customBackground || false,
+      backgroundType: tenant.sectionsSettings?.backgroundType || 'color',
+      backgroundImage: tenant.sectionsSettings?.backgroundImage || '',
+      backgroundColor: tenant.sectionsSettings?.backgroundColor || '#eff4ff',
+      additionalSettings: tenant.sectionsSettings?.additionalSettings || {
+        customTitles: {
+          en: 'Sections',
+          es: 'Secciones'
+        },
+      }
+    });
+
+    // FAQ Settings
+    setFaqSettings({
+      type: 'frequentlyask',
+      customBackground: tenant.faqSettings?.customBackground || false,
+      backgroundType: tenant.faqSettings?.backgroundType || 'color',
+      backgroundImage: tenant.faqSettings?.backgroundImage || '',
+      backgroundColor: tenant.faqSettings?.backgroundColor || '#eff4ff',
+      additionalSettings: tenant.faqSettings?.additionalSettings || {
+        customTitles: {
+          en: 'Frequently Asked Questions',
+          es: 'Preguntas Frecuentes'
+        },
+        enableSearch: true,
+        groupByCategory: false,
+        showContactInfo: true,
+        allowVoting: false,
+        enableComments: false,
+        questionsPerPage: 10,
+        showQuestionNumbers: true,
+        faqItems: [],
+        allowPublicSubmissions: false,
+        requireApprovalForSubmissions: true,
+        showAuthor: false,
+        enableEmailNotifications: true
+      }
+    });
+
+    // Registration Settings
+    setRegistrationSettings({
+      allowSelfRegistration: tenant.config?.allowSelfRegistration || true,
+      allowGoogleLogin: tenant.config?.allowGoogleLogin || false,
+      allowFacebookLogin: tenant.config?.allowFacebookLogin || false,
+      loginMethod: tenant.config?.loginMethod || LoginMethod.EMAIL,
+      allowValidationStatusUsers: tenant.config?.allowValidationStatusUsers || true,
+      requireLastName: tenant.config?.requireLastName || true,
+      requirePhone: tenant.config?.requirePhone || true,
+      requireDocumentType: tenant.config?.requireDocumentType || true,
+      requireDocument: tenant.config?.requireDocument || true,  
+      requireOrganization: tenant.config?.requireOrganization || false,
+      requirePosition: tenant.config?.requirePosition || false,
+      requireGender: tenant.config?.requireGender || false,
+      requireCity: tenant.config?.requireCity || false,
+      requireAddress: tenant.config?.requireAddress || false
+    });
+
+    // Notification Settings
+    setNotificationSettings({
+      enableEmailNotifications: tenant.config?.enableEmailNotifications || true
+    });
+
+    // Logo Settings
+    setLogoSettings({
+      faviconPath: tenant.faviconPath || '',
+      logoPath: tenant.logoPath || '',
+      loginBackgroundPath: tenant.loginBackgroundPath || '',
+      iconPath: tenant.iconPath || '',
+      additionalSettings: tenant.logoAdditionalSettings || {
+        loginLogoPath: ''
+      }
+    });
+
+    // FormData
+    setFormData({
+      name: tenant.name || '',
+      slug: tenant.slug || '',
+      domain: tenant.domain || '',
+      contactEmail: tenant.contactEmail || '',
+      plan: tenant.plan || TenantPlan.PRO,
+      maxUsers: tenant.config?.maxUsers?.toString() || '5000',
+      storageLimit: tenant.config?.storageLimit?.toString() || '150',
+      billingEmail: tenant.billingEmail || '',
+      
+      contactPerson: tenant.contactInfo?.contactEmail || '',
+      phone: tenant.contactInfo?.phone || '',
+      address: tenant.contactInfo?.address || '',
+      url_portal: tenant.contactInfo?.url_portal || '',
+      nit: tenant.contactInfo?.nit || '',
+      city: tenant.contactInfo?.city || '',
+      country: tenant.contactInfo?.country || '',
+
+      backgroundColorNavbar: tenant.componentConfigs[0]?.backgroundColor || '#0052cc',
+      textColorNavbar: tenant.componentConfigs[0]?.textColor || '#ffffff',
+      logoNavbar: tenant.config?.logoPath || 'K&LM',
+      showSearch: tenant.showSearch ?? true,
+      showNotifications: tenant.showNotifications ?? true,
+      showProfile: tenant.showProfile ?? true,
+      
+      primaryColor: tenant.primaryColor || '#0052cc',
+      secondaryColor: tenant.secondaryColor || '#ffffff',
+      timezone: tenant.timezone || 'America/Bogota',
+      language: tenant.language || 'es',
+      currency: tenant.currency || 'USD',
+
+      termsEs: tenant.termsEs || '',
+      termsEn: tenant.termsEn || '',
+      privacyEs: tenant.privacyEs || '',
+      privacyEn: tenant.privacyEn || '',
+
+      faviconPath: tenant.config?.favicon || '',
+      logoPath: tenant.config?.logoPath || '',
+      loginBackgroundPath: tenant.config?.loginBackgroundPath || '',
+      iconPath: tenant.config?.iconPath || '',
+      logoAdditionalSettings: JSON.parse(tenant.logoAdditionalSettings || '{}'),
+    });
+  }, [tenant]); // Se ejecuta cada vez que tenant cambie
 
   // console.log('TENANT: ', tenant);
 

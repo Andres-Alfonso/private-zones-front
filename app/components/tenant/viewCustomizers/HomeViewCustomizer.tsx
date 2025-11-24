@@ -80,9 +80,7 @@ export const HomeViewCustomizer: React.FC<HomeViewCustomizerProps> = ({
 
     // Sincronizar cuando cambien las props
     useEffect(() => {
-        if (homeSettings?.additionalSettings) {
-            console.log("🔄 Sincronizando homeConfig con homeSettings:", homeSettings.additionalSettings);
-            
+        if (homeSettings?.additionalSettings) {            
             setHomeConfig({
                 allowCoursesHome: homeSettings.additionalSettings.allowCoursesHome ?? false,
                 showPrivateCourses: homeSettings.additionalSettings.showPrivateCourses ?? false,

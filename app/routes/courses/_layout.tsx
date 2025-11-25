@@ -184,7 +184,7 @@ function CoursesLayoutContent() {
           )}
 
           {/* Acciones para páginas específicas */}
-          {isDetailPage && (
+          {/* {isDetailPage && (
             <div className="py-6">
               <div className="flex items-center justify-between">
                 <NavLink
@@ -207,7 +207,7 @@ function CoursesLayoutContent() {
                 </RoleGuard>
               </div>
             </div>
-          )}
+          )} */}
         </div>
       </div>
 

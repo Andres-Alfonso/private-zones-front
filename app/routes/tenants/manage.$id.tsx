@@ -739,7 +739,71 @@ export default function ManageTenant() {
           backgroundColor: metrics?.backgroundColor || '#eff4ff',
         });
       }
+
+      const sections = tenant.viewConfigs.find(view => view.viewType === 'sections');
+      
+      if(sections){
+        setSectionsSettings({
+          type: 'sections',
+          customBackground: sections?.allowBackground || false,
+          backgroundType: (sections.backgroundType as 'image' | 'color') || 'color',
+          backgroundImage: sections?.backgroundImagePath || '',
+          backgroundColor: sections?.backgroundColor || '#eff4ff',
+          additionalSettings: sections?.additionalSettings || {
+            customTitles: {
+              en: 'Sections',
+              es: 'Secciones'
+            },
+          }
+        });
+      }
+
+      // const groups = tenant.viewConfigs.find(view => view.viewType === 'courses');
+
+      const faq = tenant.viewConfigs.find(view => view.viewType === 'frequentlyask');
+      
+      if(faq){
+        setFaqSettings({
+          type: 'frequentlyask',
+          customBackground: faq?.allowBackground || false,
+          backgroundType: (faq.backgroundType as 'image' | 'color') || 'color',
+          backgroundImage: faq?.backgroundImagePath || '',
+          backgroundColor: faq?.backgroundColor || '#eff4ff',
+          additionalSettings: faq?.additionalSettings || {
+            customTitles: {
+              en: 'Frequently Asked Questions',
+              es: 'Preguntas Frecuentes'
+            },
+            enableSearch: true,
+            showContactInfo: true,
+            enableComments: false,
+            showQuestionNumbers: true,
+            faqItems: [],
+            allowPublicSubmissions: false,
+            // requireApprovalForSubmissions: true,
+            showAuthor: false,
+            // enableEmailNotifications: true
+          }
+        });
+      }
+        
     }
+
+    // Sections Settings
+    // setSectionsSettings({
+    //   type: 'sections',
+    //   customBackground: tenant.sectionsSettings?.customBackground || false,
+    //   backgroundType: tenant.sectionsSettings?.backgroundType || 'color',
+    //   backgroundImage: tenant.sectionsSettings?.backgroundImage || '',
+    //   backgroundColor: tenant.sectionsSettings?.backgroundColor || '#eff4ff',
+    //   additionalSettings: tenant.sectionsSettings?.additionalSettings || {
+    //     customTitles: {
+    //       en: 'Sections',
+    //       es: 'Secciones'
+    //     },
+    //   }
+    // });
+
     // Home Settings
     // setHomeSettings({
     //   type: 'home',
@@ -800,70 +864,55 @@ export default function ManageTenant() {
     // });
 
     // Metrics Settings
-    setMetricsSettings({
-      type: 'metrics',
-      customBackground: tenant.metricsSettings?.customBackground || false,
-      backgroundType: tenant.metricsSettings?.backgroundType || 'color',
-      backgroundImage: tenant.metricsSettings?.backgroundImage || '',
-      backgroundColor: tenant.metricsSettings?.backgroundColor || '#eff4ff',
-    });
+    // setMetricsSettings({
+    //   type: 'metrics',
+    //   customBackground: tenant.metricsSettings?.customBackground || false,
+    //   backgroundType: tenant.metricsSettings?.backgroundType || 'color',
+    //   backgroundImage: tenant.metricsSettings?.backgroundImage || '',
+    //   backgroundColor: tenant.metricsSettings?.backgroundColor || '#eff4ff',
+    // });
 
     // Groups Settings
-    setGroupsSettings({
-      type: 'courses',
-      customBackground: tenant.groupsSettings?.customBackground || false,
-      backgroundType: tenant.groupsSettings?.backgroundType || 'color',
-      backgroundImage: tenant.groupsSettings?.backgroundImage || '',
-      backgroundColor: tenant.groupsSettings?.backgroundColor || '#eff4ff',
-      additionalSettings: tenant.groupsSettings?.additionalSettings || {
-        customTitles: {
-          en: 'Groups',
-          es: 'Grupos'
-        },
-      }
-    });
-
-    // Sections Settings
-    setSectionsSettings({
-      type: 'sections',
-      customBackground: tenant.sectionsSettings?.customBackground || false,
-      backgroundType: tenant.sectionsSettings?.backgroundType || 'color',
-      backgroundImage: tenant.sectionsSettings?.backgroundImage || '',
-      backgroundColor: tenant.sectionsSettings?.backgroundColor || '#eff4ff',
-      additionalSettings: tenant.sectionsSettings?.additionalSettings || {
-        customTitles: {
-          en: 'Sections',
-          es: 'Secciones'
-        },
-      }
-    });
+    // setGroupsSettings({
+    //   type: 'courses',
+    //   customBackground: tenant.groupsSettings?.customBackground || false,
+    //   backgroundType: tenant.groupsSettings?.backgroundType || 'color',
+    //   backgroundImage: tenant.groupsSettings?.backgroundImage || '',
+    //   backgroundColor: tenant.groupsSettings?.backgroundColor || '#eff4ff',
+    //   additionalSettings: tenant.groupsSettings?.additionalSettings || {
+    //     customTitles: {
+    //       en: 'Groups',
+    //       es: 'Grupos'
+    //     },
+    //   }
+    // });
 
     // FAQ Settings
-    setFaqSettings({
-      type: 'frequentlyask',
-      customBackground: tenant.faqSettings?.customBackground || false,
-      backgroundType: tenant.faqSettings?.backgroundType || 'color',
-      backgroundImage: tenant.faqSettings?.backgroundImage || '',
-      backgroundColor: tenant.faqSettings?.backgroundColor || '#eff4ff',
-      additionalSettings: tenant.faqSettings?.additionalSettings || {
-        customTitles: {
-          en: 'Frequently Asked Questions',
-          es: 'Preguntas Frecuentes'
-        },
-        enableSearch: true,
-        groupByCategory: false,
-        showContactInfo: true,
-        allowVoting: false,
-        enableComments: false,
-        questionsPerPage: 10,
-        showQuestionNumbers: true,
-        faqItems: [],
-        allowPublicSubmissions: false,
-        requireApprovalForSubmissions: true,
-        showAuthor: false,
-        enableEmailNotifications: true
-      }
-    });
+    // setFaqSettings({
+    //   type: 'frequentlyask',
+    //   customBackground: tenant.faqSettings?.customBackground || false,
+    //   backgroundType: tenant.faqSettings?.backgroundType || 'color',
+    //   backgroundImage: tenant.faqSettings?.backgroundImage || '',
+    //   backgroundColor: tenant.faqSettings?.backgroundColor || '#eff4ff',
+    //   additionalSettings: tenant.faqSettings?.additionalSettings || {
+    //     customTitles: {
+    //       en: 'Frequently Asked Questions',
+    //       es: 'Preguntas Frecuentes'
+    //     },
+    //     enableSearch: true,
+    //     groupByCategory: false,
+    //     showContactInfo: true,
+    //     allowVoting: false,
+    //     enableComments: false,
+    //     questionsPerPage: 10,
+    //     showQuestionNumbers: true,
+    //     faqItems: [],
+    //     allowPublicSubmissions: false,
+    //     requireApprovalForSubmissions: true,
+    //     showAuthor: false,
+    //     enableEmailNotifications: true
+    //   }
+    // });
 
     // Registration Settings
     setRegistrationSettings({

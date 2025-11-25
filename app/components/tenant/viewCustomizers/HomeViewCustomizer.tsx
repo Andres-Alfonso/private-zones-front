@@ -79,30 +79,39 @@ export const HomeViewCustomizer: React.FC<HomeViewCustomizerProps> = ({
     });
 
     // Sincronizar cuando cambien las props
-    useEffect(() => {
-        if (homeSettings?.additionalSettings) {            
-            setHomeConfig({
-                allowCoursesHome: homeSettings.additionalSettings.allowCoursesHome ?? false,
-                showPrivateCourses: homeSettings.additionalSettings.showPrivateCourses ?? false,
-                allowSectionsHome: homeSettings.additionalSettings.allowSectionsHome ?? false,
-                selectedSections: homeSettings.additionalSettings.selectedSections || [],
-                textColor: homeSettings.additionalSettings.textColor || '#000000',
-                enableBanner: homeSettings.additionalSettings.enableBanner ?? false,
-                bannerType: homeSettings.additionalSettings.bannerType || 'image',
-                bannerImageUrl: homeSettings.additionalSettings.bannerImageUrl || '',
-                bannerVideoUrl: homeSettings.additionalSettings.bannerVideoUrl || '',
-                bannerPosition: homeSettings.additionalSettings.bannerPosition || 'top',
-                customTitles: {
-                    en: homeSettings.additionalSettings.customTitles?.en || 'Home',
-                    es: homeSettings.additionalSettings.customTitles?.es || 'Inicio',
-                },
-                showWelcomeMessage: homeSettings.additionalSettings.showWelcomeMessage ?? true,
-                showQuickActions: homeSettings.additionalSettings.showQuickActions ?? true,
-                showRecentActivity: homeSettings.additionalSettings.showRecentActivity ?? true,
-            });
-        }
-    }, [JSON.stringify(homeSettings?.additionalSettings)]);  // ← Cambiar la dependencia a string
+    // useEffect(() => {
+    //     if (homeSettings?.additionalSettings) {            
+    //         setHomeConfig({
+    //             allowCoursesHome: homeSettings.additionalSettings.allowCoursesHome ?? false,
+    //             showPrivateCourses: homeSettings.additionalSettings.showPrivateCourses ?? false,
+    //             allowSectionsHome: homeSettings.additionalSettings.allowSectionsHome ?? false,
+    //             selectedSections: homeSettings.additionalSettings.selectedSections || [],
+    //             textColor: homeSettings.additionalSettings.textColor || '#000000',
+    //             enableBanner: homeSettings.additionalSettings.enableBanner ?? false,
+    //             bannerType: homeSettings.additionalSettings.bannerType || 'image',
+    //             bannerImageUrl: homeSettings.additionalSettings.bannerImageUrl || '',
+    //             bannerVideoUrl: homeSettings.additionalSettings.bannerVideoUrl || '',
+    //             bannerPosition: homeSettings.additionalSettings.bannerPosition || 'top',
+    //             customTitles: {
+    //                 en: homeSettings.additionalSettings.customTitles?.en || 'Home',
+    //                 es: homeSettings.additionalSettings.customTitles?.es || 'Inicio',
+    //             },
+    //             showWelcomeMessage: homeSettings.additionalSettings.showWelcomeMessage ?? true,
+    //             showQuickActions: homeSettings.additionalSettings.showQuickActions ?? true,
+    //             showRecentActivity: homeSettings.additionalSettings.showRecentActivity ?? true,
+    //         });
+    //     }
+    // }, [JSON.stringify(homeSettings?.additionalSettings)]);  // ← Cambiar la dependencia a string
 
+    // Sincronizar con cambios del padre
+        useEffect(() => {
+        if (homeSettings?.additionalSettings) {
+            setHomeConfig(prev => ({
+                ...prev,
+                ...homeSettings.additionalSettings
+            }));
+        }
+    }, [homeSettings?.additionalSettings]);
 
 
     // Manejador para cambios en configuraciones específicas del Home

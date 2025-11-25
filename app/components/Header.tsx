@@ -39,9 +39,29 @@ export default function Header() {
   const { isAuthenticated, user } = useCurrentUser();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+
   const navbarConfig = tenant?.componentConfigs?.find(
     (config: any) => config.componentType === 'navbar'
   );
+
+  // 📝 Función helper para obtener el título personalizado de una vista
+  const getViewTitle = (viewType: string, defaultTitle: string, lang: string = 'es') => {
+    const viewConfig = tenant?.viewConfigs?.find(
+      (config: any) => config.viewType === viewType
+    );
+    return viewConfig?.additionalSettings?.customTitles?.[lang] || viewConfig?.title || defaultTitle;
+  };
+
+  // 📝 Literales personalizados desde viewConfigs
+  const navLabels = {
+    home: getViewTitle('home', 'Inicio'),
+    sections: getViewTitle('sections', 'Secciones'),
+    videocalls: getViewTitle('videocalls', 'Video Llamadas'),
+    metrics: getViewTitle('metrics', 'Métricas'),
+    customers: getViewTitle('customers', 'Clientes'),
+    frequentlyask: getViewTitle('frequentlyask', 'Preguntas Frecuentes'),
+    login: getViewTitle('login', 'Iniciar Sesión'),
+  };
 
   return (
     <>
@@ -112,7 +132,7 @@ export default function Header() {
                       textColor={navbarConfig?.textColor || '#ffffff'}
                       icon={<LayoutDashboard className="h-4 w-4" />}
                     >
-                      Inicio
+                      {navLabels.home}
                     </NavLink>
 
                     <RoleGuard requiredRoles={['superadmin', 'admin']}>
@@ -131,7 +151,7 @@ export default function Header() {
                         icon={<Building2 className="h-4 w-4" />}
                         textColor={navbarConfig?.textColor || '#ffffff'}
                       >
-                        Clientes
+                        {navLabels.customers}
                       </NavLink>
                     </RoleGuard>
 
@@ -149,7 +169,7 @@ export default function Header() {
                         textColor={navbarConfig?.textColor || '#ffffff'}
                         icon={<LayoutPanelTop className="h-4 w-4" />}
                       >
-                        Secciones
+                        {navLabels.sections}
                       </NavLink>
                     </RoleGuard>
 

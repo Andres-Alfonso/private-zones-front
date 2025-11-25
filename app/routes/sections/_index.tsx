@@ -316,7 +316,7 @@ export default function SectionsIndex() {
               </div>
             </div>
 
-            <div className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 backdrop-blur-sm bg-white/80 group">
+            {/* <div className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 backdrop-blur-sm bg-white/80 group">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600 mb-1">Seleccionadas</p>
@@ -326,7 +326,7 @@ export default function SectionsIndex() {
                   <TrendingUp className="h-8 w-8 text-yellow-600" />
                 </div>
               </div>
-            </div>
+            </div> */}
             
             {/* <div className="bg-white bg-gradient-to-r shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 backdrop-blur-sm p-4 rounded-xl">
               <div className="font-semibold text-gray-600 mb-1">Total de Secciones</div>

@@ -135,7 +135,7 @@ export default function CreateTask() {
 
     const handleBack = () => {
         if (courseId) {
-            navigate(`/tasks/course/${courseId}`);
+            navigate(`/tasks/courses/${courseId}`);
         } else {
             navigate("/tasks");
         }

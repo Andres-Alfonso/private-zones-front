@@ -484,7 +484,7 @@ function ManageCoursesContent() {
                   Estado
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Estudiantes
+                  Usuarios
                 </th>
                 {/* <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                   Ingresos
@@ -649,8 +649,8 @@ function CourseManagementRow({
 
       <td className="px-6 py-4">
         <div>
-          <div className="text-sm font-semibold text-gray-900">{course.enrollments}/{course.configuration?.maxEnrollments}</div>
-          <div className="text-xs text-gray-500">{course.completionRate}% completado</div>
+          <div className="text-sm font-semibold text-gray-900">{course.enrollments ?? 0} / {course.configuration?.maxEnrollments ?? 1000}</div>
+          <div className="text-xs text-gray-500">{course.completionRate ?? 0}% completado</div>
           <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
             {/* <div 
               className="bg-blue-600 h-1.5 rounded-full transition-all duration-200" 

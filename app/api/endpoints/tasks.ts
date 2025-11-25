@@ -58,6 +58,7 @@ export interface GetTaskOptions {
 
 export interface GetAllTasksOptions {
     courseId?: string;
+    search?: string;
     status?: TaskStatus;
     page?: number;
     limit?: number;
@@ -300,6 +301,7 @@ export const TaskAPI = {
 
         if (options) {
             if (options.courseId) params.append("courseId", courseId ?? '');
+            if (options.search) params.append("search", options.search);
             if (options.status) params.append("status", options.status);
             if (options.page) params.append("page", options.page.toString());
             if (options.limit) params.append("limit", options.limit.toString());
@@ -310,8 +312,6 @@ export const TaskAPI = {
         const url = courseId
             ? `${TASKS_ENDPOINTS.BY_COURSE(courseId)}${params.toString() ? `?${params.toString()}` : ""}`
             : `${TASKS_ENDPOINTS.BASE}${params.toString() ? `?${params.toString()}` : ""}`;
-
-        console.log("URL final:", url);
 
         const response = await apiClientToUse.get(url);
 

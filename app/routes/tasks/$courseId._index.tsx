@@ -1,115 +1,20 @@
 import { LoaderFunction } from '@remix-run/node';
-import { json, useLoaderData } from '@remix-run/react';
-import { MessageCircle, MessageSquare, TrendingUp, Users } from 'lucide-react';
-import React from 'react'
+import { json, NavLink, useLoaderData, useSearchParams } from '@remix-run/react';
+import { AlertCircle, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import React, { useState } from 'react';
 import { createApiClientFromRequest } from '~/api/client';
 import TaskAPI from '~/api/endpoints/tasks';
-
-
-export interface TaskItem {
-    id: string;
-    title: string;
-    description: string | null;
-    tenantId: string;
-    courseId: string;
-    createdBy: string;
-    createdAt: string;
-    updatedAt: string;
-    totalSubmissions?: number;
-}
-
-export interface TaskStats {
-    totalTasks: number;
-    totalSubmissions: number;
-    gradedSubmissions: number;
-    activeUsers: number;
-}
+import { RoleGuard } from '~/components/AuthGuard';
+import TaskCards, { TaskItem } from '~/components/tasks/TaskCards';
+import TaskFilters from '~/components/tasks/TaskFilters';
+import TasksDashboard, { TaskStats } from '~/components/tasks/TasksDashboard';
+import { useCurrentUser } from '~/context/AuthContext';
 
 export interface TasksFilters {
     search?: string;
     page: number;
     limit: number;
 }
-
-// Dashboard de estadísticas de foros
-const TasksDashboard = ({ stats }: { stats: TaskStats }) => {
-    return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {/* Total de Foros */}
-            <div className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 backdrop-blur-sm bg-white/80 group">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <p className="text-sm font-medium text-gray-600 mb-1">Total Foros</p>
-                        <p className="text-2xl font-bold text-gray-900">{stats.totalTasks.toLocaleString()}</p>
-                        {/* <div className="flex items-center mt-2">
-              <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
-              <span className="text-sm text-green-600 font-medium">+8%</span>
-              <span className="text-xs text-gray-500 ml-1">vs mes anterior</span>
-            </div> */}
-                    </div>
-                    <div className="p-3 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 group-hover:scale-110 transition-transform duration-200">
-                        <MessageSquare className="h-8 w-8 text-blue-600" />
-                    </div>
-                </div>
-            </div>
-
-            {/* Total Hilos */}
-            <div className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 backdrop-blur-sm bg-white/80 group">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <p className="text-sm font-medium text-gray-600 mb-1">Total Hilos</p>
-                        <p className="text-2xl font-bold text-gray-900">{stats.totalSubmissions.toLocaleString()}</p>
-                        {/* <div className="flex items-center mt-2">
-              <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
-              <span className="text-sm text-green-600 font-medium">+12%</span>
-              <span className="text-xs text-gray-500 ml-1">vs mes anterior</span>
-            </div> */}
-                    </div>
-                    <div className="p-3 rounded-xl bg-gradient-to-br from-purple-50 to-purple-100 group-hover:scale-110 transition-transform duration-200">
-                        <MessageCircle className="h-8 w-8 text-purple-600" />
-                    </div>
-                </div>
-            </div>
-
-            {/* Total Mensajes */}
-            <div className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 backdrop-blur-sm bg-white/80 group">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <p className="text-sm font-medium text-gray-600 mb-1">Total Mensajes</p>
-                        <p className="text-2xl font-bold text-gray-900">{stats.gradedSubmissions.toLocaleString()}</p>
-                        {/* <div className="flex items-center mt-2">
-              <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
-              <span className="text-sm text-green-600 font-medium">+18%</span>
-              <span className="text-xs text-gray-500 ml-1">vs mes anterior</span>
-            </div> */}
-                    </div>
-                    <div className="p-3 rounded-xl bg-gradient-to-br from-green-50 to-green-100 group-hover:scale-110 transition-transform duration-200">
-                        <TrendingUp className="h-8 w-8 text-green-600" />
-                    </div>
-                </div>
-            </div>
-
-            {/* Usuarios Activos */}
-            <div className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 backdrop-blur-sm bg-white/80 group">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <p className="text-sm font-medium text-gray-600 mb-1">Usuarios Activos</p>
-                        <p className="text-2xl font-bold text-gray-900">{stats.activeUsers.toLocaleString()}</p>
-                        {/* <div className="flex items-center mt-2">
-              <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
-              <span className="text-sm text-green-600 font-medium">+15%</span>
-              <span className="text-xs text-gray-500 ml-1">vs mes anterior</span>
-            </div> */}
-                    </div>
-                    <div className="p-3 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100 group-hover:scale-110 transition-transform duration-200">
-                        <Users className="h-8 w-8 text-orange-600" />
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
-
 
 // Loader para cargar datos del servidor
 export const loader: LoaderFunction = async ({ request, params }) => {
@@ -132,10 +37,8 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     };
 
     const authenticatedApiClient = createApiClientFromRequest(request);
-        
+    
     const apiResponse = await TaskAPI.getAll(courseId, filters, authenticatedApiClient);
-
-    console.log(apiResponse);
 
     return json({
       tasks: apiResponse,
@@ -154,9 +57,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
   }
 };
 
-
 export default function CourseTasksIndex() {
-
     const { tasks, stats, error, courseId } = useLoaderData<{
         tasks: { data: TaskItem[], total: number, page: number, limit: number },
         stats: TaskStats,
@@ -164,9 +65,157 @@ export default function CourseTasksIndex() {
         courseId: string | 'undefined'
     }>();
 
+    const [searchParams, setSearchParams] = useSearchParams();
+    const [showFilters, setShowFilters] = useState(false);
+    const { hasRole } = useCurrentUser();
+
+    // Estados para filtros
+    const [localSearch, setLocalSearch] = useState(searchParams.get('search') || '');
+
+    // Manejar búsqueda
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        const newParams = new URLSearchParams(searchParams);
+        if (localSearch) {
+            newParams.set('search', localSearch);
+        } else {
+            newParams.delete('search');
+        }
+        newParams.set('page', '1');
+        setSearchParams(newParams);
+    };
+
+    // Limpiar filtros
+    const handleClearFilters = () => {
+        setSearchParams({});
+        setLocalSearch('');
+    };
+
+    // Paginación
+    const handlePageChange = (page: number) => {
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set('page', page.toString());
+        setSearchParams(newParams);
+    };
+
+    // Calcular paginación
+    const totalPages = Math.ceil(tasks.total / tasks.limit);
+    const hasNext = tasks.page < totalPages;
+    const hasPrev = tasks.page > 1;
+
+    if (error) {
+        return (
+            <div className="text-center py-16">
+                <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-12 shadow-xl border border-gray-200/60 max-w-md mx-auto hover:shadow-2xl transition-all duration-300">
+                    <AlertCircle className="mx-auto h-16 w-16 text-red-400 mb-6" />
+                    <h1 className="text-2xl font-bold text-gray-900 mb-4">Error</h1>
+                    <p className="text-gray-600">{error}</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div>
-            <TasksDashboard stats={stats}/>
+        <div className="space-y-8">
+            {/* Dashboard de estadísticas */}
+            <TasksDashboard stats={stats} />
+
+            {/* Header con botón de crear */}
+            {/* <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/60 p-6 hover:bg-white/90 hover:shadow-xl transition-all duration-300">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-2">Tareas del Curso</h2>
+                        <p className="text-gray-600">
+                            Total de tareas: <span className="font-semibold text-blue-600">{tasks.total}</span>
+                        </p>
+                    </div>
+
+                    
+                </div>
+            </div> */}
+
+            {/* Filtros y búsqueda */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/60 p-6 hover:bg-white/90 hover:shadow-xl transition-all duration-300">
+                <TaskFilters
+                    courseId={courseId}
+                    searchTerm={localSearch}
+                    onSearchChange={setLocalSearch}
+                    onSearchSubmit={handleSearch}
+                    showFilters={showFilters}
+                    onToggleFilters={() => setShowFilters(!showFilters)}
+                    totalResults={tasks.total}
+                    onClearFilters={handleClearFilters}
+                />
+            </div>
+
+            {/* Grid de tareas */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/60 p-6 hover:bg-white/90 hover:shadow-xl transition-all duration-300">
+                {tasks.data.length > 0 ? (
+                    <TaskCards 
+                        tasks={tasks.data} 
+                        hasAdminRole={hasRole('admin') || hasRole('instructor')}
+                    />
+                ) : (
+                    <div className="text-center py-16">
+                        <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-8 max-w-md mx-auto border border-gray-200/60 hover:bg-white/80 transition-all duration-300">
+                            <AlertCircle className="mx-auto h-16 w-16 text-gray-400 mb-4" />
+                            <h3 className="text-xl font-semibold text-gray-900 mb-2">No se encontraron tareas</h3>
+                            <p className="text-gray-600 mb-6">
+                                {searchParams.toString() 
+                                    ? 'Intenta ajustar los filtros de búsqueda'
+                                    : 'Aún no hay tareas disponibles para este curso'
+                                }
+                            </p>
+                            {(hasRole('admin') || hasRole('instructor')) && (
+                                <NavLink
+                                    to={`/tasks/create?course=${courseId}`}
+                                    className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+                                >
+                                    <Plus className="h-5 w-5 mr-2" />
+                                    Crear primera tarea
+                                </NavLink>
+                            )}
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Paginación */}
+            {tasks.total > tasks.limit && (
+                <div className="flex justify-center">
+                    <nav className="flex items-center space-x-2 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/60 p-3 hover:bg-white/90 transition-all duration-300">
+                        <button
+                            disabled={!hasPrev}
+                            onClick={() => handlePageChange(tasks.page - 1)}
+                            className="p-2 text-sm border border-gray-300/60 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50/80 transition-all duration-200 backdrop-blur-sm hover:scale-105 disabled:hover:scale-100"
+                        >
+                            <ChevronLeft className="h-4 w-4" />
+                        </button>
+                        
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                            <button
+                                key={page}
+                                onClick={() => handlePageChange(page)}
+                                className={`px-4 py-2 text-sm rounded-xl transition-all duration-200 font-medium ${
+                                    page === tasks.page
+                                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg transform scale-105'
+                                        : 'border border-gray-300/60 hover:bg-gray-50/80 backdrop-blur-sm hover:shadow-md hover:scale-105'
+                                }`}
+                            >
+                                {page}
+                            </button>
+                        ))}
+                        
+                        <button
+                            disabled={!hasNext}
+                            onClick={() => handlePageChange(tasks.page + 1)}
+                            className="p-2 text-sm border border-gray-300/60 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50/80 transition-all duration-200 backdrop-blur-sm hover:scale-105 disabled:hover:scale-100"
+                        >
+                            <ChevronRight className="h-4 w-4" />
+                        </button>
+                    </nav>
+                </div>
+            )}
         </div>
-    )
+    );
 }

@@ -8,7 +8,7 @@ const TASKS_ENDPOINTS = {
     BY_ID: (id: string) => `/v1/tasks/${id}`,
     BY_COURSE: (courseId: string) => `/v1/tasks/course/${courseId}`,
     CREATE: '/v1/tasks/create',
-    UPDATE: (id: string) => `/v1/tasks/${id}`,
+    UPDATE: (id: string) => `/v1/tasks/update/${id}`,
     DELETE: (id: string) => `/v1/tasks/${id}`,
     
     // Submissions
@@ -73,6 +73,12 @@ export interface PaginationMeta {
   totalPages: number;
   hasNext: boolean;
   hasPrev: boolean;
+}
+
+export interface TaskGetByIdResponse {
+  success: boolean;
+  message: string;
+  data: TaskResponse;
 }
 
 export interface TaskGetAllResponse {
@@ -270,25 +276,21 @@ export const TaskAPI = {
     // ========== Tasks CRUD ==========
     async getById(
         taskId: string,
-        options?: GetTaskOptions,
+        // options?: GetTaskOptions,
         client?: AxiosInstance
-    ): Promise<TaskResponse> {
-        const apiClientToUse = client || apiClient;
-        const params = new URLSearchParams();
-
-        if (options) {
-            if (options.includeCourse) params.append("includeCourse", "true");
-            if (options.includeModule) params.append("includeModule", "true");
-            if (options.includeNavigation) params.append("includeNavigation", "true");
-            if (options.includeConfiguration) params.append("includeConfiguration", "true");
-            if (options.includeSubmissions) params.append("includeSubmissions", "true");
-            if (options.includeAttachments) params.append("includeAttachments", "true");
-            if (options.includeMySubmission) params.append("includeMySubmission", "true");
+    ): Promise<TaskGetByIdResponse> {
+        try {
+            const apiClientToUse = client || apiClient;
+            const response = await apiClientToUse.get<TaskGetByIdResponse>(TASKS_ENDPOINTS.BY_ID(taskId));
+            return response.data;
+        } catch (error) {
+            console.error('Error en getByCourse:', error);
+            return {
+                "success": false,
+                "message": "Error al obtener el foro",
+                "data": null as any
+            };
         }
-
-        const url = `${TASKS_ENDPOINTS.BY_ID(taskId)}${params.toString() ? `?${params.toString()}` : ""}`;
-        const response = await apiClientToUse.get<TaskResponse>(url);
-        return response.data;
     },
 
     async getAll(

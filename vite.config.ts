@@ -63,6 +63,7 @@ export default defineConfig({
             route("", "routes/tasks/_index.tsx", { index: true });
             route("courses/:courseId", "routes/tasks/$courseId._index.tsx");
             route("create", "routes/tasks/create.tsx");
+            route(":id/edit", "routes/tasks/$id.edit.tsx");
           });
 
           // Rutas de gestion de módulos

@@ -1,12 +1,21 @@
-// routes/tasks/create.tsx
+// routes/tasks/$id.edit.tsx
 import { ActionFunction, json, LoaderFunction } from '@remix-run/node';
 import { Form, useActionData, useLoaderData, useNavigate, useNavigation } from '@remix-run/react';
 import React, { useState } from 'react'
+import { createApiClientFromRequest } from '~/api/client';
+import TaskAPI from '~/api/endpoints/tasks';
 import { BasicTaskInformation } from '~/components/tasks/BasicTaskInformation';
 import { TaskConfiguration } from '~/components/tasks/Taskconfiguration';
-import { CreateTaskHeader } from '~/components/tasks/CreateTaskHeader';
+import { UpateTaskHeader } from '~/components/tasks/UpdateTaskHeader';
 import { AlertCircle } from 'lucide-react';
 import { FormActionTask } from '~/components/tasks/FormActionTask';
+import { TaskStatus, UpdateTaskPayload } from '~/api/types/task.types';
+import { toDateTimeLocal } from '~/utils/date';
+
+type LoaderData = {
+    courseId: string | null;
+    task: any;
+}
 
 interface FormErrors {
     title?: string;
@@ -28,10 +37,6 @@ interface FormErrors {
     status?: string;
     order?: string;
     general?: string;
-}
-
-type LoaderData = {
-    courseId: string | null;
 }
 
 interface TaskFormData {
@@ -60,11 +65,21 @@ interface TaskFormData {
     taskInfo: string;
 }
 
-export const loader: LoaderFunction = async ({ request }) => {
+export const loader: LoaderFunction = async ({ request, params }) => {
     try {
         const url = new URL(request.url);
         const urlParams = new URLSearchParams(url.search);
         const courseId = urlParams.get('course');
+        const { id } = params;
+
+        console.log('PARAMS EN EDIT TASK:', params);
+
+        if (!id) {
+            throw new Response("ID de la tarea no proporcionado", { 
+                status: 400,
+                statusText: "Bad Request"
+            });
+        }
 
         if (courseId == null) {
             throw new Response("Error interno del servidor", {
@@ -73,7 +88,21 @@ export const loader: LoaderFunction = async ({ request }) => {
             });
         }
 
-        return json<LoaderData>({ courseId: courseId || null });
+        const authenticatedApiClient = createApiClientFromRequest(request);
+        const response = await TaskAPI.getById(id, authenticatedApiClient);
+        console.log('RESPONSE EN EDIT TASK:', response);
+
+        if(!response.success || !response.data){
+            throw new Response("Tarea no encontrada", {
+                status: 404,
+                statusText: "Not Found"
+            });
+        }
+
+        return json<LoaderData>({ 
+            courseId: courseId || null,
+            task: response.data
+        });
 
     } catch (error) {
         if (error instanceof Response) {
@@ -88,11 +117,18 @@ export const loader: LoaderFunction = async ({ request }) => {
     }
 }
 
-
-export const action: ActionFunction = async ({ request }) => {
+export const action: ActionFunction = async ({ request, params }) => {
     const formData = await request.formData();
+    const { id } = params;
 
     try {
+        if (!id) {
+            throw new Response("ID de la tarea no proporcionado", { 
+                status: 400,
+                statusText: "Bad Request"
+            });
+        }
+
         const url = new URL(request.url);
         const urlParams = new URLSearchParams(url.search);
         const courseId = urlParams.get('course') ?? 'not_id';
@@ -132,62 +168,105 @@ export const action: ActionFunction = async ({ request }) => {
             errors.endDate = 'La fecha límite es obligatoria';
         }
 
+        // Validar status
+        const validStatuses = ['draft', 'published', 'closed', 'archived'];
+        if (status && !validStatuses.includes(status)) {
+            errors.status = 'Estado inválido';
+        }
+
         if (Object.keys(errors).length > 0) {
             return json({ errors, fields: Object.fromEntries(formData) }, { status: 400 });
         }
 
-        // Aquí irá la lógica para crear la tarea en el backend
+        // Preparar datos para actualizar
+        const authenticatedApiClient = createApiClientFromRequest(request);
+        
+        const updateData: UpdateTaskPayload = {
+            title: title,
+            description: description,
+            instructions: instructions,
+            status: status as TaskStatus,
+            order: Number(order),
+            startDate: startDate || Date.now().toString(),
+            endDate,
+            lateSubmissionDate: lateSubmissionDate || Date.now().toString(),
+            maxPoints: Number(maxPoints),
+            lateSubmissionPenalty: Number(lateSubmissionPenalty),
+            maxFileUploads: Number(maxAttachments), // Nota: maxAttachments -> maxFileUploads
+            maxFileSize: Number(maxFileSize),
+            allowedFileTypes: allowedFileTypes ? allowedFileTypes.split(',') : [],
+            allowMultipleSubmissions,
+            maxSubmissionAttempts: maxSubmissionAttempts === '0' ? null : Number(maxSubmissionAttempts),
+            requireSubmission,
+            enablePeerReview,
+            showGradeToStudent,
+            showFeedbackToStudent,
+            notifyOnSubmission,
+        };
+
+        await TaskAPI.update(id, updateData, authenticatedApiClient);
 
         return json({ success: true });
     } catch (error: any) {
-        console.error('Error al crear tarea:', error);
+        console.error('Error al actualizar tarea:', error);
         return json({
-            errors: { general: error.message || 'Error al crear la tarea' },
+            errors: { general: error.message || 'Error al actualizar la tarea' },
             fields: Object.fromEntries(formData)
         }, { status: 500 });
     }
 }
 
-export default function CreateTask() {
-    const { courseId } = useLoaderData<LoaderData>();
+
+export default function EditCourseTask() {
+    const { courseId, task } = useLoaderData<LoaderData>();
+    const navigate = useNavigate();
+    const navigation = useNavigation();
+
     const actionData = useActionData<{
         errors?: FormErrors;
         fields?: any;
     }>();
-    const navigation = useNavigation();
-    const navigate = useNavigate();
 
-    const [showPreview, setShowPreview] = useState(false);
-    const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
-    const [supportDocFile, setSupportDocFile] = useState<File | null>(null);
-    
     const isSubmitting = navigation.state === 'submitting';
     
+    // Estado principal del formulario
     const [formData, setFormData] = useState<TaskFormData>({
-        title: actionData?.fields?.title || '',
-        description: actionData?.fields?.description || '',
-        instructions: actionData?.fields?.instructions || '',
-        thumbnailUrl: actionData?.fields?.thumbnailUrl || '',
-        status: actionData?.fields?.status || 'draft',
-        order: actionData?.fields?.order || 0,
-        startDate: actionData?.fields?.startDate || '',
-        endDate: actionData?.fields?.endDate || '',
-        lateSubmissionDate: actionData?.fields?.lateSubmissionDate || '',
-        maxPoints: actionData?.fields?.maxPoints || 100,
-        lateSubmissionPenalty: actionData?.fields?.lateSubmissionPenalty || 0,
-        maxAttachments: actionData?.fields?.maxAttachments || 5,
-        maxFileSize: actionData?.fields?.maxFileSize || 10,
-        allowedFileTypes: actionData?.fields?.allowedFileTypes?.split(',') || ['pdf', 'doc', 'docx'],
-        allowMultipleSubmissions: actionData?.fields?.allowMultipleSubmissions ?? true,
-        maxSubmissionAttempts: actionData?.fields?.maxSubmissionAttempts || null,
-        requireSubmission: actionData?.fields?.requireSubmission ?? true,
-        enablePeerReview: actionData?.fields?.enablePeerReview ?? false,
-        showGradeToStudent: actionData?.fields?.showGradeToStudent ?? true,
-        showFeedbackToStudent: actionData?.fields?.showFeedbackToStudent ?? true,
-        notifyOnSubmission: actionData?.fields?.notifyOnSubmission ?? false,
-        isAutoGradable: actionData?.fields?.isAutoGradable ?? false,
-        taskInfo: actionData?.fields?.taskInfo || '',
+        title: actionData?.fields?.title || task?.title || '',
+        description: actionData?.fields?.description || task?.description || '',
+        instructions: actionData?.fields?.instructions || task?.instructions || '',
+        thumbnailUrl: actionData?.fields?.thumbnailUrl || task?.thumbnailUrl || '',
+        status: actionData?.fields?.status || task?.status || 'draft',
+        order: actionData?.fields?.order || task?.order || 0,
+        startDate: toDateTimeLocal(actionData?.fields?.startDate || task?.startDate),
+        endDate: toDateTimeLocal(actionData?.fields?.endDate || task?.endDate),
+        lateSubmissionDate: toDateTimeLocal(actionData?.fields?.lateSubmissionDate || task?.lateSubmissionDate),
+        maxPoints: actionData?.fields?.maxPoints || task?.maxPoints || 100,
+        lateSubmissionPenalty: actionData?.fields?.lateSubmissionPenalty || task?.lateSubmissionPenalty || 0,
+        maxAttachments: actionData?.fields?.maxAttachments || task?.maxAttachments || 5,
+        maxFileSize: actionData?.fields?.maxFileSize || task?.maxFileSize || 10,
+        allowedFileTypes: actionData?.fields?.allowedFileTypes?.split(',') || task?.allowedFileTypes || ['pdf', 'doc', 'docx'],
+        allowMultipleSubmissions: actionData?.fields?.allowMultipleSubmissions ?? task?.allowMultipleSubmissions ?? true,
+        maxSubmissionAttempts: actionData?.fields?.maxSubmissionAttempts || task?.maxSubmissionAttempts || null,
+        requireSubmission: actionData?.fields?.requireSubmission ?? task?.requireSubmission ?? true,
+        enablePeerReview: actionData?.fields?.enablePeerReview ?? task?.enablePeerReview ?? false,
+        showGradeToStudent: actionData?.fields?.showGradeToStudent ?? task?.showGradeToStudent ?? true,
+        showFeedbackToStudent: actionData?.fields?.showFeedbackToStudent ?? task?.showFeedbackToStudent ?? true,
+        notifyOnSubmission: actionData?.fields?.notifyOnSubmission ?? task?.notifyOnSubmission ?? false,
+        isAutoGradable: actionData?.fields?.isAutoGradable ?? task?.isAutoGradable ?? false,
+        taskInfo: actionData?.fields?.taskInfo || task?.taskInfo || '',
     });
+
+    // Estados para archivos
+    const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+    const [supportDocFile, setSupportDocFile] = useState<File | null>(null);
+
+    // Función para actualizar el formulario
+    const handleFormChange = (field: string, value: any) => {
+        setFormData(prev => ({
+            ...prev,
+            [field]: value
+        }));
+    };
 
     const handleBack = () => {
         if (courseId) {
@@ -200,15 +279,10 @@ export default function CreateTask() {
     const isValid = formData.title.trim().length > 0 && formData.endDate.trim().length > 0;
     const errors = actionData?.errors || {};
 
-    const handleFormChange = (field: string, value: any) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
-    };
-
     return (
         <div className='max-w-6xl mx-auto space-y-8'>
-            <CreateTaskHeader
+            <UpateTaskHeader
                 onBack={handleBack}
-                onPreview={() => setShowPreview(true)}
                 isValid={isValid}
             />
 
@@ -219,7 +293,7 @@ export default function CreateTask() {
                 className="space-y-8"
             >
                 {/* Información Básica */}
-                <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-8">
+                <div className='bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-8'>
                     <BasicTaskInformation
                         title={formData.title}
                         description={formData.description}
@@ -351,15 +425,15 @@ export default function CreateTask() {
                     </div>
                 </div>
             )}
-
-            {typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('created') === 'true' && (
+            {/* 
+            {actionData?.success && (
                 <div className="bg-green-50 border border-green-200 rounded-2xl p-4">
                     <div className="flex items-center space-x-2 text-green-600">
                         <AlertCircle className="h-5 w-5" />
-                        <span className="font-medium">¡Tarea creada exitosamente!</span>
+                        <span className="font-medium">¡Tarea actualizada exitosamente!</span>
                     </div>
                 </div>
-            )}
+            )} */}
         </div>
     )
 }

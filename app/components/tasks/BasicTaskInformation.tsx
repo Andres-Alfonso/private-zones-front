@@ -1,26 +1,42 @@
+// src/components/tasks/BasicTaskInformation.tsx
 import { FileText, MessageSquare } from "lucide-react";
 
 interface BasicTaskInformationProps {
   title: string;
   description: string;
+  instructions: string;
   thumbnail?: File | null;
+  status: string;
+  order: number;
   onTitleChange: (value: string) => void;
   onDescriptionChange: (value: string) => void;
+  onInstructionsChange: (value: string) => void;
   onThumbnailChange: (file: File | null) => void;
+  onStatusChange: (value: string) => void;
+  onOrderChange: (value: number) => void;
   errors?: {
     title?: string;
     description?: string;
+    instructions?: string;
     thumbnail?: string;
+    status?: string;
+    order?: string;
   };
 }
 
 export function BasicTaskInformation({
   title,
   description,
+  instructions,
   thumbnail,
+  status,
+  order,
   onTitleChange,
   onDescriptionChange,
+  onInstructionsChange,
   onThumbnailChange,
+  onStatusChange,
+  onOrderChange,
   errors = {}
 }: BasicTaskInformationProps) {
 
@@ -44,7 +60,7 @@ export function BasicTaskInformation({
       {/* CONTENEDOR DOS COLUMNAS */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-        {/* COLUMNA IZQUIERDA: TÍTULO + DESCRIPCIÓN */}
+        {/* COLUMNA IZQUIERDA: TÍTULO + DESCRIPCIÓN + INSTRUCCIONES */}
         <div className="space-y-4">
 
           {/* Título */}
@@ -80,7 +96,7 @@ export function BasicTaskInformation({
               htmlFor="description"
               className="block text-sm font-medium text-gray-700 mb-2"
             >
-              Descripción
+              Descripción General
             </label>
 
             <textarea
@@ -88,7 +104,7 @@ export function BasicTaskInformation({
               value={description}
               onChange={(e) => onDescriptionChange(e.target.value)}
               placeholder="Describe brevemente la tarea..."
-              rows={6}
+              rows={4}
               className={`
                 w-full px-4 py-3 border rounded-lg resize-none
                 focus:outline-none focus:ring-2 focus:ring-purple-500
@@ -101,6 +117,89 @@ export function BasicTaskInformation({
             )}
           </div>
 
+          {/* Instrucciones */}
+          <div>
+            <label
+              htmlFor="instructions"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Instrucciones Detalladas
+            </label>
+
+            <textarea
+              id="instructions"
+              value={instructions}
+              onChange={(e) => onInstructionsChange(e.target.value)}
+              placeholder="Instrucciones paso a paso para completar la tarea..."
+              rows={6}
+              className={`
+                w-full px-4 py-3 border rounded-lg resize-none
+                focus:outline-none focus:ring-2 focus:ring-purple-500
+                ${errors.instructions ? "border-red-300 bg-red-50" : "border-gray-300"}
+              `}
+            />
+
+            {errors.instructions && (
+              <p className="mt-1 text-sm text-red-600">{errors.instructions}</p>
+            )}
+          </div>
+
+          {/* Estado y Orden */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* Estado */}
+            <div>
+              <label
+                htmlFor="status"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Estado
+              </label>
+              <select
+                id="status"
+                value={status}
+                onChange={(e) => onStatusChange(e.target.value)}
+                className={`
+                  w-full px-4 py-3 border rounded-lg
+                  focus:outline-none focus:ring-2 focus:ring-purple-500
+                  ${errors.status ? "border-red-300 bg-red-50" : "border-gray-300"}
+                `}
+              >
+                {/* <option value="draft">Borrador</option> */}
+                <option value="published">Publicada</option>
+                <option value="closed">Cerrada</option>
+                {/* <option value="archived">Archivada</option> */}
+              </select>
+              {errors.status && (
+                <p className="mt-1 text-sm text-red-600">{errors.status}</p>
+              )}
+            </div>
+
+            {/* Orden */}
+            <div>
+              <label
+                htmlFor="order"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Orden
+              </label>
+              <input
+                id="order"
+                type="number"
+                min="0"
+                value={order}
+                onChange={(e) => onOrderChange(Number(e.target.value))}
+                className={`
+                  w-full px-4 py-3 border rounded-lg
+                  focus:outline-none focus:ring-2 focus:ring-purple-500
+                  ${errors.order ? "border-red-300 bg-red-50" : "border-gray-300"}
+                `}
+              />
+              {errors.order && (
+                <p className="mt-1 text-sm text-red-600">{errors.order}</p>
+              )}
+            </div>
+          </div>
+
         </div>
 
         {/* COLUMNA DERECHA: THUMBNAIL */}
@@ -111,7 +210,7 @@ export function BasicTaskInformation({
           </label>
 
           {thumbnailPreview ? (
-            <div className="relative w-64 h-40 border-2 border-gray-300 rounded-lg overflow-hidden">
+            <div className="relative w-full h-64 border-2 border-gray-300 rounded-lg overflow-hidden">
               <img
                 src={thumbnailPreview}
                 alt="Thumbnail Preview"
@@ -130,7 +229,7 @@ export function BasicTaskInformation({
             <label
               htmlFor="thumbnail"
               className={`
-                flex flex-col items-center justify-center w-64 h-40 border-2 border-dashed rounded-lg cursor-pointer
+                flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer
                 transition-all duration-200
                 ${errors.thumbnail
                   ? "border-red-300 bg-red-50"

@@ -341,14 +341,14 @@ export default function CourseIndex() {
                         </div>
 
                         {/* Quick Stats */}
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 text-center">
                                 <div className="font-bold text-gray-900 text-lg">{data.userProgress.completedItems.length}</div>
-                                <div className="text-gray-600 text-sm">Completados</div>
+                                <div className="text-gray-600 text-sm break-words">Contenidos Completados</div>
                             </div>
                             <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 text-center">
                                 <div className="font-bold text-gray-900 text-lg">{data.modules.length}</div>
-                                <div className="text-gray-600 text-sm">Módulos</div>
+                                <div className="text-gray-600 text-sm break-words">Módulos</div>
                             </div>
                         </div>
                     </div>
@@ -516,7 +516,7 @@ export default function CourseIndex() {
                 </div>
 
                 {/* Tips Section */}
-                <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-2xl p-6 border border-purple-200/50">
+                {/* <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-2xl p-6 border border-purple-200/50">
                     <div className="flex items-start space-x-4">
                         <div className="p-3 bg-purple-100 rounded-full">
                             <Zap className="h-6 w-6 text-purple-600" />
@@ -529,7 +529,7 @@ export default function CourseIndex() {
                             </p>
                         </div>
                     </div>
-                </div>
+                </div> */}
             </div>
 
             {/* <style jsx>{`

@@ -110,6 +110,10 @@ export const ContentAPI = {
             }
         }
 
+        if (fromModule !== undefined) {
+            params.append("fromModule", fromModule ? "true" : "false");
+        }
+
         const url = `${CONTENTS_ENDPOINTS.BY_ID(contentId)}${params.toString() ? `?${params.toString()}` : ""
             }`;
 

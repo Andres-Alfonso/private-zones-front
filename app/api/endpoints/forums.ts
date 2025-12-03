@@ -213,10 +213,19 @@ export const ForumsAPI = {
     forumId: string,
     client?: AxiosInstance
   ): Promise<ForumGetByIdResponse> {
-    const apiClientToUse = client || apiClient;
-    const response = await apiClientToUse.get<ForumGetByIdResponse>(
-      FORUMS_ENDPOINTS.BY_ID(forumId)
-    );
-    return response.data;
+    try {
+      const apiClientToUse = client || apiClient;
+      const response = await apiClientToUse.get<ForumGetByIdResponse>(
+        FORUMS_ENDPOINTS.BY_ID(forumId)
+      );
+      return response.data;
+    } catch (error) {
+      // console.error('Error en getByCourse:', error);
+      return {
+        "success": false,
+        "message": "Error al obtener el foro",
+        "data": null as any
+      };
+    }
   },
 };

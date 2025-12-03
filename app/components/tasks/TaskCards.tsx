@@ -17,9 +17,10 @@ export interface TaskItem {
 interface TaskCardsProps {
   tasks: TaskItem[];
   hasAdminRole: boolean;
+  courseId: string;
 }
 
-export default function TaskCards({ tasks, hasAdminRole }: TaskCardsProps) {
+export default function TaskCards({ tasks, hasAdminRole, courseId }: TaskCardsProps) {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-ES', {
       year: 'numeric',
@@ -89,7 +90,7 @@ export default function TaskCards({ tasks, hasAdminRole }: TaskCardsProps) {
               {hasAdminRole && (
                 <>
                   <NavLink
-                    to={`/tasks/${task.id}/edit`}
+                    to={`/tasks/${task.id}/edit?course=${courseId}`}
                     className="flex items-center justify-center p-2.5 border border-gray-300/60 rounded-xl hover:bg-gray-50/80 transition-all duration-200 backdrop-blur-sm hover:shadow-md transform hover:scale-105"
                   >
                     <Edit className="h-4 w-4 text-gray-600" />

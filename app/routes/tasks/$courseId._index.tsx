@@ -153,7 +153,8 @@ export default function CourseTasksIndex() {
                 {tasks.data.length > 0 ? (
                     <TaskCards 
                         tasks={tasks.data} 
-                        hasAdminRole={hasRole('admin') || hasRole('instructor')}
+                        hasAdminRole={hasRole('admin') || hasRole('superadmin')}
+                        courseId={courseId}
                     />
                 ) : (
                     <div className="text-center py-16">

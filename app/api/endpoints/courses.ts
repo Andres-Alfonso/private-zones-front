@@ -1,7 +1,7 @@
 // app/api/endpoints/courses.ts
 
 import { AxiosInstance } from 'axios';
-import apiClient from '../client';
+import apiClient, { createApiClient } from '../client';
 import { API_CONFIG } from '../config';
 import { 
   Course, 
@@ -17,6 +17,7 @@ import {
 // Primero actualiza tu API_CONFIG para incluir los endpoints de courses
 const COURSES_ENDPOINTS = {
   BASE: '/v1/courses',
+  FOR_HOME: '/v1/courses/home',
   BY_ID: (id: string) => `/v1/courses/${id}`,
   BY_TENANT: '/v1/courses/tenant',
   CATEGORIES: '/v1/courses/categories',
@@ -58,7 +59,26 @@ export const CoursesAPI = {
     
     const queryString = params.toString();
     const url = `${COURSES_ENDPOINTS.BASE}${queryString ? `?${queryString}` : ''}`;
+ 
+    const response = await apiClientToUse.get(url);
+    return response.data;
+  },
+
+  getForHome: async (filters?: CourseFilters, client?: AxiosInstance): Promise<CourseListResponse> => {
+    const apiClientToUse = client || apiClient;
+    const params = new URLSearchParams();
     
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          params.append(key, value.toString());
+        }
+      });
+    }
+    
+    const queryString = params.toString();
+    const url = `${COURSES_ENDPOINTS.FOR_HOME}${queryString ? `?${queryString}` : ''}`;
+ 
     const response = await apiClientToUse.get(url);
     return response.data;
   },
@@ -132,3 +152,7 @@ export const CoursesAPI = {
     return response.data;
   }
 };
+
+function getCurrentDomain(): string | undefined {
+  throw new Error('Function not implemented.');
+}

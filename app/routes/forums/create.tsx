@@ -14,7 +14,7 @@ import { ForumSettings } from "~/components/forums/ForumSettings";
 import { ThumbnailUploader } from "~/components/forums/ThumbnailUploader";
 import { TagsEditor } from "~/components/forums/TagsEditor";
 import { ForumPreview } from "~/components/forums/ForumPreview";
-import { FormActions } from "~/components/forums/FormActions";
+import { ForumSummaryPanel } from "~/components/forums/ForumSummaryPanel";
 
 // Tipos para el formulario
 interface ForumFormData {
@@ -38,46 +38,23 @@ interface FormErrors {
 }
 
 type LoaderData = {
-  courseId: string | null;
+  courseId?: string;
 }
 
 export const loader: LoaderFunction = async ({ request }) => {
-  try {
-    const url = new URL(request.url);
-    const urlParams = new URLSearchParams(url.search);
-    const courseId = urlParams.get('course');
+  const url = new URL(request.url);
+  const courseId = url.searchParams.get('courseId');
 
-    if(courseId == null){
-      throw new Response("Error interno del servidor", { 
-        status: 500,
-        statusText: "Internal Server Error"
-      });
-    }
-
-    return json<LoaderData>({ courseId: courseId || null });
-    
-  } catch (error) {
-    if (error instanceof Response) {
-      throw error;
-    }
-    
-    console.error("Error cargando datos:", error);
-    throw new Response("Error interno del servidor", { 
-      status: 500,
-      statusText: "Internal Server Error"
-    });
-  }
+  return json<LoaderData>({ 
+    courseId: courseId || undefined
+  });
 }
 
-// Action para procesar el formulario
+// Action para procesar el formulario de creación
 export const action: ActionFunction = async ({ request }) => {
   const formData = await request.formData();
   
   try {
-    const url = new URL(request.url);
-    const urlParams = new URLSearchParams(url.search);
-    const courseId = urlParams.get('course') ?? 'not_id';
-
     // Obtener datos del formulario
     const title = formData.get('title') as string;
     const description = formData.get('description') as string;
@@ -88,6 +65,7 @@ export const action: ActionFunction = async ({ request }) => {
     const expirationDate = formData.get('expirationDate') as string;
     const tags = JSON.parse((formData.get('tags') as string) || '[]');
     const file = formData.get('file') as File | null;
+    const courseId = formData.get('courseId') as string;
 
     // Validaciones básicas
     const errors: FormErrors = {};
@@ -132,7 +110,7 @@ export const action: ActionFunction = async ({ request }) => {
       isPinned,
       expirationDate: expirationDate ? new Date(expirationDate) : undefined,
       tags: tags.length > 0 ? tags : undefined,
-      courseId: courseId
+      courseId: courseId || undefined,
     };
 
     // Simular delay de creación
@@ -141,12 +119,12 @@ export const action: ActionFunction = async ({ request }) => {
     const authenticatedApiClient = createApiClientFromRequest(request);
     const response = await ForumsAPI.create(forumData, authenticatedApiClient);
 
-    if (response.success) {
+    if (response.success && response.data) {
       // Redireccionar según contexto
       if (courseId) {
-        return redirect(`/forums/course/${courseId}`);
+        return redirect(`/forums/course/${courseId}?created=true`);
       } else {
-        return redirect('/forums');
+        return redirect(`/forums?created=true`);
       }
     } else {
       throw new Error(response.message || 'Error desconocido');
@@ -173,6 +151,7 @@ export default function CreateForum() {
   
   const [showPreview, setShowPreview] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [hasChanges, setHasChanges] = useState(false);
   const [formData, setFormData] = useState<ForumFormData>({
     title: actionData?.fields?.title || '',
     description: actionData?.fields?.description || '',
@@ -204,6 +183,7 @@ export default function CreateForum() {
   // Manejar cambios en el formulario
   const handleFormChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    setHasChanges(true);
   };
 
   // Manejar envío del formulario
@@ -239,116 +219,138 @@ export default function CreateForum() {
     }
   };
 
+  // función para cancelar
+  const handleCancel = () => {
+    if (hasChanges) {
+      if (confirm('¿Estás seguro de que quieres cancelar? Se perderán todos los cambios.')) {
+        handleBack();
+      }
+    } else {
+      handleBack();
+    }
+  };
+
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
-      {/* Header */}
-      <CreateForumHeader
-        onBack={handleBack}
-        onPreview={() => setShowPreview(true)}
-        isValid={isValid}
-      />
-
-      <Form id="forum-form" method="post" encType="multipart/form-data" className="space-y-8">
-        {/* Información Básica */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-8">
-          <BasicForumInformation
-            title={formData.title}
-            description={formData.description}
-            category={formData.category}
-            onTitleChange={(value) => handleFormChange('title', value)}
-            onDescriptionChange={(value) => handleFormChange('description', value)}
-            onCategoryChange={(value) => handleFormChange('category', value)}
-            errors={errors}
-          />
-        </div>
-
-        {/* Imagen de Portada */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-8">
-          <ThumbnailUploader
-            thumbnailUrl={formData.thumbnailUrl}
-            selectedFile={selectedFile}
-            onUrlChange={(url) => {
-              handleFormChange('thumbnailUrl', url);
-              if (url && selectedFile) {
-                setSelectedFile(null);
-              }
-            }}
-            onFileChange={(file) => {
-              setSelectedFile(file);
-              if (file && formData.thumbnailUrl) {
-                handleFormChange('thumbnailUrl', '');
-              }
-            }}
-            error={errors.thumbnailUrl || errors.file}
-          />
-        </div>
-
-        {/* Configuración */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-8">
-          <ForumSettings
-            isActive={formData.isActive}
-            isPinned={formData.isPinned}
-            expirationDate={formData.expirationDate}
-            onIsActiveChange={(value) => handleFormChange('isActive', value)}
-            onIsPinnedChange={(value) => handleFormChange('isPinned', value)}
-            onExpirationDateChange={(value) => handleFormChange('expirationDate', value)}
-          />
-        </div>
-
-        {/* Etiquetas */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-8">
-          <TagsEditor
-            tags={formData.tags}
-            onTagsChange={(tags) => handleFormChange('tags', tags)}
-          />
-        </div>
-
-        {/* Acciones del Formulario */}
-        <FormActions
-          onSave={handleSubmit}
-          isSubmitting={isSubmitting}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="container mx-auto px-4 py-8">
+        
+        {/* Header */}
+        <CreateForumHeader
+          onBack={handleBack}
+          onPreview={() => setShowPreview(true)}
           isValid={isValid}
+          isEditing={false}
         />
 
-        {/* Campos ocultos para el formulario */}
-        <input type="hidden" name="title" value={formData.title} />
-        <input type="hidden" name="description" value={formData.description} />
-        <input type="hidden" name="category" value={formData.category} />
-        <input type="hidden" name="thumbnailUrl" value={formData.thumbnailUrl} />
-        <input type="hidden" name="isActive" value={String(formData.isActive)} />
-        <input type="hidden" name="isPinned" value={String(formData.isPinned)} />
-        <input type="hidden" name="expirationDate" value={formData.expirationDate} />
-        <input type="hidden" name="tags" value={JSON.stringify(formData.tags)} />
-      </Form>
-
-      {/* Modal de Vista Previa */}
-      {showPreview && (
-        <ForumPreview
-          formData={formData}
-          selectedFile={selectedFile}
-          onClose={() => setShowPreview(false)}
-        />
-      )}
-
-      {/* Error general */}
-      {errors.general && (
-        <div className="bg-red-50 border border-red-200 rounded-2xl p-4">
-          <div className="flex items-center space-x-2 text-red-600">
-            <AlertCircle className="h-5 w-5" />
-            <span className="font-medium">Error: {errors.general}</span>
+        {/* Error general */}
+        {errors.general && (
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-6">
+            <div className="flex items-center space-x-2 text-red-600">
+              <AlertCircle className="h-5 w-5" />
+              <span className="font-medium">Error: {errors.general}</span>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Mensaje de éxito */}
-      {typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('created') === 'true' && (
-        <div className="bg-green-50 border border-green-200 rounded-2xl p-4">
-          <div className="flex items-center space-x-2 text-green-600">
-            <AlertCircle className="h-5 w-5" />
-            <span className="font-medium">¡Foro creado exitosamente!</span>
+        <Form id="forum-form" method="post" encType="multipart/form-data">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            
+            {/* Columna izquierda - Contenido principal (2/3) */}
+            <div className="xl:col-span-2 space-y-6">
+              
+              {/* Información Básica */}
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-6">
+                <BasicForumInformation
+                  title={formData.title}
+                  description={formData.description}
+                  category={formData.category}
+                  onTitleChange={(value) => handleFormChange('title', value)}
+                  onDescriptionChange={(value) => handleFormChange('description', value)}
+                  onCategoryChange={(value) => handleFormChange('category', value)}
+                  errors={errors}
+                />
+              </div>
+
+              {/* Imagen de Portada */}
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-6">
+                <ThumbnailUploader
+                  thumbnailUrl={formData.thumbnailUrl}
+                  selectedFile={selectedFile}
+                  onUrlChange={(url) => {
+                    handleFormChange('thumbnailUrl', url);
+                    if (url && selectedFile) {
+                      setSelectedFile(null);
+                    }
+                  }}
+                  onFileChange={(file) => {
+                    setSelectedFile(file);
+                    if (file && formData.thumbnailUrl) {
+                      handleFormChange('thumbnailUrl', '');
+                    }
+                  }}
+                  error={errors.thumbnailUrl || errors.file}
+                />
+              </div>
+
+              {/* Configuración y Etiquetas en dos columnas */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Configuración */}
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-6">
+                  <ForumSettings
+                    isActive={formData.isActive}
+                    isPinned={formData.isPinned}
+                    expirationDate={formData.expirationDate}
+                    onIsActiveChange={(value) => handleFormChange('isActive', value)}
+                    onIsPinnedChange={(value) => handleFormChange('isPinned', value)}
+                    onExpirationDateChange={(value) => handleFormChange('expirationDate', value)}
+                  />
+                </div>
+
+                {/* Etiquetas */}
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-6">
+                  <TagsEditor
+                    tags={formData.tags}
+                    onTagsChange={(tags) => handleFormChange('tags', tags)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Columna derecha - Panel de resumen (1/3) */}
+            <div>
+              <ForumSummaryPanel
+                formData={formData}
+                hasChanges={hasChanges}
+                isSubmitting={isSubmitting}
+                isValid={isValid}
+                onSubmit={handleSubmit}
+                onCancel={handleCancel}
+                isEditing={false}
+              />
+            </div>
           </div>
-        </div>
-      )}
+
+          {/* Campos ocultos para el formulario */}
+          <input type="hidden" name="title" value={formData.title} />
+          <input type="hidden" name="description" value={formData.description} />
+          <input type="hidden" name="category" value={formData.category} />
+          <input type="hidden" name="thumbnailUrl" value={formData.thumbnailUrl} />
+          <input type="hidden" name="isActive" value={String(formData.isActive)} />
+          <input type="hidden" name="isPinned" value={String(formData.isPinned)} />
+          <input type="hidden" name="expirationDate" value={formData.expirationDate} />
+          <input type="hidden" name="tags" value={JSON.stringify(formData.tags)} />
+          {courseId && <input type="hidden" name="courseId" value={courseId} />}
+        </Form>
+
+        {/* Modal de Vista Previa */}
+        {showPreview && (
+          <ForumPreview
+            formData={formData}
+            selectedFile={selectedFile}
+            onClose={() => setShowPreview(false)}
+          />
+        )}
+      </div>
     </div>
   );
 }

@@ -7,17 +7,34 @@ import { useCurrentUser } from "~/context/AuthContext";
 import { SectionApi } from "~/api/endpoints/sections";
 import CoursesSection from "~/components/home/CoursesSection";
 import SectionsSection from "~/components/home/SectionsSection";
+import { CoursesAPI } from "~/api/endpoints/courses";
+import { createApiClientFromRequest } from "~/api/client";
+import { CourseFilters } from "~/api/types/course.types";
 
 export const loader: LoaderFunction = async ({ request }) => {
     try {
         const url = new URL(request.url);
         const hostname = url.hostname;
+
+        const filters: CourseFilters = {
+            search: url.searchParams.get('search') || undefined,
+            isActive: url.searchParams.get('active') ? url.searchParams.get('active') === 'true' : undefined,
+            page: parseInt(url.searchParams.get('page') || '1'),
+            limit: parseInt(url.searchParams.get('limit') || '20'),
+        };
         
         // Obtener secciones si es necesario
         const sections = await SectionApi.getAll({}, hostname);
+
+        // const courses = await CoursesAPI.getAll({});
+
+        const authenticatedApiClient = createApiClientFromRequest(request);
+            
+        const courses = await CoursesAPI.getForHome(filters, authenticatedApiClient);
         
         return json({ 
             sections: sections || { data: [], total: 0 },
+            courses: courses || { data: [], total: 0 },
             error: null 
         });
     } catch (error: any) {
@@ -30,7 +47,7 @@ export const loader: LoaderFunction = async ({ request }) => {
 };
 
 export default function HomeIndex() {
-    const { sections, error } = useLoaderData<typeof loader>();
+    const { sections, courses, error } = useLoaderData<typeof loader>();
     const { user } = useCurrentUser();
     const { state: tenantState } = useTenant();
     const { tenant } = tenantState;
@@ -73,7 +90,7 @@ export default function HomeIndex() {
             
             {/* Mostrar cursos si está habilitado */}
             {allowCoursesHome && (
-                <CoursesSection textColor={customTextColor} />
+                <CoursesSection courses={courses} textColor={customTextColor} />
             )}
 
 

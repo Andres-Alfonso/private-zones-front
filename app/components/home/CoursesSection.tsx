@@ -1,13 +1,17 @@
 // app/components/home/CoursesSection.tsx
 
 import { Link } from "@remix-run/react";
-import { GraduationCap, Clock, Play } from "lucide-react";
+import { GraduationCap, Clock, Play, Building2, Folder } from "lucide-react";
 
 interface CoursesSectionProps {
+    courses: {
+        data: any[];
+        total: number;
+    };
     textColor?: string;
 }
 
-export default function CoursesSection({ textColor }: CoursesSectionProps) {
+export default function CoursesSection({ courses, textColor }: CoursesSectionProps) {
     // Usar color personalizado si existe y no está vacío, sino usar colores por defecto
     const shouldUseCustomColor = textColor && textColor.trim() !== '';
     
@@ -51,6 +55,38 @@ export default function CoursesSection({ textColor }: CoursesSectionProps) {
         }
     ];
 
+        if (!courses.data || courses.data.length === 0) {
+            return (
+                <div>
+                    <div className="mb-6">
+                        <h2 
+                            className={`text-2xl font-bold flex items-center gap-3 ${!shouldUseCustomColor ? 'bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent' : ''}`}
+                            style={shouldUseCustomColor ? { color: textColor } : {}}
+                        >
+                            <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg">
+                                <Building2 className="h-6 w-6 text-white" />
+                            </div>
+                            Secciones
+                        </h2>
+                    </div>
+                    
+                    <div className="text-center py-8">
+                        <div className="text-gray-400 mb-4">
+                            <Folder className="w-12 h-12 mx-auto" />
+                        </div>
+                        <p 
+                            className={!shouldUseCustomColor ? 'text-gray-600' : ''}
+                            style={shouldUseCustomColor ? { color: textColor } : {}}
+                        >
+                            No hay cursos disponibles
+                        </p>
+                    </div>
+                </div>
+            );
+        }else{
+            console.log('Rendering courses:', courses);
+        }
+
     return (
         <div>
             <div className="mb-6">
@@ -66,7 +102,7 @@ export default function CoursesSection({ textColor }: CoursesSectionProps) {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {mockCourses.map((course) => (
+                {courses.data.slice(0, 8).map((course: any) => (
                     <Link 
                         key={course.id} 
                         to={`/courses/${course.id}`}
@@ -75,11 +111,13 @@ export default function CoursesSection({ textColor }: CoursesSectionProps) {
                         {/* Thumbnail */}
                         <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100">
                             {course.thumbnail ? (
+                                <>
                                 <img 
                                     src={course.thumbnail} 
                                     alt={course.title}
                                     className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                                 />
+                                </>
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center">
                                     <img 

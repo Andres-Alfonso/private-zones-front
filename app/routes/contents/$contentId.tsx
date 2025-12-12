@@ -1,10 +1,13 @@
-// app/routes/contents/create.tsx
+// app/routes/contents/edit.$contentId.tsx
 
 import { json, LoaderFunction, ActionFunction, redirect } from "@remix-run/node";
 import { useLoaderData, useActionData, Form, useNavigation, useNavigate } from "@remix-run/react";
 import { useState } from "react";
 import { AlertCircle } from "lucide-react";
-import { useCurrentUser } from "~/context/AuthContext";
+import { createApiClientFromRequest } from "~/api/client";
+import { ContentAPI } from "~/api/endpoints/contents";
+import { CoursesAPI } from "~/api/endpoints/courses";
+import { CourseBasic } from "~/api/types/course.types";
 
 // Importar componentes
 import { CreateContentHeader } from "~/components/contents/CreateContentHeader";
@@ -14,11 +17,6 @@ import { ContentUploader } from "~/components/contents/ContentUploader";
 import { MetadataEditor } from "~/components/contents/MetadataEditor";
 import { ContentPreview } from "~/components/contents/ContentPreview";
 import { ContentSummaryPanel } from "~/components/contents/ContentSummaryPanel";
-import { request } from "node_modules/axios/index.cjs";
-import { createApiClientFromRequest } from "~/api/client";
-import { CoursesAPI } from "~/api/endpoints/courses";
-import { CourseBasic } from "~/api/types/course.types";
-import { ContentAPI } from "~/api/endpoints/contents";
 
 // Tipos para el formulario
 interface ContentFormData {
@@ -28,13 +26,6 @@ interface ContentFormData {
   contentUrl: string;
   courseId: string;
   metadata: Record<string, any>;
-}
-
-interface Course {
-  id: string;
-  title: string;
-  category: string;
-  instructor: string;
 }
 
 interface FormErrors {
@@ -47,29 +38,60 @@ interface FormErrors {
   general?: string;
 }
 
+interface ContentData {
+  id: string;
+  title: string;
+  description: string | null;
+  type: 'video' | 'image' | 'document' | 'embed' | 'scorm';
+  contentUrl: string | null;
+  courseId: string;
+  metadata: Record<string, any>;
+}
+
 type LoaderData = {
+  content: ContentData;
   coursesResult: CourseBasic[] | { error: string };
-  course: string | null;
+  courseId: string;
 }
 
 export const loader: LoaderFunction = async ({ request, params }) => {
   try {
-    const url = new URL(request.url);
-    const urlParams = new URLSearchParams(url.search);
-    const preferredLanguage = urlParams.get('lang') || 'es';
-    const courseId = urlParams.get('course');
+    const { contentId } = params;
 
-    const requestApiClient = createApiClientFromRequest(request);
-    const coursesResult = await CoursesAPI.getByTenant(requestApiClient);
-
-    if (!coursesResult) {
-      throw new Response("Cursos no encontrado", { 
-        status: 500,
-        statusText: "Upps! Algo salió mal"
+    if (!contentId) {
+      throw new Response("ID del contenido no proporcionado", { 
+        status: 400,
+        statusText: "Bad Request"
       });
     }
 
-    return json<LoaderData>({ coursesResult, course: courseId || null });
+    const authenticatedApiClient = createApiClientFromRequest(request);
+    
+    // Cargar el contenido
+    const contentResponse = await ContentAPI.getById(contentId, authenticatedApiClient);
+
+    if (!contentResponse.success || !contentResponse.data) {
+      throw new Response("Contenido no encontrado", { 
+        status: 404,
+        statusText: "Not Found"
+      });
+    }
+
+    // Cargar los cursos disponibles
+    const coursesResult = await CoursesAPI.getByTenant(authenticatedApiClient);
+
+    if (!coursesResult) {
+      throw new Response("Error al cargar cursos", { 
+        status: 500,
+        statusText: "Internal Server Error"
+      });
+    }
+
+    return json<LoaderData>({ 
+      content: contentResponse.data,
+      coursesResult,
+      courseId: contentResponse.data.courseId
+    });
     
   } catch (error) {
     if (error instanceof Response) {
@@ -84,14 +106,15 @@ export const loader: LoaderFunction = async ({ request, params }) => {
   }
 }
 
-// Action para procesar el formulario
-export const action: ActionFunction = async ({ request }) => {
+// Action para procesar el formulario de edición
+export const action: ActionFunction = async ({ request, params }) => {
   const formData = await request.formData();
+  const { contentId } = params;
   
   try {
-    const url = new URL(request.url);
-    const urlParams = new URLSearchParams(url.search);
-    const course = urlParams.get('course');
+    if (!contentId) {
+      throw new Error("ID del contenido no proporcionado");
+    }
 
     // Obtener datos del formulario
     const title = formData.get('title') as string;
@@ -130,59 +153,60 @@ export const action: ActionFunction = async ({ request }) => {
     if (Object.keys(errors).length > 0) {
       return json({ 
         errors,
-        fields: { title, description, contentType, contentUrl, courseId, metadata }
+        fields: { 
+          title, 
+          description, 
+          contentType, 
+          contentUrl, 
+          courseId, 
+          metadata 
+        }
       }, { status: 400 });
     }
 
-    // Simular procesamiento de archivo si existe
+    // Procesar archivo si existe
+    let finalContentUrl = contentUrl;
     if (file && file.size > 0) {
       console.log(`Procesando archivo: ${file.name} (${file.size} bytes)`);
+      // Aquí se subiría el archivo al servidor/storage
+      finalContentUrl = `uploaded-files/${file.name}`;
     }
 
-    // Simular creación del contenido
-    console.log('Creando contenido:', {
-      title,
-      description,
-      contentType,
-      contentUrl: file ? `uploaded-files/${file.name}` : contentUrl,
-      courseId,
-      metadata
-    });
-
-    // Simular delay de creación
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
+    // Preparar datos para el API
     const contentData = {
-      title: title,
-      description,
+      title,
+      description: description || undefined,
       type: contentType,
-      contentUrl: file ? `uploaded-files/${file.name}` : contentUrl,
+      contentUrl: finalContentUrl || undefined,
       courseId,
-      metadata
+      metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
     };
 
+    // Simular delay de actualización
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
     const authenticatedApiClient = createApiClientFromRequest(request);
-    const response = await ContentAPI.create(contentData, authenticatedApiClient);
+    const response = await ContentAPI.update(contentId, contentData, authenticatedApiClient);
 
     if (response.success) {
-      return redirect(`/contents/course/${course}`);
+      // Redireccionar a la lista de contenidos del curso
+      return redirect(`/contents/course/${courseId}?updated=true`);
     } else {
       throw new Error(response.message || 'Error desconocido');
     }
 
   } catch (error: any) {
-    console.error('Error al crear contenido:', error);
+    console.error('Error al actualizar contenido:', error);
     return json({ 
-      errors: { general: error.message || 'Error al crear el contenido' },
+      errors: { general: error.message || 'Error al actualizar el contenido' },
       fields: Object.fromEntries(formData)
     }, { status: 500 });
   }
 };
 
 // Componente principal
-export default function CreateContent() {
-  const { coursesResult, course } = useLoaderData<LoaderData>();
-  
+export default function EditContent() {
+  const { content, coursesResult, courseId } = useLoaderData<LoaderData>();
   const actionData = useActionData<{ 
     errors?: FormErrors; 
     fields?: any;
@@ -190,20 +214,17 @@ export default function CreateContent() {
   const navigation = useNavigation();
   const navigate = useNavigate();
   
-  const [currentStep, setCurrentStep] = useState(1);
   const [showPreview, setShowPreview] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [hasChanges, setHasChanges] = useState(false);
   const [formData, setFormData] = useState<ContentFormData>({
-    title: actionData?.fields?.title || '',
-    description: actionData?.fields?.description || '',
-    contentType: actionData?.fields?.contentType || ('' as any),
-    contentUrl: actionData?.fields?.contentUrl || '',
-    courseId: course || '',
-    metadata: actionData?.fields?.metadata || {}
+    title: actionData?.fields?.title || content.title,
+    description: actionData?.fields?.description || content.description || '',
+    contentType: actionData?.fields?.contentType || content.type,
+    contentUrl: actionData?.fields?.contentUrl || content.contentUrl || '',
+    courseId: actionData?.fields?.courseId || content.courseId,
+    metadata: actionData?.fields?.metadata || content.metadata || {}
   });
 
-  const totalSteps = 4;
   const isSubmitting = navigation.state === 'submitting';
   const errors = actionData?.errors || {};
 
@@ -243,7 +264,6 @@ export default function CreateContent() {
   // Manejar cambios en el formulario
   const handleFormChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    setHasChanges(true);
   };
 
   // Manejar envío del formulario
@@ -272,8 +292,8 @@ export default function CreateContent() {
 
   // función onBack
   const handleBack = () => {
-    if (course) {
-      navigate(`/contents/course/${course}`);
+    if (courseId) {
+      navigate(`/contents/course/${courseId}`);
     } else {
       navigate("/contents");
     }
@@ -281,11 +301,7 @@ export default function CreateContent() {
 
   // función para cancelar
   const handleCancel = () => {
-    if (hasChanges) {
-      if (confirm('¿Estás seguro de que quieres cancelar? Se perderán todos los cambios.')) {
-        handleBack();
-      }
-    } else {
+    if (confirm('¿Estás seguro de que quieres cancelar? Se perderán los cambios no guardados.')) {
       handleBack();
     }
   };
@@ -308,8 +324,9 @@ export default function CreateContent() {
           onBack={handleBack}
           onPreview={() => setShowPreview(true)}
           isValid={!!isValid}
-          currentStep={currentStep}
-          totalSteps={totalSteps}
+          currentStep={1}
+          totalSteps={4}
+          isEditing={true}
         />
 
         {/* Error general */}
@@ -397,7 +414,7 @@ export default function CreateContent() {
                 formData={formData}
                 selectedCourse={selectedCourse || null}
                 selectedFile={selectedFile}
-                hasChanges={hasChanges}
+                hasChanges={true}
                 isSubmitting={isSubmitting}
                 isValid={!!isValid}
                 onSubmit={handleSubmit}
@@ -426,11 +443,11 @@ export default function CreateContent() {
         )}
 
         {/* Mensaje de éxito */}
-        {typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('created') === 'true' && (
+        {typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('updated') === 'true' && (
           <div className="fixed bottom-4 right-4 bg-green-50 border border-green-200 rounded-2xl p-4 shadow-lg animate-in slide-in-from-bottom">
             <div className="flex items-center space-x-2 text-green-600">
               <AlertCircle className="h-5 w-5" />
-              <span className="font-medium">¡Contenido creado exitosamente!</span>
+              <span className="font-medium">¡Contenido actualizado exitosamente!</span>
             </div>
           </div>
         )}

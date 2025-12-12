@@ -54,6 +54,7 @@ export default defineConfig({
             route("course/:courseId", "routes/contents/$courseId._index.tsx");
             route("create", "routes/contents/create.tsx");
             route(":id", "routes/contents/$id.tsx");
+            route("edit/:contentId", "routes/contents/$contentId.tsx");
             // route("create", "routes/contents/create.tsx");
             // route(":id/edit", "routes/contents/$id.edit.tsx");
           });

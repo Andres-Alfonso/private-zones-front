@@ -116,7 +116,7 @@ export interface TenantConfig {
   secondaryColor: string;
   logo?: string;
   logoPath?: string;
-  favicon?: string;
+  faviconPath?: string;
   showLearningModule: boolean;
   enableChatSupport: boolean;
   allowGamification: boolean;

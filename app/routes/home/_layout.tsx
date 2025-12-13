@@ -97,7 +97,7 @@ function HomeLayoutContent() {
                 backgroundAttachment: 'fixed'
             }}
         >
-            <div className={`shadow-lg border-b border-gray-200/50 ${!hasBackground ? 'backdrop-blur-sm' : ''}`}>
+            <div className={`shadow-lg border-b border-gray-200/50 min-h-screen ${!hasBackground ? 'backdrop-blur-sm' : ''}`}>
                 <div className="container mx-auto px-4">
                     {/* Breadcrumb y título */}
                     <div className="py-6 border-b border-gray-200/50">

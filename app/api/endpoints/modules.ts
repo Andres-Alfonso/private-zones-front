@@ -83,12 +83,55 @@ export interface ContentResponse {
     };
 }
 
+export interface ContentGetResponse {
+    id: string;
+    course: {
+        id: string;
+        slug: string;
+        tenantId: string;
+        isActive: boolean;
+        created_at: string;
+        updated_at: string;
+        deleted_at: string | null;
+        translations: any[];
+    };
+
+    courseId: string;
+    title: string;
+    description: string | null;
+    thumbnailImagePath: string | null;
+
+    createdAt: string;
+    updatedAt: string;
+    deletedAt: string | null;
+
+    configuration: {
+        id: string;
+        courseModuleId: string;
+        isActive: boolean;
+        order: number;
+        approvalPercentage: number;
+        metadata: Record<string, any>;
+        createdAt: string;
+        updatedAt: string;
+        deletedAt: string | null;
+    };
+
+    items: any[];
+}
+
+
+export interface ContentGetByIdResponse {
+    success: boolean;
+    data: ContentGetResponse;
+}
+
 export const ModuleAPI = {
     async getById(
         contentId: string,
         options?: GetContentOptions,
         client?: AxiosInstance
-    ): Promise<ContentResponse> {
+    ): Promise<ContentGetByIdResponse> {
         const apiClientToUse = client || apiClient;
         // console.log('CLIENTE EN CONTENTS API:', apiClientToUse);
 

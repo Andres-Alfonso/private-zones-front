@@ -124,7 +124,7 @@ export default function CourseModulesIndex() {
 
     // Manejar edición
     const handleEdit = (moduleId: string) => {
-        navigate(`/modules/${moduleId}/edit`);
+        navigate(`/modules/${moduleId}?course=${courseId}#content-modules`);
     };
 
     // Manejar eliminación

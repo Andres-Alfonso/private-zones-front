@@ -1,7 +1,7 @@
 // ~/components/modules/BasicModuleInformation.tsx
 
 import { useState } from "react";
-import { Upload, X, Image as ImageIcon, FileText, Layers } from "lucide-react";
+import { Upload, X, Image as ImageIcon, Layers } from "lucide-react";
 import { ModuleFormData } from "~/routes/modules/create";
 
 interface BasicModuleInformationProps {
@@ -29,10 +29,9 @@ export function BasicModuleInformation({
     if (file) {
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
-      // Limpiar URL existente
-      onFormChange('thumbnailImagePath', '');
+      onFormChange('thumbnailImagePath', url);
     } else {
-      if (previewUrl) {
+      if (previewUrl && previewUrl.startsWith('blob:')) {
         URL.revokeObjectURL(previewUrl);
       }
       setPreviewUrl(null);
@@ -69,177 +68,133 @@ export function BasicModuleInformation({
     return null;
   };
 
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      handleThumbnailFileSelect(file);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center space-x-3">
-        <div className="p-2 bg-blue-100 rounded-lg">
-          <Layers className="h-5 w-5 text-blue-600" />
-        </div>
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">Información Básica del Módulo</h2>
-          <p className="text-sm text-gray-600">Define los datos principales del módulo</p>
-        </div>
+      <div className="flex items-center space-x-2 mb-6">
+        <Layers className="h-6 w-6 text-blue-600" />
+        <h2 className="text-xl font-semibold text-gray-900">Información Básica</h2>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Columna izquierda - Información básica */}
-        <div className="space-y-6">
-          {/* Título */}
-          <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-              Título del Módulo *
-            </label>
-            <input
-              type="text"
-              id="title"
-              value={formData.title}
-              onChange={(e) => onFormChange('title', e.target.value)}
-              placeholder="Ej: Fundamentos de React"
-              className={`
-                w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                transition-colors duration-200
-                ${errors.title ? 'border-red-300 bg-red-50' : 'border-gray-300'}
-              `}
-            />
-            {errors.title && (
-              <p className="mt-1 text-sm text-red-600">{errors.title}</p>
-            )}
-          </div>
+      <div className="space-y-4">
+        {/* Título */}
+        <div>
+          <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+            Título del Módulo *
+          </label>
+          <input
+            type="text"
+            id="title"
+            value={formData.title}
+            onChange={(e) => onFormChange('title', e.target.value)}
+            placeholder="Ej: Fundamentos de React"
+            className={`
+              w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent
+              transition-colors duration-200
+              ${errors.title ? 'border-red-300 bg-red-50' : 'border-gray-300'}
+            `}
+          />
+          {errors.title && (
+            <p className="mt-1 text-sm text-red-600">{errors.title}</p>
+          )}
+        </div>
 
-          {/* Descripción */}
-          <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-              Descripción
-            </label>
-            <textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => onFormChange('description', e.target.value)}
-              placeholder="Describe el contenido y objetivos del módulo..."
-              rows={4}
-              className={`
-                w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                transition-colors duration-200 resize-none
-                ${errors.description ? 'border-red-300 bg-red-50' : 'border-gray-300'}
-              `}
-            />
-            {errors.description && (
-              <p className="mt-1 text-sm text-red-600">{errors.description}</p>
-            )}
-          </div>
+        {/* Descripción */}
+        <div>
+          <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+            Descripción
+          </label>
+          <textarea
+            id="description"
+            value={formData.description}
+            onChange={(e) => onFormChange('description', e.target.value)}
+            placeholder="Describe el contenido y objetivos del módulo..."
+            rows={4}
+            className={`
+              w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent
+              transition-colors duration-200 resize-none
+              ${errors.description ? 'border-red-300 bg-red-50' : 'border-gray-300'}
+            `}
+          />
+          {errors.description && (
+            <p className="mt-1 text-sm text-red-600">{errors.description}</p>
+          )}
+        </div>
 
-          {/* URL de thumbnail manual */}
-          <div>
-            <label htmlFor="thumbnailUrl" className="block text-sm font-medium text-gray-700 mb-2">
-              URL de Imagen (opcional)
+        {/* Imagen del módulo */}
+        <div>
+          <h3 className="text-sm font-medium text-gray-700 mb-3">Imagen del Módulo</h3>
+          <div className="flex items-center justify-center w-full">
+            <label 
+              htmlFor="thumbnailUpload" 
+              className="relative flex flex-col items-center justify-center w-full h-48 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors"
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+            >
+              {getThumbnailPreviewUrl() ? (
+                <div className="relative w-full h-full">
+                  <img 
+                    src={getThumbnailPreviewUrl()!} 
+                    alt="Vista previa" 
+                    className="w-full h-full object-cover rounded-lg"
+                  />
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleThumbnailFileSelect(null);
+                      onFormChange('thumbnailImagePath', '');
+                    }}
+                    className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                  <Upload className="w-10 h-10 mb-3 text-gray-400" />
+                  <p className="mb-2 text-sm text-gray-500">
+                    <span className="font-semibold">Clic para subir</span> o arrastra
+                  </p>
+                  <p className="text-xs text-gray-500">PNG, JPG hasta 10MB</p>
+                </div>
+              )}
+              <input 
+                id="thumbnailUpload" 
+                type="file" 
+                className="hidden" 
+                accept="image/*"
+                onChange={handleImageUpload}
+              />
+            </label>
+          </div>
+          
+          <div className="mt-3">
+            <label htmlFor="thumbnailUrl" className="block text-sm font-medium text-gray-700 mb-1">
+              O ingresa una URL
             </label>
             <input
               type="url"
               id="thumbnailUrl"
-              value={formData.thumbnailImagePath}
+              value={previewUrl ? '' : formData.thumbnailImagePath}
               onChange={(e) => {
-                onFormChange('thumbnailImagePath', e.target.value);
-                // Si se escribe URL, limpiar archivo
-                if (e.target.value && selectedThumbnailFile) {
+                const value = e.target.value;
+                onFormChange('thumbnailImagePath', value);
+                if (value && selectedThumbnailFile) {
                   handleThumbnailFileSelect(null);
                 }
               }}
               placeholder="https://ejemplo.com/imagen.jpg"
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200"
               disabled={!!selectedThumbnailFile}
             />
-            <p className="mt-1 text-xs text-gray-500">
-              Proporciona una URL de imagen o sube un archivo abajo
-            </p>
-          </div>
-        </div>
-
-        {/* Columna derecha - Subir thumbnail */}
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Imagen del Módulo
-            </label>
-            
-            {/* Vista previa de thumbnail */}
-            {getThumbnailPreviewUrl() && (
-              <div className="relative mb-4 group">
-                <img
-                  src={getThumbnailPreviewUrl()!}
-                  alt="Preview"
-                  className="w-full h-48 object-cover rounded-xl border border-gray-200"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleThumbnailFileSelect(null);
-                    onFormChange('thumbnailImagePath', '');
-                  }}
-                  className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            )}
-
-            {/* Área de carga de archivo */}
-            {!getThumbnailPreviewUrl() && (
-              <div
-                onDrop={handleDrop}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                className={`
-                  relative border-2 border-dashed rounded-xl p-6 text-center transition-all duration-200
-                  ${dragOver ? 'border-blue-400 bg-blue-50' : 'border-gray-300'}
-                  ${selectedThumbnailFile ? 'bg-green-50 border-green-300' : ''}
-                `}
-              >
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0] || null;
-                    handleThumbnailFileSelect(file);
-                  }}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  disabled={!!formData.thumbnailImagePath}
-                />
-
-                <div className="space-y-3">
-                  <div className="mx-auto w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
-                    {selectedThumbnailFile ? (
-                      <ImageIcon className="h-6 w-6 text-green-600" />
-                    ) : (
-                      <Upload className="h-6 w-6 text-gray-400" />
-                    )}
-                  </div>
-
-                  {selectedThumbnailFile ? (
-                    <div>
-                      <p className="text-sm font-medium text-green-600">
-                        Archivo seleccionado: {selectedThumbnailFile.name}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Tamaño: {(selectedThumbnailFile.size / 1024 / 1024).toFixed(2)} MB
-                      </p>
-                    </div>
-                  ) : (
-                    <div>
-                      <p className="text-sm font-medium text-gray-700">
-                        Arrastra una imagen aquí o haz clic para seleccionar
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        PNG, JPG, JPEG hasta 10MB
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            <p className="mt-2 text-xs text-gray-500">
-              La imagen ayudará a identificar visualmente el módulo
-            </p>
           </div>
         </div>
       </div>

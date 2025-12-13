@@ -32,7 +32,7 @@ export const TenantsAPI = {
       
       const response = await apiClient.put(`${API_CONFIG.ENDPOINTS.TENANTS.BASE}/${tenantId}`, updateData);
       
-      console.log("Tenant updated successfully:", response.data);
+      // console.log("Tenant updated successfully:", response.data);
       return response.data;
     } catch (error: any) {
       // Manejo más específico de errores

@@ -21,7 +21,12 @@ export const meta: MetaFunction = () => {
 };
 
 export const loader: LoaderFunction = async ({ request, params }) => {
-    const courseId = params.courseId;
+
+    const url = new URL(request.url);
+    const queryCourseId = url.searchParams.get("course");
+
+    const courseId = params.courseId ?? params.course ?? queryCourseId;
+
 
     if (!courseId) {
         return json({

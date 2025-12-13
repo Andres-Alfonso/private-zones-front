@@ -245,7 +245,7 @@ export const LoginRegisterCustomizer: React.FC<LoginRegisterCustomizerProps> = (
                     </div> */}
 
                     {/* Logo de Login */}
-                    {/* <div className="mb-8 p-4 bg-green-50 rounded-lg">
+                    <div className="mb-8 p-4 bg-green-50 rounded-lg">
                         <h5 className="text-sm font-medium text-gray-800 mb-3">Logo para Pantalla de Login</h5>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -276,10 +276,10 @@ export const LoginRegisterCustomizer: React.FC<LoginRegisterCustomizerProps> = (
                                 </div>
                             )}
                         </div>
-                    </div> */}
+                    </div>
 
                     {/* Fondo de Login */}
-                    {/* <div className="mb-8 p-4 bg-purple-50 rounded-lg">
+                    <div className="mb-8 p-4 bg-purple-50 rounded-lg">
                         <h5 className="text-sm font-medium text-gray-800 mb-3">Fondo de Pantalla de Login</h5>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -310,7 +310,7 @@ export const LoginRegisterCustomizer: React.FC<LoginRegisterCustomizerProps> = (
                                 </div>
                             )}
                         </div>
-                    </div> */}
+                    </div>
 
                     {/* Configuración de Login Social */}
                     {/* <div className="mb-8 p-4 bg-yellow-50 rounded-lg">

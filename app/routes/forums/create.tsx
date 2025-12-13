@@ -43,7 +43,7 @@ type LoaderData = {
 
 export const loader: LoaderFunction = async ({ request }) => {
   const url = new URL(request.url);
-  const courseId = url.searchParams.get('courseId');
+  const courseId = url.searchParams.get('course');
 
   return json<LoaderData>({ 
     courseId: courseId || undefined

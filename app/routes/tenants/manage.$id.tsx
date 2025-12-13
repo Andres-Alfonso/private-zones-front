@@ -33,6 +33,7 @@ import TermsPrivacyConfig from '~/components/tenant/RichTextEditor';
 import { LoginMethod } from '~/components/tenant/viewCustomizers/RegistrationViewCustomizer';
 import { BrandingSettings } from '~/components/tenant/BrandingSettings';
 import { LoginRegisterCustomizer } from '~/components/tenant/viewCustomizers/LoginRegisterViewCustomizer';
+import { extractBooleanFields, formDataToBoolean } from '~/utils/form-helpers';
 
 interface LoaderData {
     tenant: Tenant;
@@ -92,12 +93,35 @@ export const action: ActionFunction = async ({ request, params }) => {
     }
 
     try {
+
+        console.log('Form Data received for tenant update:', Object.fromEntries(formData.entries()));
+
+        // Extraer todos los campos booleanos de una vez
+        const booleanFields = extractBooleanFields(formData, [
+            'showNotifications',
+            'showProfile',
+            'allowSelfRegistration',
+            'allowGoogleLogin',
+            'allowFacebookLogin',
+            'allowValidationStatusUsers',
+            'requireLastName',
+            'requirePhone',
+            'requireDocumentType',
+            'requireDocument',
+            'requireOrganization',
+            'requirePosition',
+            'requireGender',
+            'requireCity',
+            'requireAddress',
+            'enableEmailNotifications'
+        ]);
+        
         const tenantData: UpdateTenantRequest = {
             name: formData.get('name') as string,
             slug: formData.get('slug') as string,
             domain: formData.get('domain') as string,
             contactEmail: formData.get('contactEmail') as string,
-            plan: formData.get('plan') as TenantPlan,
+            plan: 'pro' as TenantPlan,
             maxUsers: Number(formData.get('maxUsers')),
             storageLimit: Number(formData.get('storageLimit')),
 
@@ -113,8 +137,10 @@ export const action: ActionFunction = async ({ request, params }) => {
             backgroundColorNavbar: formData.get('backgroundColorNavbar') as string || '#0052cc',
             textColorNavbar: formData.get('textColorNavbar') as string || '#ffffff',
             logoNavbar: formData.get('logoNavbar') as string || 'Mi App',
-            showNotifications: formData.get('showNotifications') === 'on',
-            showProfile: formData.get('showProfile') === 'on',
+            
+            // Usar los booleanos convertidos
+            showNotifications: booleanFields.showNotifications,
+            showProfile: booleanFields.showProfile,
 
             // Configuración inicial
             primaryColor: formData.get('primaryColor') as string || '#0052cc',
@@ -125,7 +151,7 @@ export const action: ActionFunction = async ({ request, params }) => {
             // Configuraciones de vistas
             homeSettings: {
                 type: 'home',
-                customBackground: formData.get('homeCustomBackground') === 'true',
+                customBackground: formDataToBoolean(formData.get('homeCustomBackground')),
                 backgroundType: formData.get('homeBackgroundType') as 'image' | 'color' || 'color',
                 backgroundImage: formData.get('homeBackgroundImage') as string || '',
                 backgroundColor: formData.get('homeBackgroundColor') as string || '#eff4ff',
@@ -133,7 +159,7 @@ export const action: ActionFunction = async ({ request, params }) => {
             },
             videoCallSettings: {
                 type: 'videocalls',
-                customBackground: formData.get('videoCallCustomBackground') === 'true',
+                customBackground: formDataToBoolean(formData.get('videoCallCustomBackground')),
                 backgroundType: formData.get('videoCallBackgroundType') as 'image' | 'color' || 'color',
                 backgroundImage: formData.get('videoCallBackgroundImage') as string || '',
                 backgroundColor: formData.get('videoCallBackgroundColor') as string || '#eff4ff',
@@ -141,21 +167,21 @@ export const action: ActionFunction = async ({ request, params }) => {
             },
             metricsSettings: {
                 type: 'metrics',
-                customBackground: formData.get('metricsCustomBackground') === 'true',
+                customBackground: formDataToBoolean(formData.get('metricsCustomBackground')),
                 backgroundType: formData.get('metricsBackgroundType') as 'image' | 'color' || 'color',
                 backgroundImage: formData.get('metricsBackgroundImage') as string || '',
                 backgroundColor: formData.get('metricsBackgroundColor') as string || '#eff4ff',
             },
             groupsSettings: {
                 type: 'courses',
-                customBackground: formData.get('groupsCustomBackground') === 'true',
+                customBackground: formDataToBoolean(formData.get('groupsCustomBackground')),
                 backgroundType: formData.get('groupsBackgroundType') as 'image' | 'color' || 'color',
                 backgroundImage: formData.get('groupsBackgroundImage') as string || '',
                 backgroundColor: formData.get('groupsBackgroundColor') as string || '#eff4ff',
             },
             sectionsSettings: {
                 type: 'sections',
-                customBackground: formData.get('sectionsCustomBackground') === 'true',
+                customBackground: formDataToBoolean(formData.get('sectionsCustomBackground')),
                 backgroundType: formData.get('sectionsBackgroundType') as 'image' | 'color' || 'color',
                 backgroundImage: formData.get('sectionsBackgroundImage') as string || '',
                 backgroundColor: formData.get('sectionsBackgroundColor') as string || '#eff4ff',
@@ -163,33 +189,42 @@ export const action: ActionFunction = async ({ request, params }) => {
             },
             faqSettings: {
                 type: 'frequentlyask',
-                customBackground: formData.get('faqCustomBackground') === 'true',
+                customBackground: formDataToBoolean(formData.get('faqCustomBackground')),
                 backgroundType: formData.get('faqBackgroundType') as 'image' | 'color' || 'color',
                 backgroundImage: formData.get('faqBackgroundImage') as string || '',
                 backgroundColor: formData.get('faqBackgroundColor') as string || '#eff4ff',
                 additionalSettings: JSON.parse(formData.get('faqAdditionalSettings') as string || '{}')
             },
 
-            // Configuración de registro
-            allowSelfRegistration: formData.get('allowSelfRegistration') === 'true',
-            allowGoogleLogin: formData.get('allowGoogleLogin') === 'true',
-            allowFacebookLogin: formData.get('allowFacebookLogin') === 'true',
+            loginRegisterSettings: {
+                type: 'login',
+                customBackground: formDataToBoolean(formData.get('loginCustomBackground')),
+                backgroundType: formData.get('loginBackgroundType') as 'image' | 'color' || 'color',
+                backgroundImage: formData.get('loginBackgroundImage') as string || '',
+                backgroundColor: formData.get('loginBackgroundColor') as string || '#eff4ff',
+                additionalSettings: JSON.parse(formData.get('loginAdditionalSettings') as string || '{}')
+            },
+
+            // Configuración de registro - usar los booleanos convertidos
+            allowSelfRegistration: booleanFields.allowSelfRegistration,
+            allowGoogleLogin: booleanFields.allowGoogleLogin,
+            allowFacebookLogin: booleanFields.allowFacebookLogin,
             loginMethod: formData.get('loginMethod') as LoginMethod || LoginMethod.EMAIL,
-            allowValidationStatusUsers: formData.get('allowValidationStatusUsers') === 'true',
+            allowValidationStatusUsers: booleanFields.allowValidationStatusUsers,
 
             // Campos requeridos en registro
-            requireLastName: formData.get('requireLastName') === 'true',
-            requirePhone: formData.get('requirePhone') === 'true',
-            requireDocumentType: formData.get('requireDocumentType') === 'true',
-            requireDocument: formData.get('requireDocument') === 'true',
-            requireOrganization: formData.get('requireOrganization') === 'true',
-            requirePosition: formData.get('requirePosition') === 'true',
-            requireGender: formData.get('requireGender') === 'true',
-            requireCity: formData.get('requireCity') === 'true',
-            requireAddress: formData.get('requireAddress') === 'true',
+            requireLastName: booleanFields.requireLastName,
+            requirePhone: booleanFields.requirePhone,
+            requireDocumentType: booleanFields.requireDocumentType,
+            requireDocument: booleanFields.requireDocument,
+            requireOrganization: booleanFields.requireOrganization,
+            requirePosition: booleanFields.requirePosition,
+            requireGender: booleanFields.requireGender,
+            requireCity: booleanFields.requireCity,
+            requireAddress: booleanFields.requireAddress,
 
             // Configuración de notificaciones
-            enableEmailNotifications: formData.get('enableEmailNotifications') === 'true',
+            enableEmailNotifications: booleanFields.enableEmailNotifications,
 
             // Términos y condiciones
             termsEs: formData.get('termsEs') as string || '',
@@ -205,8 +240,6 @@ export const action: ActionFunction = async ({ request, params }) => {
         };
 
         const tenantResult = await TenantsAPI.update(id, tenantData);
-
-        console.log('Tenant update result:', tenantResult);
 
         if ('error' in tenantResult) {
             const errorMessage = getSpecificErrorMessage(tenantResult);
@@ -457,20 +490,29 @@ export default function ManageTenant() {
 
     const [loginRegisterSettings, setLoginRegisterSettings] = useState<ViewSettings>({
         type: 'login',
-        customBackground: false,
-        backgroundType: 'color',
-        backgroundImage: '',
-        backgroundColor: '#eff4ff',
-        additionalSettings: {
+        customBackground: tenant.loginSettings?.customBackground || false,
+        backgroundType: tenant.loginSettings?.backgroundType || 'color',
+        backgroundImage: tenant.loginSettings?.backgroundImage || '',
+        backgroundColor: tenant.loginSettings?.backgroundColor || '#eff4ff',
+        // additionalSettings: {
+        //     customTitles: {
+        //         en: 'Login and Registration',
+        //         es: 'Login y Registro'
+        //     },
+        //     showSocialLoginButtons: true,
+        //     socialLoginProviders: {
+        //         google: false,
+        //         facebook: false
+        //     },
+        // }
+
+        additionalSettings: tenant.loginSettings?.additionalSettings || {
             customTitles: {
                 en: 'Login and Registration',
                 es: 'Login y Registro'
             },
-            showSocialLoginButtons: true,
-            socialLoginProviders: {
-                google: false,
-                facebook: false
-            },
+            formPosition: 'center',
+            loginLogoPath: ''
         }
     });
 
@@ -659,7 +701,7 @@ export default function ManageTenant() {
             settings: loginRegisterSettings,
             // Props adicionales específicos para LoginRegister
             extraProps: {
-            loginRegisterSettings: loginRegisterSettings
+                loginRegisterSettings: loginRegisterSettings
             }
         }
     ];
@@ -840,6 +882,26 @@ export default function ManageTenant() {
                         // requireApprovalForSubmissions: true,
                         showAuthor: false,
                         // enableEmailNotifications: true
+                    }
+                });
+            }
+
+            const login = tenant.viewConfigs.find(view => view.viewType === 'login');
+
+            if (login) {
+                setLoginRegisterSettings({
+                    type: 'login',
+                    customBackground: login?.allowBackground || false,
+                    backgroundType: (login.backgroundType as 'image' | 'color') || 'color',
+                    backgroundImage: login?.backgroundImagePath || '',
+                    backgroundColor: login?.backgroundColor || '#eff4ff',
+                    additionalSettings: login?.additionalSettings || {
+                        customTitles: {
+                            en: 'Login and Registration',
+                            es: 'Login y Registro'
+                        },
+                        formPosition: 'center',
+                        loginLogoPath: ''
                     }
                 });
             }
@@ -1170,7 +1232,7 @@ export default function ManageTenant() {
     ];
 
     return (
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
             {/* Header */}
             <div className="mb-8">
                 <div className="flex items-center justify-between">
@@ -1698,6 +1760,13 @@ export default function ManageTenant() {
                 <input type="hidden" name="faqBackgroundImage" value={faqSettings.backgroundImage || ''} />
                 <input type="hidden" name="faqBackgroundColor" value={faqSettings.backgroundColor || '#eff4ff'} />
                 <input type="hidden" name="faqAdditionalSettings" value={JSON.stringify(faqSettings.additionalSettings)} />
+
+                {/* loginRegister Settings */}
+                <input type="hidden" name="loginCustomBackground" value={loginRegisterSettings.customBackground ? 'true' : 'false'} />
+                <input type="hidden" name="loginBackgroundType" value={loginRegisterSettings.backgroundType || 'color'} />
+                <input type="hidden" name="loginBackgroundImage" value={loginRegisterSettings.backgroundImage || ''} />
+                <input type="hidden" name="loginBackgroundColor" value={loginRegisterSettings.backgroundColor || '#eff4ff'} />
+                <input type="hidden" name="loginAdditionalSettings" value={JSON.stringify(loginRegisterSettings.additionalSettings)} />
 
                 {/* Registration Settings */}
                 <input type="hidden" name="allowSelfRegistration" value={registrationSettings.allowSelfRegistration ? 'true' : 'false'} />

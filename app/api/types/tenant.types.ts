@@ -1,7 +1,8 @@
 // app/types/tenant.types.ts
 
 import { a } from "node_modules/tailwindcss/dist/types-B254mqw1.mjs";
-import { HomeAdditionalSettings } from "~/components/tenant/viewCustomizers/types";
+import { LoginRegisterAdditionalSettings } from "~/components/tenant/viewCustomizers/LoginRegisterViewCustomizer";
+import { HomeAdditionalSettings, LoginAdditionalSettings } from "~/components/tenant/viewCustomizers/types";
 
 export interface Tenant {
   id: string;
@@ -35,6 +36,7 @@ export interface Tenant {
   groupsSettings?: ViewConfiguration;
   sectionsSettings?: ViewConfiguration;
   faqSettings?: ViewConfiguration;
+  loginSettings?: ViewLoginConfiguration;
 }
 
 export interface TenantViewConfig {
@@ -487,6 +489,15 @@ export interface ViewConfiguration {
   backgroundImage: string;
   backgroundColor: string;
   additionalSettings?: HomeAdditionalSettings;
+}
+
+export interface ViewLoginConfiguration {
+  type: string;
+  customBackground: boolean;
+  backgroundType: 'image' | 'color';
+  backgroundImage: string;
+  backgroundColor: string;
+  additionalSettings?: LoginRegisterAdditionalSettings;
 }
 
 export interface TenantValidationError {

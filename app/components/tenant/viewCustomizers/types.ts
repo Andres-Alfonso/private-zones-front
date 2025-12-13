@@ -112,6 +112,15 @@ export interface SectionsAdditionalSettings{
   };
 }
 
+export interface LoginAdditionalSettings {
+  // Títulos personalizados multiidioma
+  customTitles?: {
+    en?: string;
+    es?: string;
+  };
+  formPosition?: 'left' | 'center' | 'right';
+}
+
 // Estructura que se guardará en TenantViewConfig.additionalSettings
 export interface ViewAdditionalSettings {
   home?: HomeAdditionalSettings;

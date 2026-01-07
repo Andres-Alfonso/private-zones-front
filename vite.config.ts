@@ -76,6 +76,12 @@ export default defineConfig({
             route(":moduleId", "routes/modules/$moduleId.tsx");
           });
 
+          route("assessments", "routes/assessments/_layout.tsx", () => {
+            route("", "routes/assessments/_index.tsx", { index: true });
+            route("create", "routes/assessments/create.tsx");
+            route(":id/edit", "routes/assessments/$id.edit.tsx");
+          });
+
 
           // Rutas de gestion de foros
           route("forums", "routes/forums/_layout.tsx", () => {

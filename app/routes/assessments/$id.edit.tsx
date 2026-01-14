@@ -8,41 +8,43 @@ import AssessmentForm from '../../components/assessments/AssessmentForm';
 import { createApiClientFromRequest } from '~/api/client';
 import { CoursesAPI } from '~/api/endpoints/courses';
 import { CourseBasic, CourseFromAPI } from '~/api/types/course.types';
+import { AssessmentApi } from '~/api/endpoints/assessments';
+import { Assessment } from '~/api/types/assessment.types';
 
-interface Assessment {
-    id: string;
-    slug: string;
-    type: string;
-    status: string;
-    isActive: boolean;
-    order: number;
-    courseId: string;
-    tenantId: string;
-    created_at: string;
-    updated_at: string;
-    translations: Array<{
-        languageCode: string;
-        title: string;
-        description: string;
-        instructions: string;
-        welcomeMessage: string;
-        completionMessage: string;
-    }>;
-    configuration: {
-        isGradable: boolean;
-        gradingMethod: string;
-        passingScore: number | null;
-        maxScore: number;
-        timeLimit: number | null;
-        strictTimeLimit: boolean;
-        maxAttempts: number;
-        allowReview: boolean;
-        showCorrectAnswers: boolean;
-        showScoreImmediately: boolean;
-        randomizeOptions: boolean;
-        oneQuestionPerPage: boolean;
-    };
-}
+// interface Assessment {
+//     id: string;
+//     slug: string;
+//     type: string;
+//     status: string;
+//     isActive: boolean;
+//     order: number;
+//     courseId: string;
+//     tenantId: string;
+//     created_at: string;
+//     updated_at: string;
+//     translations: Array<{
+//         languageCode: string;
+//         title: string;
+//         description: string;
+//         instructions: string;
+//         welcomeMessage: string;
+//         completionMessage: string;
+//     }>;
+//     configuration: {
+//         isGradable: boolean;
+//         gradingMethod: string;
+//         passingScore: number | null;
+//         maxScore: number;
+//         timeLimit: number | null;
+//         strictTimeLimit: boolean;
+//         maxAttempts: number;
+//         allowReview: boolean;
+//         showCorrectAnswers: boolean;
+//         showScoreImmediately: boolean;
+//         randomizeOptions: boolean;
+//         oneQuestionPerPage: boolean;
+//     };
+// }
 
 interface LoaderData {
     assessment: Assessment | null;
@@ -154,51 +156,13 @@ export const loader: LoaderFunction = async ({ params, request }) => {
             throw new Error('ID de evaluación no proporcionado');
         }
 
-        const requestApiClient = createApiClientFromRequest(request);
+        const authenticatedApiClient = createApiClientFromRequest(request);
 
-        // Aquí deberías llamar a tu API para obtener el assessment
-        // const assessment = await AssessmentAPI.getById(assessmentId, requestApiClient);
-
-        // Por ahora simulamos datos
-        const mockAssessment: Assessment = {
-            id: assessmentId,
-            slug: 'evaluacion-ejemplo',
-            type: 'evaluation',
-            status: 'draft',
-            isActive: true,
-            order: 0,
-            courseId: '',
-            tenantId: 'tenant-id',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            translations: [
-                {
-                    languageCode: 'es',
-                    title: 'Evaluación de Ejemplo',
-                    description: 'Esta es una evaluación de ejemplo',
-                    instructions: 'Lee cuidadosamente cada pregunta',
-                    welcomeMessage: 'Bienvenido a esta evaluación',
-                    completionMessage: 'Has completado la evaluación'
-                }
-            ],
-            configuration: {
-                isGradable: true,
-                gradingMethod: 'automatic',
-                passingScore: 70,
-                maxScore: 100,
-                timeLimit: 60,
-                strictTimeLimit: false,
-                maxAttempts: 3,
-                allowReview: true,
-                showCorrectAnswers: false,
-                showScoreImmediately: true,
-                randomizeOptions: false,
-                oneQuestionPerPage: false
-            }
-        };
+        // llamar a API para obtener el assessment
+        const assessment = await AssessmentApi.getById(assessmentId, authenticatedApiClient);
 
         // Obtener cursos disponibles
-        const coursesResult = await CoursesAPI.getByTenant(requestApiClient);
+        const coursesResult = await CoursesAPI.getByTenant(authenticatedApiClient);
         let availableCourses: CourseBasic[] = [];
 
         if (coursesResult && !('error' in coursesResult)) {
@@ -208,7 +172,7 @@ export const loader: LoaderFunction = async ({ params, request }) => {
         }
 
         return json<LoaderData>({
-            assessment: mockAssessment,
+            assessment: assessment.data,
             error: null,
             availableCourses
         });
@@ -227,6 +191,8 @@ export const action: ActionFunction = async ({ request, params }) => {
     const assessmentId = params.id as string;
     const intent = formData.get('intent') as string;
 
+    console.log(formData)
+    console.log('Action intent:', intent);
     try {
         switch (intent) {
             case 'update':
@@ -237,8 +203,6 @@ export const action: ActionFunction = async ({ request, params }) => {
                         errors: validation.errors
                     }, { status: 400 });
                 }
-
-                const requestApiClient = createApiClientFromRequest(request);
 
                 // Preparar datos del assessment
                 const assessmentData = {
@@ -274,8 +238,17 @@ export const action: ActionFunction = async ({ request, params }) => {
                     }
                 };
 
+                const authenticatedApiClient = createApiClientFromRequest(request);
+
                 // Aquí deberías llamar a tu API para actualizar el assessment
-                // const result = await AssessmentAPI.update(assessmentId, assessmentData, requestApiClient);
+                const result = await AssessmentApi.update(assessmentId, assessmentData, authenticatedApiClient);
+
+
+                if(result.success !== true){
+                    return json<ActionData>({
+                        generalError: result.message || 'Error al actualizar la evaluación'
+                    }, { status: 500 });
+                }
 
                 console.log('Assessment data to update:', assessmentData);
 

@@ -2,7 +2,7 @@
 
 import { AxiosInstance } from 'axios';
 import { createApiClient } from '../client';
-import { AssessmentFilters, AssessmentListResponse } from '../types/assessment.types';
+import { AssessmentFilters, AssessmentGetByIdResponse, AssessmentListResponse, AssessmentUpdateRequest } from '../types/assessment.types';
 import apiClient from "../client";
 
 
@@ -63,6 +63,36 @@ export const AssessmentApi = {
             
         } catch (error) {
             console.error('Error en forgot password API:', error);
+            throw error;
+        }
+    },
+    getById: async (id: string, client?: AxiosInstance): Promise<AssessmentGetByIdResponse> => {
+        try {
+            const apiClientToUse = client || apiClient;
+            const url = ASSESSMENT_ENDPOINTS.BY_ID(id);
+            const response = await apiClientToUse.get(url);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching assessment by ID:', error);
+            throw error;
+        }
+    },
+
+    update: async (
+        id: string,
+        assessmentData: any,
+        client?: AxiosInstance
+    ): Promise<AssessmentUpdateRequest> => {
+        try {
+            const apiClientToUse = client || apiClient;
+
+            const url = ASSESSMENT_ENDPOINTS.BY_ID(id);
+
+            const updatedAssessmentResponse = await apiClientToUse.put(url, assessmentData);
+
+            return updatedAssessmentResponse.data;
+        } catch (error) {
+            console.error('Error updating assessment:', error);
             throw error;
         }
     }

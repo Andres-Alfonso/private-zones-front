@@ -13,12 +13,23 @@ export interface Assessment {
         languageCode: string;
         title: string;
         description: string;
+        instructions: string;
+        welcomeMessage: string;
+        completionMessage: string;
     }>;
     configuration: {
         isGradable: boolean;
         maxScore: number;
         timeLimit: number | null;
         maxAttempts: number;
+        gradingMethod: 'automatic' | 'manual' | 'hybrid';
+        passingScore: number | null;
+        strictTimeLimit: boolean;
+        allowReview: boolean;
+        showCorrectAnswers: boolean;
+        showScoreImmediately: boolean;
+        randomizeOptions: boolean;
+        oneQuestionPerPage: boolean;
     };
     course?: {
         id: string;
@@ -66,4 +77,16 @@ export interface AssessmentListResponse {
         totalPublished: number;
         totalArchived: number;
     };
+}
+
+export interface AssessmentGetByIdResponse {
+    success: boolean;
+    message: string;
+    data: Assessment;
+}
+
+export interface AssessmentUpdateRequest {
+    success: boolean;
+    message: string;
+    data: Assessment;
 }

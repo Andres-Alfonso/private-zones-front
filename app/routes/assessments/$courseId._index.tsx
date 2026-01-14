@@ -1,4 +1,4 @@
-// app/routes/assessments/_index.tsx
+// app/routes/assessments/$courseId_index.tsx
 
 import { json, LoaderFunction, ActionFunction } from '@remix-run/node';
 import { useLoaderData, useActionData, Link, Form, useNavigation, useSearchParams } from '@remix-run/react';
@@ -7,7 +7,7 @@ import {
   Plus, Search, Filter, MoreVertical, Edit2, Trash2, Eye, 
   CheckCircle, XCircle, Calendar, ClipboardList, ArrowUpDown,
   TrendingUp, Building2, Users, Award, Clock,
-  FileText
+  FileText, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { Assessment } from '~/api/types/assessment.types';
 import { AssessmentApi } from '~/api/endpoints/assessments';
@@ -17,13 +17,21 @@ import { assessmentSortOptions, assessmentStatuses, assessmentTypes, getValidPar
 
 interface LoaderData {
   assessments: Assessment[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
   stats: {
     total: number;
-    active: number;
-    draft: number;
-    published: number;
-    totalAttempts: number;
-    averageScore: number;
+    totalActive: number;
+    totalInactive: number;
+    totalDraft: number;
+    totalPublished: number;
+    totalArchived: number;
   };
   error: string | null;
 }
@@ -33,179 +41,37 @@ interface ActionData {
   error?: string;
 }
 
-export const loader: LoaderFunction = async ({ request }) => {
+export const loader: LoaderFunction = async ({ request, params }) => {
+  const { courseId } = params;
   const url = new URL(request.url);
-  const searchQuery = url.searchParams.get('search') || '';
-  const typeFilter = url.searchParams.get('type') || '';
-  const statusFilter = url.searchParams.get('status') || '';
-  const courseFilter = url.searchParams.get('course') || '';
-
-  const filters = {
-    search: url.searchParams.get('search') || undefined,
-    type: getValidParam(url.searchParams.get('type'), assessmentTypes),
-    status: getValidParam(url.searchParams.get('status'), assessmentStatuses),
-    sortBy: getValidParam(url.searchParams.get('sortBy'), assessmentSortOptions),
-    page: Number(url.searchParams.get('page') ?? 1),
-    limit: Number(url.searchParams.get('limit') ?? 12),
-    courseId: courseFilter || undefined,
-  };
-
-  const authenticatedApiClient = createApiClientFromRequest(request);
+  
+  const search = url.searchParams.get('search') || undefined;
+  const actives = url.searchParams.get('actives') === 'true' ? true : undefined;
+  const page = Number(url.searchParams.get('page') || 1);
+  const limit = Number(url.searchParams.get('limit') || 12);
 
   try {
-    // Aquí deberías llamar a tu API para obtener las evaluaciones
-    const assessments = await AssessmentApi.getAll(filters, authenticatedApiClient);
 
-    // Por ahora simulamos datos
-    const mockAssessments: Assessment[] = [
-      {
-        id: '1',
-        slug: 'evaluacion-final-modulo-1',
-        type: 'evaluation',
-        status: 'published',
-        isActive: true,
-        order: 1,
-        courseId: 'course-1',
-        tenantId: 'tenant-1',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        translations: [
-          {
-            languageCode: 'es',
-            title: 'Evaluación Final - Módulo 1',
-            description: 'Evaluación comprensiva del primer módulo'
-          }
-        ],
-        configuration: {
-          isGradable: true,
-          maxScore: 100,
-          timeLimit: 60,
-          maxAttempts: 3
-        },
-        course: {
-          id: 'course-1',
-          slug: 'curso-ejemplo',
-          translations: [
-            {
-              languageCode: 'es',
-              title: 'Curso de Ejemplo'
-            }
-          ]
-        },
-        totalAttempts: 45,
-        completedAttempts: 42,
-        averageScore: 78.5
-      },
-      {
-        id: '2',
-        slug: 'encuesta-satisfaccion',
-        type: 'survey',
-        status: 'published',
-        isActive: true,
-        order: 2,
-        courseId: 'course-1',
-        tenantId: 'tenant-1',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        translations: [
-          {
-            languageCode: 'es',
-            title: 'Encuesta de Satisfacción',
-            description: 'Evaluación de la experiencia del curso'
-          }
-        ],
-        configuration: {
-          isGradable: false,
-          maxScore: 0,
-          timeLimit: null,
-          maxAttempts: 1
-        },
-        course: {
-          id: 'course-1',
-          slug: 'curso-ejemplo',
-          translations: [
-            {
-              languageCode: 'es',
-              title: 'Curso de Ejemplo'
-            }
-          ]
-        },
-        totalAttempts: 38,
-        completedAttempts: 38,
-        averageScore: 0
-      },
-      {
-        id: '3',
-        slug: 'autoevaluacion-conocimientos',
-        type: 'self_assessment',
-        status: 'draft',
-        isActive: false,
-        order: 3,
-        courseId: 'course-2',
-        tenantId: 'tenant-1',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        translations: [
-          {
-            languageCode: 'es',
-            title: 'Autoevaluación de Conocimientos',
-            description: 'Evalúa tu nivel de comprensión'
-          }
-        ],
-        configuration: {
-          isGradable: true,
-          maxScore: 50,
-          timeLimit: 30,
-          maxAttempts: 0
-        },
-        totalAttempts: 0,
-        completedAttempts: 0,
-        averageScore: 0
-      }
-    ];
+    const authenticatedApiClient = createApiClientFromRequest(request);
 
-    // Filtrar
-    let filteredAssessments = mockAssessments;
-    
-    if (searchQuery) {
-      filteredAssessments = filteredAssessments.filter(a =>
-        a.translations[0]?.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        a.slug.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    if (typeFilter) {
-      filteredAssessments = filteredAssessments.filter(a => a.type === typeFilter);
-    }
-
-    if (statusFilter) {
-      filteredAssessments = filteredAssessments.filter(a => a.status === statusFilter);
-    }
-
-    if (courseFilter) {
-      filteredAssessments = filteredAssessments.filter(a => a.courseId === courseFilter);
-    }
-
-    // Calcular estadísticas
-    const stats = {
-      total: mockAssessments.length,
-      active: mockAssessments.filter(a => a.isActive).length,
-      draft: mockAssessments.filter(a => a.status === 'draft').length,
-      published: mockAssessments.filter(a => a.status === 'published').length,
-      totalAttempts: mockAssessments.reduce((sum, a) => sum + (a.totalAttempts || 0), 0),
-      averageScore: mockAssessments.filter(a => a.configuration.isGradable).reduce((sum, a) => sum + (a.averageScore || 0), 0) / mockAssessments.filter(a => a.configuration.isGradable).length || 0
-    };
+    const response = await AssessmentApi.getAll(
+      courseId!,
+      { search, actives, page, limit },
+      authenticatedApiClient
+    );
 
     return json<LoaderData>({ 
-      assessments: filteredAssessments,
-      stats,
+      assessments: response.data,
+      pagination: response.pagination,
+      stats: response.stats,
       error: null 
     });
   } catch (error: any) {
     console.error('Error loading assessments:', error);
     return json<LoaderData>({ 
       assessments: [],
-      stats: { total: 0, active: 0, draft: 0, published: 0, totalAttempts: 0, averageScore: 0 },
+      pagination: { total: 0, page: 1, limit: 12, totalPages: 0, hasNextPage: false, hasPrevPage: false },
+      stats: { total: 0, totalActive: 0, totalInactive: 0, totalDraft: 0, totalPublished: 0, totalArchived: 0 },
       error: error.message || 'Error al cargar las evaluaciones' 
     });
   }
@@ -238,7 +104,7 @@ export const action: ActionFunction = async ({ request }) => {
 };
 
 export default function AssessmentsIndex() {
-  const { assessments, stats, error } = useLoaderData<LoaderData>();
+  const { assessments, pagination, stats, error } = useLoaderData<LoaderData>();
   const actionData = useActionData<ActionData>();
   const navigation = useNavigation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -256,6 +122,14 @@ export default function AssessmentsIndex() {
     } else {
       newSearchParams.delete('search');
     }
+    newSearchParams.set('page', '1'); // Reset a página 1 al buscar
+    setSearchParams(newSearchParams);
+  };
+
+  // Manejar cambio de página
+  const handlePageChange = (newPage: number) => {
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.set('page', newPage.toString());
     setSearchParams(newSearchParams);
   };
 
@@ -359,7 +233,7 @@ export default function AssessmentsIndex() {
 
         {/* Estadísticas */}
         <div className="mt-4 pt-4 border-t border-gray-200/50">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
             
             <div className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 backdrop-blur-sm bg-white/80 group">
               <div className="flex items-center justify-between">
@@ -377,7 +251,7 @@ export default function AssessmentsIndex() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600 mb-1">Activas</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.active}</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.totalActive}</p>
                 </div>
                 <div className="p-3 rounded-xl bg-gradient-to-br from-green-50 to-green-100 group-hover:scale-110 transition-transform duration-200">
                   <CheckCircle className="h-8 w-8 text-green-600" />
@@ -389,7 +263,7 @@ export default function AssessmentsIndex() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600 mb-1">Publicadas</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.published}</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.totalPublished}</p>
                 </div>
                 <div className="p-3 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 group-hover:scale-110 transition-transform duration-200">
                   <TrendingUp className="h-8 w-8 text-blue-600" />
@@ -401,7 +275,7 @@ export default function AssessmentsIndex() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600 mb-1">Borradores</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.draft}</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.totalDraft}</p>
                 </div>
                 <div className="p-3 rounded-xl bg-gradient-to-br from-yellow-50 to-yellow-100 group-hover:scale-110 transition-transform duration-200">
                   <Edit2 className="h-8 w-8 text-yellow-600" />
@@ -412,11 +286,11 @@ export default function AssessmentsIndex() {
             <div className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 backdrop-blur-sm bg-white/80 group">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 mb-1">Intentos</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalAttempts}</p>
+                  <p className="text-sm font-medium text-gray-600 mb-1">Archivadas</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.totalArchived}</p>
                 </div>
-                <div className="p-3 rounded-xl bg-gradient-to-br from-indigo-50 to-indigo-100 group-hover:scale-110 transition-transform duration-200">
-                  <Users className="h-8 w-8 text-indigo-600" />
+                <div className="p-3 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 group-hover:scale-110 transition-transform duration-200">
+                  <Calendar className="h-8 w-8 text-gray-600" />
                 </div>
               </div>
             </div>
@@ -424,11 +298,11 @@ export default function AssessmentsIndex() {
             <div className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 backdrop-blur-sm bg-white/80 group">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 mb-1">Promedio</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.averageScore.toFixed(1)}%</p>
+                  <p className="text-sm font-medium text-gray-600 mb-1">Inactivas</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.totalInactive}</p>
                 </div>
-                <div className="p-3 rounded-xl bg-gradient-to-br from-pink-50 to-pink-100 group-hover:scale-110 transition-transform duration-200">
-                  <Award className="h-8 w-8 text-pink-600" />
+                <div className="p-3 rounded-xl bg-gradient-to-br from-red-50 to-red-100 group-hover:scale-110 transition-transform duration-200">
+                  <XCircle className="h-8 w-8 text-red-600" />
                 </div>
               </div>
             </div>
@@ -464,12 +338,6 @@ export default function AssessmentsIndex() {
                 </th>
                 <th className="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Calificable
-                </th>
-                <th className="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Intentos
-                </th>
-                <th className="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Promedio
                 </th>
                 <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Acciones
@@ -524,20 +392,6 @@ export default function AssessmentsIndex() {
                       <XCircle className="h-5 w-5 text-gray-400 mx-auto" />
                     )}
                   </td>
-                  <td className="px-6 py-4 text-center">
-                    <span className="text-sm text-gray-900">
-                      {assessment.completedAttempts}/{assessment.totalAttempts}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    {assessment.configuration.isGradable ? (
-                      <span className="inline-flex items-center px-2 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
-                        {assessment.averageScore?.toFixed(1)}%
-                      </span>
-                    ) : (
-                      <span className="text-gray-400">N/A</span>
-                    )}
-                  </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end space-x-2">
                       <Link
@@ -585,6 +439,62 @@ export default function AssessmentsIndex() {
             </tbody>
           </table>
         </div>
+
+        {/* Paginación */}
+        {pagination.totalPages > 1 && (
+          <div className="px-6 py-4 border-t border-gray-200/50 flex items-center justify-between">
+            <div className="text-sm text-gray-700">
+              Mostrando {((pagination.page - 1) * pagination.limit) + 1} - {Math.min(pagination.page * pagination.limit, pagination.total)} de {pagination.total} evaluaciones
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => handlePageChange(pagination.page - 1)}
+                disabled={!pagination.hasPrevPage}
+                className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              
+              <div className="flex items-center space-x-1">
+                {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
+                  .filter(page => {
+                    const current = pagination.page;
+                    return page === 1 || 
+                           page === pagination.totalPages || 
+                           (page >= current - 1 && page <= current + 1);
+                  })
+                  .map((page, index, array) => {
+                    if (index > 0 && array[index - 1] !== page - 1) {
+                      return (
+                        <span key={`ellipsis-${page}`} className="px-2">...</span>
+                      );
+                    }
+                    return (
+                      <button
+                        key={page}
+                        onClick={() => handlePageChange(page)}
+                        className={`px-4 py-2 rounded-lg transition-colors ${
+                          page === pagination.page
+                            ? 'bg-purple-600 text-white'
+                            : 'border border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    );
+                  })}
+              </div>
+
+              <button
+                onClick={() => handlePageChange(pagination.page + 1)}
+                disabled={!pagination.hasNextPage}
+                className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Estado vacío */}

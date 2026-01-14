@@ -235,7 +235,7 @@ export const action: ActionFunction = async ({ request }) => {
     // Simular respuesta exitosa
     const mockAssessmentId = "new-assessment-id";
 
-    return redirect(`/assessments/${mockAssessmentId}?created=true`);
+    return redirect(`/assessments/${mockAssessmentId}/questions?created=true`);
   } catch (error: any) {
     console.error("Error creating assessment:", error);
     return json<ActionData>(

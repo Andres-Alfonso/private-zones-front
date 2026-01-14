@@ -41,6 +41,7 @@ function AssessmentsLayoutContent() {
 
     const isCreatePage = location.pathname.includes("/create");
     const isEditPage = location.pathname.includes("/edit");
+    const questionsPage = location.pathname.includes("/questions");
     const isDetailPage =
         location.pathname.match(/\/assessments\/[^\/]+$/) && !isCreatePage;
     const isIndexPage = location.pathname === "/assessments";
@@ -189,6 +190,19 @@ function AssessmentsLayoutContent() {
                             </div>
                         </div>
                     )}
+
+                    {/* {(isEditPage || questionsPage) && (
+                    <div className="py-6">
+                        <div className="flex items-center space-x-2">
+                        <NavLink to={`/assessments/${params.id}/edit`}>
+                            Información
+                        </NavLink>
+                        <NavLink to={`/assessments/${params.id}/questions`}>
+                            Preguntas
+                        </NavLink>
+                        </div>
+                    </div>
+                    )} */}
                 </div>
             </div>
 

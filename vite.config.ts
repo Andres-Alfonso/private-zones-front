@@ -80,6 +80,8 @@ export default defineConfig({
             route("", "routes/assessments/_index.tsx", { index: true });
             route("create", "routes/assessments/create.tsx");
             route(":id/edit", "routes/assessments/$id.edit.tsx");
+            route(":id/questions", "routes/assessments/$id.questions.tsx");
+            route("course/:courseId", "routes/assessments/$courseId._index.tsx");
           });
 
 

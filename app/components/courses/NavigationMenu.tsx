@@ -6,7 +6,7 @@ const NavigationMenu = ({ course, className = "" }) => {
     { name: 'Contenidos', route: `/contents/course/${course?.id}`, icon: BookOpen, isActive: () => location.pathname.startsWith('/contents/course/') },
     { name: 'Foros', route: `/forums/course/${course?.id}`, icon: MessageSquare, isActive: () => location.pathname.startsWith('/forums/course/') },
     { name: 'Tareas', route: `/tasks/courses/${course?.id}`, icon: FileText, isActive: () => location.pathname.startsWith('/tasks/courses/') },
-    { name: 'Evaluaciones', route: `/evaluations/course/${course?.id}`, icon: ClipboardCheck, isActive: () => location.pathname.startsWith('/evaluations/courses/') },
+    { name: 'Evaluaciones', route: `/assessments/course/${course?.id}`, icon: ClipboardCheck, isActive: () => location.pathname.startsWith('/assessments/course/') },
     { name: 'Actividades', route: `/activities/course/${course?.id}`, icon: Sparkles, isActive: () => location.pathname.startsWith('/activities/courses/') },
     { name: 'Módulos', route: `/make/courses/${course?.id || ''}`, icon: Layers, isActive: () => location.pathname.startsWith('/make/courses/') || location.pathname.startsWith('/modules/course/') },
     { name: 'Métricas', route: `/analysis/course/${course?.id}`, icon: BarChart3, isActive: () => location.pathname.startsWith('/analysis/courses/') },

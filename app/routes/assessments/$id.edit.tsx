@@ -305,7 +305,7 @@ export default function EditAssessment() {
                         <h2 className="text-xl font-semibold text-gray-900 mb-2">Error al cargar la evaluación</h2>
                         <p className="text-gray-600 mb-6">{error}</p>
                         <button
-                            onClick={() => navigate('/assessments')}
+                            onClick={() => navigate('/assessments/course/' + (assessment?.courseId || ''))}
                             className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
                         >
                             Volver a Evaluaciones
@@ -330,10 +330,10 @@ export default function EditAssessment() {
     const handleCancel = () => {
         if (hasChanges) {
             if (confirm('¿Estás seguro de que quieres cancelar? Se perderán todos los cambios.')) {
-                navigate('/assessments');
+                navigate('/assessments/course/' + assessment.courseId);
             }
         } else {
-            navigate('/assessments');
+            navigate('/assessments/course/' + assessment.courseId);
         }
     };
 

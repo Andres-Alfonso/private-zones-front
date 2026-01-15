@@ -191,8 +191,6 @@ export const action: ActionFunction = async ({ request, params }) => {
     const assessmentId = params.id as string;
     const intent = formData.get('intent') as string;
 
-    console.log(formData)
-    console.log('Action intent:', intent);
     try {
         switch (intent) {
             case 'update':
@@ -206,23 +204,27 @@ export const action: ActionFunction = async ({ request, params }) => {
 
                 // Preparar datos del assessment
                 const assessmentData = {
-                    slug: formData.get('slug') as string,
+                    // slug: formData.get('slug') as string,
+                    // title: formData.get('title') as string,
                     type: formData.get('type') as string,
                     status: formData.get('status') as string,
                     isActive: formData.get('isActive') === 'true',
                     order: parseInt(formData.get('order') as string) || 0,
                     courseId: formData.get('courseId') as string,
                     // Traducción
-                    translation: {
-                        languageCode: 'es',
-                        title: formData.get('title') as string,
-                        description: formData.get('description') as string || '',
-                        instructions: formData.get('instructions') as string || '',
-                        welcomeMessage: formData.get('welcomeMessage') as string || '',
-                        completionMessage: formData.get('completionMessage') as string || '',
-                    },
+                    translations:[
+                        {
+                           languageCode: 'es',
+                           title: formData.get('title') as string,
+                           description: formData.get('description') as string || '',
+                           instructions: formData.get('instructions') as string || '',
+                           welcomeMessage: formData.get('welcomeMessage') as string || '',
+                           completionMessage: formData.get('completionMessage') as string || '',
+                       }
+                    ],
                     // Configuración
                     configuration: {
+                        description: formData.get('description') as string || '',
                         isGradable: formData.get('isGradable') === 'true',
                         gradingMethod: formData.get('gradingMethod') as string,
                         passingScore: formData.get('passingScore') ? parseFloat(formData.get('passingScore') as string) : null,
@@ -252,7 +254,7 @@ export const action: ActionFunction = async ({ request, params }) => {
 
                 console.log('Assessment data to update:', assessmentData);
 
-                return redirect(`/assessments?updated=true`);
+                return redirect(`/assessments/course/${assessmentData.courseId}?updated=true`);
 
             case 'delete':
                 console.log('Eliminar evaluación:', assessmentId);

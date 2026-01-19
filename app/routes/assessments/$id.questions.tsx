@@ -2,78 +2,106 @@
 
 import { json, LoaderFunction, ActionFunction } from '@remix-run/node';
 import { useLoaderData, useNavigate } from '@remix-run/react';
-import { ArrowLeft, CheckCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
 import QuestionBuilder, { Question } from '~/components/assessments/QuestionBuilder/QuestionBuilder';
 import { createApiClientFromRequest } from '~/api/client';
+import { QuestionsApi } from '~/api/endpoints/questions';
+import { AssessmentApi } from '~/api/endpoints/assessments';
+import apiClient from '~/api/client';
 
 interface LoaderData {
     assessmentId: string;
     assessmentTitle: string;
     questions: Question[];
+    error?: string;
+}
+
+interface ActionData {
+    success?: boolean;
+    message?: string;
+    error?: string;
+    data?: Question[];
 }
 
 export const loader: LoaderFunction = async ({ params, request }) => {
     const assessmentId = params.id as string;
 
     try {
-        // Aquí llamarías a tu API para obtener las preguntas existentes
-        // const questions = await AssessmentAPI.getQuestions(assessmentId, requestApiClient);
+        const apiClient = createApiClientFromRequest(request);
 
-        // Por ahora devolvemos datos de ejemplo
-        const mockData: LoaderData = {
+        // Obtener información del assessment
+        const assessmentResponse = await AssessmentApi.getById(assessmentId, apiClient);
+        const assessment = assessmentResponse.data;
+
+        // Obtener preguntas
+        const questions = await QuestionsApi.getQuestions(assessmentId, apiClient);
+
+        const translation = assessment.translations?.find((t: any) => t.languageCode === 'es')
+            || assessment.translations?.[0];
+
+        return json<LoaderData>({
             assessmentId,
-            assessmentTitle: 'Evaluación Final - Módulo 1',
-            questions: []
-        };
-
-        return json(mockData);
+            assessmentTitle: translation?.title || 'Evaluación',
+            questions: questions || [],
+        });
     } catch (error: any) {
         console.error('Error loading questions:', error);
-        throw new Response('Error al cargar las preguntas', { status: 500 });
+        return json<LoaderData>(
+            {
+                assessmentId,
+                assessmentTitle: 'Evaluación',
+                questions: [],
+                error: error.message || 'Error al cargar las preguntas',
+            },
+            { status: 500 }
+        );
     }
 };
 
 export const action: ActionFunction = async ({ params, request }) => {
     const assessmentId = params.id as string;
-    const formData = await request.formData();
 
     try {
+        const formData = await request.formData();
         const questionsJson = formData.get('questions') as string;
         const questions = JSON.parse(questionsJson) as Question[];
 
-        // Aquí llamarías a tu API para guardar las preguntas
-        // const requestApiClient = createApiClientFromRequest(request);
-        // await AssessmentAPI.saveQuestions(assessmentId, questions, requestApiClient);
+        const apiClient = createApiClientFromRequest(request);
+        const savedQuestions = await QuestionsApi.saveQuestions(
+            assessmentId,
+            questions,
+            apiClient
+        );
 
-        console.log('Guardando preguntas para assessment:', assessmentId);
-        console.log('Preguntas:', questions);
-
-        return json({ success: true, message: 'Preguntas guardadas exitosamente' });
+        return json<ActionData>({
+            success: true,
+            message: 'Preguntas guardadas exitosamente',
+            data: savedQuestions,
+        });
     } catch (error: any) {
         console.error('Error saving questions:', error);
-        return json(
-            { success: false, error: error.message || 'Error al guardar las preguntas' },
+        return json<ActionData>(
+            {
+                success: false,
+                error: error.message || 'Error al guardar las preguntas',
+            },
             { status: 500 }
         );
     }
 };
 
 export default function AssessmentQuestions() {
-    const { assessmentId, assessmentTitle, questions } = useLoaderData<LoaderData>();
+    const { assessmentId, assessmentTitle, questions, error: loaderError } = useLoaderData<LoaderData>();
     const navigate = useNavigate();
 
     const handleSaveQuestions = async (updatedQuestions: Question[]) => {
-        const formData = new FormData();
-        formData.append('questions', JSON.stringify(updatedQuestions));
+        // Llamar directamente al backend usando el apiClient del navegador
+        const savedQuestions = await QuestionsApi.saveQuestions(
+            assessmentId,
+            updatedQuestions
+        );
 
-        const response = await fetch(`/assessments/${assessmentId}/questions`, {
-            method: 'POST',
-            body: formData
-        });
-
-        if (!response.ok) {
-            throw new Error('Error al guardar las preguntas');
-        }
+        return savedQuestions;
     };
 
     return (
@@ -107,6 +135,17 @@ export default function AssessmentQuestions() {
                         </button>
                     </div>
                 </div>
+
+                {/* Mensaje de error del loader */}
+                {loaderError && (
+                    <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-start space-x-3">
+                        <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                            <p className="text-red-800 font-medium">Error al cargar las preguntas</p>
+                            <p className="text-red-600 text-sm mt-1">{loaderError}</p>
+                        </div>
+                    </div>
+                )}
 
                 {/* Question Builder */}
                 <QuestionBuilder

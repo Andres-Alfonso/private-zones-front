@@ -194,7 +194,7 @@ export default function QuestionBuilder({
         total: questions.length,
         gradable: questions.filter(q => q.isGradable).length,
         additional: questions.filter(q => !q.isGradable).length,
-        totalPoints: questions.filter(q => q.isGradable).reduce((sum, q) => sum + q.points, 0)
+        totalPoints: questions.filter(q => q.isGradable).reduce((sum, q) => sum + Number(q.points), 0)
     };
 
     return (

@@ -13,6 +13,11 @@ const ASSESSMENT_ENDPOINTS = {
         return courseId ? `/v1/assessments/course/${courseId}` : '/v1/assessments';
     },
     CREATE: '/v1/assessments/create',
+    TAKE: (id: string) => `/v1/assessments/${id}/take`,
+    VALIDATE_SESSION: '/v1/assessment-sessions/validate',
+    SUBMIT_ATTEMPT: (attemptId: string) => `/v1/assessment-attempts/${attemptId}/submit`,
+    START_INFO: (id: string) => `/v1/assessments/${id}/start-info`,
+    CREATE_SESSION: '/v1/assessment-sessions/create',
 };
 
 function getCurrentDomain(): string {
@@ -95,5 +100,57 @@ export const AssessmentApi = {
             console.error('Error updating assessment:', error);
             throw error;
         }
+    },
+
+    /**
+     * Valida si una sesión de evaluación es activa y válida
+     */
+    validateSession: async (token: string, assessmentId: string, client?: AxiosInstance) => {
+        const apiClientToUse = client || apiClient;
+        const response = await apiClientToUse.get(ASSESSMENT_ENDPOINTS.VALIDATE_SESSION, {
+            params: { token, assessmentId }
+        });
+        return response.data;
+    },
+
+    /**
+     * Obtiene la estructura completa de la evaluación para ser respondida
+     */
+    getForTaking: async (id: string, client?: AxiosInstance): Promise<AssessmentGetByIdResponse> => {
+        const apiClientToUse = client || apiClient;
+        const response = await apiClientToUse.get(ASSESSMENT_ENDPOINTS.TAKE(id));
+        return response.data;
+    },
+
+    /**
+     * Envía las respuestas finales de un intento
+     */
+    submitAttempt: async (attemptId: string, answers: any, client?: AxiosInstance) => {
+        const apiClientToUse = client || apiClient;
+        const response = await apiClientToUse.post(
+            ASSESSMENT_ENDPOINTS.SUBMIT_ATTEMPT(attemptId), 
+            { answers }
+        );
+        return response.data;
+    },
+    /**
+     * Obtiene la información inicial, configuración e intentos del usuario para una evaluación
+     */
+    getStartInfo: async (id: string, client?: AxiosInstance) => {
+        const apiClientToUse = client || apiClient;
+        const response = await apiClientToUse.get(ASSESSMENT_ENDPOINTS.START_INFO(id));
+        // Según tu código actual, la estructura es data.data
+        return response.data;
+    },
+
+    /**
+     * Crea una nueva sesión (intento) para el usuario
+     */
+    createSession: async (assessmentId: string, client?: AxiosInstance) => {
+        const apiClientToUse = client || apiClient;
+        const response = await apiClientToUse.post(ASSESSMENT_ENDPOINTS.CREATE_SESSION, {
+            assessmentId
+        });
+        return response.data;
     }
 };

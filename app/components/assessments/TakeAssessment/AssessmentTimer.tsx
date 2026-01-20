@@ -1,10 +1,8 @@
-// app/components/assessments/TakeAssessment/AssessmentTimer.tsx
-
 import { useEffect, useState } from 'react';
-import { Clock, AlertCircle } from 'lucide-react';
+import { Clock } from 'lucide-react';
 
 interface AssessmentTimerProps {
-    initialTime: number; // En segundos
+    initialTime: number; // en segundos
     onTimeUp: () => void;
 }
 
@@ -17,36 +15,41 @@ export default function AssessmentTimer({ initialTime, onTimeUp }: AssessmentTim
             return;
         }
 
-        const interval = setInterval(() => {
-            setTimeRemaining(prev => prev - 1);
+        const timer = setInterval(() => {
+            setTimeRemaining((prev) => {
+                if (prev <= 1) {
+                    clearInterval(timer);
+                    return 0;
+                }
+                return prev - 1;
+            });
         }, 1000);
 
-        return () => clearInterval(interval);
+        return () => clearInterval(timer);
     }, [timeRemaining, onTimeUp]);
 
-    const minutes = Math.floor(timeRemaining / 60);
-    const seconds = timeRemaining % 60;
+    const formatTime = (seconds: number) => {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = seconds % 60;
 
-    const isWarning = timeRemaining < 300; // Menos de 5 minutos
-    const isCritical = timeRemaining < 60; // Menos de 1 minuto
+        if (hours > 0) {
+            return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+        return `${minutes}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    const getTimerColor = () => {
+        const percentRemaining = (timeRemaining / initialTime) * 100;
+        if (percentRemaining > 50) return 'text-green-600 bg-green-50';
+        if (percentRemaining > 20) return 'text-yellow-600 bg-yellow-50';
+        return 'text-red-600 bg-red-50';
+    };
 
     return (
-        <div
-            className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-mono text-lg font-semibold ${isCritical
-                    ? 'bg-red-100 text-red-700'
-                    : isWarning
-                        ? 'bg-yellow-100 text-yellow-700'
-                        : 'bg-blue-100 text-blue-700'
-                }`}
-        >
-            {isCritical ? (
-                <AlertCircle className="h-5 w-5 animate-pulse" />
-            ) : (
-                <Clock className="h-5 w-5" />
-            )}
-            <span>
-                {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
-            </span>
+        <div className={`flex items-center space-x-2 px-4 py-2 rounded-lg ${getTimerColor()}`}>
+            <Clock className="h-5 w-5" />
+            <span className="font-mono text-lg font-bold">{formatTime(timeRemaining)}</span>
         </div>
     );
 }

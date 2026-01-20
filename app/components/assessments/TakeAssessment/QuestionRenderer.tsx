@@ -1,9 +1,31 @@
-// app/components/assessments/TakeAssessment/QuestionRenderer.tsx
-
-import { AlertCircle } from 'lucide-react';
+import { useState } from 'react';
 
 interface QuestionRendererProps {
-    question: any;
+    question: {
+        id: string;
+        type: string;
+        points: number;
+        isRequired: boolean;
+        translations: Array<{
+            languageCode: string;
+            questionText: string;
+            hint?: string;
+        }>;
+        options: Array<{
+            id: string;
+            order: number;
+            translations: Array<{
+                languageCode: string;
+                optionText: string;
+            }>;
+        }>;
+        caseSensitive?: boolean;
+        minLength?: number;
+        maxLength?: number;
+        scaleMin?: number;
+        scaleMax?: number;
+        scaleStep?: number;
+    };
     answer: any;
     onAnswerChange: (answer: any) => void;
     languageCode: string;
@@ -13,247 +35,178 @@ export default function QuestionRenderer({
     question,
     answer,
     onAnswerChange,
-    languageCode = 'es',
+    languageCode
 }: QuestionRendererProps) {
-    const translation = question.translations?.find(
-        (t: any) => t.languageCode === languageCode
-    ) || question.translations?.[0];
+    const translation = question.translations.find(t => t.languageCode === languageCode);
+    const questionText = translation?.questionText || '';
+    const hint = translation?.hint;
 
-    const renderByType = () => {
+    const renderQuestion = () => {
         switch (question.type) {
             case 'multiple_choice':
                 return (
-                    <MultipleChoice
-                        options={question.options}
-                        selectedOption={answer}
-                        onChange={onAnswerChange}
-                        languageCode={languageCode}
-                    />
+                    <div className="space-y-3">
+                        {question.options
+                            .sort((a, b) => a.order - b.order)
+                            .map((option) => {
+                                const optionTranslation = option.translations.find(
+                                    t => t.languageCode === languageCode
+                                );
+                                return (
+                                    <label
+                                        key={option.id}
+                                        className="flex items-start p-4 border rounded-lg cursor-pointer hover:bg-blue-50 transition-colors"
+                                    >
+                                        <input
+                                            type="radio"
+                                            name={`question-${question.id}`}
+                                            value={option.id}
+                                            checked={answer === option.id}
+                                            onChange={(e) => onAnswerChange(e.target.value)}
+                                            className="mt-1 mr-3"
+                                        />
+                                        <span className="flex-1">{optionTranslation?.optionText}</span>
+                                    </label>
+                                );
+                            })}
+                    </div>
                 );
 
             case 'multiple_response':
                 return (
-                    <MultipleResponse
-                        options={question.options}
-                        selectedOptions={answer || []}
-                        onChange={onAnswerChange}
-                        languageCode={languageCode}
-                    />
+                    <div className="space-y-3">
+                        {question.options
+                            .sort((a, b) => a.order - b.order)
+                            .map((option) => {
+                                const optionTranslation = option.translations.find(
+                                    t => t.languageCode === languageCode
+                                );
+                                const selectedOptions = Array.isArray(answer) ? answer : [];
+                                return (
+                                    <label
+                                        key={option.id}
+                                        className="flex items-start p-4 border rounded-lg cursor-pointer hover:bg-blue-50 transition-colors"
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            value={option.id}
+                                            checked={selectedOptions.includes(option.id)}
+                                            onChange={(e) => {
+                                                const newAnswer = e.target.checked
+                                                    ? [...selectedOptions, option.id]
+                                                    : selectedOptions.filter(id => id !== option.id);
+                                                onAnswerChange(newAnswer);
+                                            }}
+                                            className="mt-1 mr-3"
+                                        />
+                                        <span className="flex-1">{optionTranslation?.optionText}</span>
+                                    </label>
+                                );
+                            })}
+                    </div>
                 );
 
             case 'true_false':
                 return (
-                    <TrueFalse
-                        selectedValue={answer}
-                        onChange={onAnswerChange}
-                    />
+                    <div className="space-y-3">
+                        <label className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-blue-50 transition-colors">
+                            <input
+                                type="radio"
+                                name={`question-${question.id}`}
+                                value="true"
+                                checked={answer === 'true'}
+                                onChange={(e) => onAnswerChange(e.target.value)}
+                                className="mr-3"
+                            />
+                            <span>Verdadero</span>
+                        </label>
+                        <label className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-blue-50 transition-colors">
+                            <input
+                                type="radio"
+                                name={`question-${question.id}`}
+                                value="false"
+                                checked={answer === 'false'}
+                                onChange={(e) => onAnswerChange(e.target.value)}
+                                className="mr-3"
+                            />
+                            <span>Falso</span>
+                        </label>
+                    </div>
                 );
 
             case 'short_answer':
                 return (
-                    <ShortAnswer
+                    <input
+                        type="text"
                         value={answer || ''}
-                        onChange={onAnswerChange}
+                        onChange={(e) => onAnswerChange(e.target.value)}
+                        minLength={question.minLength}
                         maxLength={question.maxLength}
+                        className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Escribe tu respuesta..."
                     />
                 );
 
             case 'essay':
                 return (
-                    <Essay
+                    <textarea
                         value={answer || ''}
-                        onChange={onAnswerChange}
+                        onChange={(e) => onAnswerChange(e.target.value)}
+                        minLength={question.minLength}
                         maxLength={question.maxLength}
+                        rows={6}
+                        className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                        placeholder="Escribe tu respuesta..."
                     />
                 );
 
-            default:
+            case 'scale':
                 return (
-                    <div className="text-gray-500 italic">
-                        Tipo de pregunta no soportado: {question.type}
+                    <div className="space-y-4">
+                        <div className="flex justify-between text-sm text-gray-600">
+                            <span>{question.scaleMin}</span>
+                            <span>{question.scaleMax}</span>
+                        </div>
+                        <input
+                            type="range"
+                            min={question.scaleMin}
+                            max={question.scaleMax}
+                            step={question.scaleStep || 1}
+                            value={answer || question.scaleMin}
+                            onChange={(e) => onAnswerChange(Number(e.target.value))}
+                            className="w-full"
+                        />
+                        <div className="text-center text-lg font-semibold">
+                            Valor seleccionado: {answer || question.scaleMin}
+                        </div>
                     </div>
                 );
+
+            default:
+                return <p className="text-gray-500">Tipo de pregunta no soportado</p>;
         }
     };
 
     return (
-        <div>
-            <div className="mb-6">
-                <div className="flex items-start justify-between mb-4">
-                    <h2 className="text-lg font-semibold text-gray-900 flex-1">
-                        {translation?.text || 'Sin texto'}
-                    </h2>
-                    <div className="ml-4 flex items-center space-x-2 text-sm">
-                        {question.isRequired && (
-                            <span className="text-red-500 font-medium">*Requerida</span>
-                        )}
-                        <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium">
-                            {question.points} {question.points === 1 ? 'punto' : 'puntos'}
-                        </span>
-                    </div>
+        <div className="space-y-4">
+            <div className="flex items-start justify-between">
+                <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        {questionText}
+                        {question.isRequired && <span className="text-red-500 ml-1">*</span>}
+                    </h3>
+                    {hint && (
+                        <p className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg mb-4">
+                            💡 <strong>Pista:</strong> {hint}
+                        </p>
+                    )}
                 </div>
-
-                {translation?.explanation && (
-                    <p className="text-gray-600 text-sm mt-2">{translation.explanation}</p>
-                )}
+                <div className="ml-4 bg-blue-100 px-3 py-1 rounded-full text-sm font-semibold text-blue-800">
+                    {question.points} {question.points === 1 ? 'punto' : 'puntos'}
+                </div>
             </div>
 
-            {renderByType()}
-        </div>
-    );
-}
-
-// Componentes individuales para cada tipo de pregunta
-
-function MultipleChoice({ options, selectedOption, onChange, languageCode }: any) {
-    return (
-        <div className="space-y-3">
-            {options
-                .sort((a: any, b: any) => a.order - b.order)
-                .map((option: any) => {
-                    const translation = option.translations?.find(
-                        (t: any) => t.languageCode === languageCode
-                    ) || option.translations?.[0];
-
-                    return (
-                        <label
-                            key={option.id}
-                            className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${selectedOption === option.id
-                                    ? 'border-blue-500 bg-blue-50'
-                                    : 'border-gray-200 hover:border-gray-300'
-                                }`}
-                        >
-                            <input
-                                type="radio"
-                                name="option"
-                                value={option.id}
-                                checked={selectedOption === option.id}
-                                onChange={(e) => onChange(e.target.value)}
-                                className="w-5 h-5 text-blue-600"
-                            />
-                            <span className="ml-3 text-gray-900">{translation?.text}</span>
-                        </label>
-                    );
-                })}
-        </div>
-    );
-}
-
-function MultipleResponse({ options, selectedOptions, onChange, languageCode }: any) {
-    const handleToggle = (optionId: string) => {
-        const newSelected = selectedOptions.includes(optionId)
-            ? selectedOptions.filter((id: string) => id !== optionId)
-            : [...selectedOptions, optionId];
-        onChange(newSelected);
-    };
-
-    return (
-        <div className="space-y-3">
-            {options
-                .sort((a: any, b: any) => a.order - b.order)
-                .map((option: any) => {
-                    const translation = option.translations?.find(
-                        (t: any) => t.languageCode === languageCode
-                    ) || option.translations?.[0];
-
-                    return (
-                        <label
-                            key={option.id}
-                            className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${selectedOptions.includes(option.id)
-                                    ? 'border-blue-500 bg-blue-50'
-                                    : 'border-gray-200 hover:border-gray-300'
-                                }`}
-                        >
-                            <input
-                                type="checkbox"
-                                checked={selectedOptions.includes(option.id)}
-                                onChange={() => handleToggle(option.id)}
-                                className="w-5 h-5 text-blue-600 rounded"
-                            />
-                            <span className="ml-3 text-gray-900">{translation?.text}</span>
-                        </label>
-                    );
-                })}
-        </div>
-    );
-}
-
-function TrueFalse({ selectedValue, onChange }: any) {
-    return (
-        <div className="space-y-3">
-            <label
-                className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${selectedValue === 'true'
-                        ? 'border-green-500 bg-green-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-            >
-                <input
-                    type="radio"
-                    name="trueFalse"
-                    value="true"
-                    checked={selectedValue === 'true'}
-                    onChange={(e) => onChange(e.target.value)}
-                    className="w-5 h-5 text-green-600"
-                />
-                <span className="ml-3 text-gray-900 font-medium">Verdadero</span>
-            </label>
-
-            <label
-                className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${selectedValue === 'false'
-                        ? 'border-red-500 bg-red-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-            >
-                <input
-                    type="radio"
-                    name="trueFalse"
-                    value="false"
-                    checked={selectedValue === 'false'}
-                    onChange={(e) => onChange(e.target.value)}
-                    className="w-5 h-5 text-red-600"
-                />
-                <span className="ml-3 text-gray-900 font-medium">Falso</span>
-            </label>
-        </div>
-    );
-}
-
-function ShortAnswer({ value, onChange, maxLength }: any) {
-    return (
-        <div>
-            <input
-                type="text"
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                maxLength={maxLength}
-                placeholder="Escribe tu respuesta..."
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
-            />
-            {maxLength && (
-                <p className="text-sm text-gray-500 mt-2">
-                    {value.length} / {maxLength} caracteres
-                </p>
-            )}
-        </div>
-    );
-}
-
-function Essay({ value, onChange, maxLength }: any) {
-    return (
-        <div>
-            <textarea
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                maxLength={maxLength}
-                rows={8}
-                placeholder="Escribe tu respuesta..."
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none resize-none"
-            />
-            {maxLength && (
-                <p className="text-sm text-gray-500 mt-2">
-                    {value.length} / {maxLength} caracteres
-                </p>
-            )}
+            {renderQuestion()}
         </div>
     );
 }

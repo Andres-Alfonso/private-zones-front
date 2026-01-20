@@ -116,7 +116,7 @@ export const AssessmentApi = {
     /**
      * Obtiene la estructura completa de la evaluación para ser respondida
      */
-    getForTaking: async (id: string, client?: AxiosInstance): Promise<AssessmentGetByIdResponse> => {
+    getToTake: async (id: string, client?: AxiosInstance): Promise<AssessmentGetByIdResponse> => {
         const apiClientToUse = client || apiClient;
         const response = await apiClientToUse.get(ASSESSMENT_ENDPOINTS.TAKE(id));
         return response.data;

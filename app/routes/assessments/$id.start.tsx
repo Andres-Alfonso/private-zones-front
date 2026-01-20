@@ -143,7 +143,7 @@ export default function StartAssessment() {
                                         }`}
                                         >
                                         Calificación:{' '}
-                                        {(userAttempts.lastAttempt?.score ?? 0).toFixed(2)} /{' '}
+                                        {Number(userAttempts.lastAttempt?.score || 0).toFixed(2)} /{' '}
                                         {assessment.configuration.maxScore}
                                     </p>
 

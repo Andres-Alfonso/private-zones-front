@@ -711,7 +711,7 @@ function CourseMakeLayoutContent() {
 
                                                             <div className="flex items-center justify-between mt-3">
                                                                 <div className="text-xs text-gray-500">
-                                                                    {module.stats?.completedItems}/{module.stats?.totalItems} elementos • {module.stats?.totalDuration}min
+                                                                    {module.stats?.completedItems ?? 0}/{module.stats?.totalItems ?? 0} elementos • {module.stats?.totalDuration ?? 0}min
                                                                 </div>
                                                                 <div className={`text-sm font-bold ${isLocked ? 'text-gray-400' :
                                                                     progress === 100 ? 'text-green-600' :

@@ -399,7 +399,7 @@ export default function AssessmentsIndex() {
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex items-center justify-end space-x-2">
                                             <Link
-                                                to={`/assessments/${assessment.id}`}
+                                                to={`/assessments/${assessment.id}/take`}
                                                 className="p-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
                                                 title="Ver detalles"
                                             >

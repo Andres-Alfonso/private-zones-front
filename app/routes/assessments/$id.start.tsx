@@ -253,14 +253,16 @@ export default function StartAssessment() {
                     <Form method="post">
                         <button
                             type="submit"
-                            disabled={!userAttempts.canAttempt || isSubmitting}
+                            disabled={!userAttempts.canAttempt || isSubmitting || assessment.questionCount === 0}
                             className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 rounded-xl font-semibold text-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:from-gray-400 disabled:to-gray-500"
                         >
                             {isSubmitting
                                 ? 'Iniciando...'
-                                : userAttempts.canAttempt
-                                    ? 'Comenzar Evaluación'
-                                    : 'No Disponible'}
+                                : assessment.questionCount === 0
+                                    ? 'Sin preguntas disponibles'
+                                    : userAttempts.canAttempt
+                                        ? 'Comenzar Evaluación'
+                                        : 'No Disponible'}
                         </button>
                     </Form>
                 </div>

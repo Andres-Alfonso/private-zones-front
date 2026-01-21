@@ -97,6 +97,18 @@ export default function StartAssessment() {
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
             <div className="container mx-auto px-4 py-8">
                 <div className="max-w-3xl mx-auto">
+
+                    {/* boton regresar */}
+                    <div className="mb-4">
+                        <button
+                            type="button"
+                            className="text-blue-600 hover:underline bg-transparent border-none p-0 cursor-pointer"
+                            onClick={() => window.history.back()}
+                        >
+                            &larr; Regresar a evaluaciones
+                        </button>
+                    </div>
+
                     {/* Header */}
                     <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-8 mb-6">
                         <div className="flex items-start space-x-4">

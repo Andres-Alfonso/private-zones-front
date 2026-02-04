@@ -1,12 +1,14 @@
 // routes/tasks/create.tsx
 import { ActionFunction, json, LoaderFunction } from '@remix-run/node';
-import { Form, useActionData, useLoaderData, useNavigate, useNavigation } from '@remix-run/react';
+import { Form, redirect, useActionData, useLoaderData, useNavigate, useNavigation } from '@remix-run/react';
 import React, { useState } from 'react'
 import { BasicTaskInformation } from '~/components/tasks/BasicTaskInformation';
 import { TaskConfiguration } from '~/components/tasks/Taskconfiguration';
 import { CreateTaskHeader } from '~/components/tasks/CreateTaskHeader';
 import { AlertCircle } from 'lucide-react';
 import { FormActionTask } from '~/components/tasks/FormActionTask';
+import { createApiClientFromRequest } from '~/api/client';
+import TaskAPI, { TaskStatus } from '~/api/endpoints/tasks';
 
 interface FormErrors {
     title?: string;
@@ -101,7 +103,7 @@ export const action: ActionFunction = async ({ request }) => {
         const title = formData.get('title') as string;
         const description = formData.get('description') as string;
         const instructions = formData.get('instructions') as string;
-        const status = formData.get('status') as string;
+        const status = formData.get('status') as TaskStatus ?? 'draft';
         const order = formData.get('order') as string;
         const startDate = formData.get('startDate') as string;
         const endDate = formData.get('endDate') as string;
@@ -112,7 +114,7 @@ export const action: ActionFunction = async ({ request }) => {
         const maxFileSize = formData.get('maxFileSize') as string;
         const allowedFileTypes = formData.get('allowedFileTypes') as string;
         const allowMultipleSubmissions = formData.get('allowMultipleSubmissions') === 'true';
-        const maxSubmissionAttempts = formData.get('maxSubmissionAttempts') as string;
+        const maxSubmissionAttempts = formData.get('maxSubmissionAttempts') ?? '1' as string;
         const requireSubmission = formData.get('requireSubmission') === 'true';
         const enablePeerReview = formData.get('enablePeerReview') === 'true';
         const showGradeToStudent = formData.get('showGradeToStudent') === 'true';
@@ -136,9 +138,48 @@ export const action: ActionFunction = async ({ request }) => {
             return json({ errors, fields: Object.fromEntries(formData) }, { status: 400 });
         }
 
-        // Aquí irá la lógica para crear la tarea en el backend
+        const forumData = {
+            courseId,
+            title,
+            description,
+            instructions,
+            status,
+            order: Number(order),
+            startDate,
+            endDate,
+            lateSubmissionDate,
+            maxPoints: Number(maxPoints),
+            lateSubmissionPenalty: Number(lateSubmissionPenalty),
+            maxFileUploads: Number(maxAttachments),
+            maxFileSize: Number(maxFileSize),
+            allowedFileTypes: allowedFileTypes ? allowedFileTypes.split(',') : [],
+            allowMultipleSubmissions,
+            maxSubmissionAttempts: maxSubmissionAttempts ? Number(maxSubmissionAttempts) : null,
+            requireSubmission,
+            enablePeerReview,
+            showGradeToStudent,
+            showFeedbackToStudent,
+            notifyOnSubmission,
+            isAutoGradable,
+            // taskInfo,
+        }
 
-        return json({ success: true });
+        // Simular delay de creación
+        await new Promise(resolve => setTimeout(resolve, 1000));
+    
+        const authenticatedApiClient = createApiClientFromRequest(request);
+        const response = await TaskAPI.create(forumData, authenticatedApiClient);
+    
+        if (response) {
+            // Redireccionar según contexto
+            if (courseId) {
+            return redirect(`/tasks/courses/${courseId}?created=true`);
+            } else {
+            return redirect(`/tasks?created=true`);
+            }
+        } else {
+            throw new Error('Error al crear la tarea');
+        }
     } catch (error: any) {
         console.error('Error al crear tarea:', error);
         return json({
@@ -334,7 +375,7 @@ export default function CreateTask() {
                 <input type="hidden" name="showFeedbackToStudent" value={String(formData.showFeedbackToStudent)} />
                 <input type="hidden" name="notifyOnSubmission" value={String(formData.notifyOnSubmission)} />
                 <input type="hidden" name="isAutoGradable" value={String(formData.isAutoGradable)} />
-                <input type="hidden" name="taskInfo" value={formData.taskInfo} />
+                {/* <input type="hidden" name="taskInfo" value={formData.taskInfo} />  */}
 
                 <FormActionTask
                     isSubmitting={isSubmitting}

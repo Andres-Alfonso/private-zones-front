@@ -1,6 +1,6 @@
 // routes/tasks/$id.edit.tsx
 import { ActionFunction, json, LoaderFunction } from '@remix-run/node';
-import { Form, useActionData, useLoaderData, useNavigate, useNavigation } from '@remix-run/react';
+import { Form, redirect, useActionData, useLoaderData, useNavigate, useNavigation } from '@remix-run/react';
 import React, { useState } from 'react'
 import { createApiClientFromRequest } from '~/api/client';
 import TaskAPI from '~/api/endpoints/tasks';
@@ -187,9 +187,9 @@ export const action: ActionFunction = async ({ request, params }) => {
             instructions: instructions,
             status: status as TaskStatus,
             order: Number(order),
-            startDate: startDate || Date.now().toString(),
+            startDate: startDate || new Date().toISOString(),
             endDate,
-            lateSubmissionDate: lateSubmissionDate || Date.now().toString(),
+            lateSubmissionDate: lateSubmissionDate || undefined,
             maxPoints: Number(maxPoints),
             lateSubmissionPenalty: Number(lateSubmissionPenalty),
             maxFileUploads: Number(maxAttachments), // Nota: maxAttachments -> maxFileUploads
@@ -204,9 +204,18 @@ export const action: ActionFunction = async ({ request, params }) => {
             notifyOnSubmission,
         };
 
-        await TaskAPI.update(id, updateData, authenticatedApiClient);
+         const response = await TaskAPI.update(id, updateData, authenticatedApiClient);
 
-        return json({ success: true });
+        if (response) {
+            // Redireccionar según contexto
+            if (courseId) {
+            return redirect(`/tasks/courses/${courseId}?updated=true`);
+            } else {
+            return redirect(`/tasks?updated=true`);
+            }
+        } else {
+            throw new Error('Error al crear la tarea');
+        }
     } catch (error: any) {
         console.error('Error al actualizar tarea:', error);
         return json({

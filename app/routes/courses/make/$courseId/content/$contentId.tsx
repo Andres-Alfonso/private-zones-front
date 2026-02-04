@@ -106,7 +106,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
             includeCourse: true,
             includeModule: true,
             includeNavigation: true,
-        }, authenticatedApiClient);
+        }, true, authenticatedApiClient);
 
         // Datos mockeados para demostración
         const mockContent: ContentData = {

@@ -226,7 +226,7 @@ export default function ContentView() {
 
 function useProgressTracker(contentId: string, courseId: string, initialProgress: any) {
     const [localProgress, setLocalProgress] = useState({
-        isCompleted: initialProgress.isCompleted,
+        isCompleted: initialProgress.isCompleted ?? false,
         timeSpent: initialProgress.timeSpent,
         progressPercentage: 0,
     });

@@ -1,7 +1,7 @@
 // app/routes/tenants/$id.edit.client.tsx
 
 import { json, redirect, LoaderFunction, ActionFunction } from '@remix-run/node';
-import { useLoaderData, useActionData, Form, useNavigation, useNavigate, useParams } from '@remix-run/react';
+import { useLoaderData, useActionData, Form, useNavigation, useNavigate, useParams, redirectDocument } from '@remix-run/react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Save, X, AlertCircle, Building2, Globe, User, MapPin, Palette, ArrowLeft } from 'lucide-react';
 import {
@@ -252,10 +252,9 @@ export const action: ActionFunction = async ({ request, params }) => {
             });
         }
 
-        return json<ActionData>({
-            success: true,
-            tenantId: tenantResult.id
-        });
+        if(tenantResult){
+            return redirectDocument('/home');
+        }
 
     } catch (error: any) {
         console.error('Error updating tenant:', error);
@@ -1232,7 +1231,7 @@ export default function ManageTenant() {
     ];
 
     return (
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-6xl mx-auto my-8">
             {/* Header */}
             <div className="mb-8">
                 <div className="flex items-center justify-between">

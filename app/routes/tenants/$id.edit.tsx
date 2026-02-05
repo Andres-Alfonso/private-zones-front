@@ -1,7 +1,7 @@
 // app/routes/tenants/$id.edit.tsx
 
 import { json, redirect, LoaderFunction, ActionFunction } from '@remix-run/node';
-import { useLoaderData, useActionData, Form, useNavigation, useNavigate } from '@remix-run/react';
+import { useLoaderData, useActionData, Form, useNavigation, useNavigate, redirectDocument } from '@remix-run/react';
 import { useState, useEffect } from 'react';
 import { Save, X, AlertCircle, Building2, Globe, User, MapPin, Palette, Trash2, ImageIcon } from 'lucide-react';
 import { 
@@ -201,10 +201,10 @@ export const action: ActionFunction = async ({ request, params }) => {
         errors: fieldErrors
       });
     }
-    
-    return json<ActionData>({ 
-      success: true
-    });
+
+    if(result){
+      redirectDocument('/home');
+    }
     
   } catch (error: any) {
     console.error('Error updating tenant:', error);

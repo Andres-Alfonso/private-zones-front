@@ -842,6 +842,7 @@ function UserRow({
           <Form method="post" className="inline">
             <input type="hidden" name="_action" value="toggle-active" />
             <input type="hidden" name="userId" value={user.id} />
+            <div className="relative group inline-block">
             <button
               type="submit"
               disabled={isSubmitting}
@@ -850,10 +851,16 @@ function UserRow({
                   ? 'text-red-600 hover:text-red-900' 
                   : 'text-green-600 hover:text-green-900'
               }`}
-              title={user.isActive ? 'Desactivar usuario' : 'Activar usuario'}
             >
               {user.isActive ? <EyeOff className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
             </button>
+
+            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2
+              whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white
+              opacity-0 group-hover:opacity-100 transition-opacity">
+              {user.isActive ? 'Desactivar usuario' : 'Activar usuario'}
+            </span>
+          </div>
           </Form>
 
           <Form 

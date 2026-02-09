@@ -674,7 +674,7 @@ function CourseMakeLayoutContent() {
 
                         {/* Modules list */}
                         <div className="p-4 space-y-4">
-                            <h3 className="font-semibold text-gray-900 text-lg mb-4 hidden lg:block">Contenido del Curso</h3>
+                            <h3 className="font-semibold text-gray-900 text-lg mb-4 hidden lg:block">Modulos</h3>
 
                             {course.modules.map((module, index) => {
                                 const progress = getModuleProgress(module);

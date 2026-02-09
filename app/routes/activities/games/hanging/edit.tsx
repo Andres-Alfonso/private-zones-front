@@ -52,6 +52,9 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 
 export const action: ActionFunction = async ({ request, params }) => {
     const activityId = params.activityId;
+
+    const url = new URL(request.url);
+    const courseId = url.searchParams.get("course") || undefined;
     
     if (!activityId) {
         return json<ActionData>({
@@ -83,7 +86,7 @@ export const action: ActionFunction = async ({ request, params }) => {
         const response = await HangingAPI.update(activityId, hangingData, apiClient);
         
         if (response.success) {
-            return redirect(`/activities/${activityId}`);
+            return redirect(`/activities/course/${courseId}`);
         } else {
             return json<ActionData>({
                 success: false,

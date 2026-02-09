@@ -18,9 +18,11 @@ interface ActionData {
     generalError?: string;
 }
 
-export const loader: LoaderFunction = async ({ params }) => {
+export const loader: LoaderFunction = async ({ params, request }) => {
+    const url = new URL(request.url);
+
     const activityId = params.activityId;
-    const courseId = params.courseId;
+    const courseId = url.searchParams.get("course") || undefined;
     
     if (!activityId) {
         throw new Response("Activity ID requerido", { status: 400 });
@@ -35,7 +37,9 @@ export const loader: LoaderFunction = async ({ params }) => {
 
 export const action: ActionFunction = async ({ request, params }) => {
     const activityId = params.activityId;
-    const courseId = params.courseId;
+
+    const url = new URL(request.url);
+    const courseId = url.searchParams.get("course") || undefined;
     
     if (!activityId) {
         return json<ActionData>({
@@ -68,7 +72,7 @@ export const action: ActionFunction = async ({ request, params }) => {
 
         if (response.success) {
             // Redirigir a la vista de detalle de la actividad
-            return redirect(`/activities?course${courseId}`);
+            return redirect(`/activities/course/${courseId}`);
         } else {
             return json<ActionData>({
                 success: false,

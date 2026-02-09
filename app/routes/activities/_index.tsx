@@ -336,7 +336,7 @@ export default function ActivitiesIndex() {
                             : "Comienza creando tu primera actividad educativa"}
                     </p>
                     <Link
-                        to="/activities/create"
+                        to={`/activities/create?course=${courseId || ""}`}
                         className="inline-flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl font-medium"
                     >
                         <Plus className="h-5 w-5" />

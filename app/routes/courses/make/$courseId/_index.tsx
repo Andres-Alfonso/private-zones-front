@@ -199,6 +199,8 @@ export default function CourseIndex() {
     const { data, error } = useLoaderData<LoaderData>();
     const params = useParams();
 
+    const titleColor = data?.colorTitle || '#2563eb';
+
     if (error) {
         return (
             <div className="flex items-center justify-center h-full p-8">
@@ -326,7 +328,7 @@ export default function CourseIndex() {
                                 <TrendingUp className="h-6 w-6 text-green-600" />
                                 <span className="font-semibold text-gray-900">Tu Progreso</span>
                             </div>
-                            <div className="text-3xl font-bold mb-2" style={{ color: data.colorTitle }}>
+                            <div className="text-3xl font-bold mb-2" style={{ color: titleColor }}>
                                 {data.userProgress.overallProgress}%
                             </div>
                             <div className="w-full bg-gray-200 rounded-full h-2">
@@ -334,7 +336,7 @@ export default function CourseIndex() {
                                     className="h-2 rounded-full transition-all duration-500"
                                     style={{
                                         width: `${data.userProgress.overallProgress}%`,
-                                        background: `linear-gradient(to right, ${data.colorTitle}, ${data.colorTitle})`
+                                        background: `linear-gradient(to right, ${titleColor}, ${titleColor})`
                                     }}
                                 ></div>
                             </div>

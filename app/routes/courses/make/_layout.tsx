@@ -271,7 +271,7 @@ function CourseMakeLayoutContent() {
     const courseTitle = course.translations[0]?.title || course.slug;
     const courseDescription = course.translations[0]?.description || '';
     const currentViewConfig = course.viewsConfig[0];
-    const titleColor = currentViewConfig?.titleColor || course.configuration?.colorTitle || '#2563eb';
+    const titleColor = currentViewConfig?.titleColor || '#2563eb';
 
     // Determinar si estamos en la vista principal del curso
     const isMainCourseView = location.pathname === `/make/courses/${course.id}`;
@@ -529,8 +529,8 @@ function CourseMakeLayoutContent() {
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="font-bold text-gray-900 text-lg">Tu Progreso</h3>
                                 <div className="flex items-center space-x-2">
-                                    <Target className="h-5 w-5 text-blue-600" />
-                                    <span className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                                    <Target className="h-5 w-5 text-[#25343F]" />
+                                    <span className="text-3xl font-bold bg-[#25343F] bg-clip-text text-transparent">
                                         {syncedProgress.overallProgress}%
                                     </span>
                                 </div>
@@ -541,13 +541,23 @@ function CourseMakeLayoutContent() {
                                 <div
                                     className="h-4 rounded-full transition-all duration-1000 ease-out relative"
                                     style={{
-                                        width: `${syncedProgress.overallProgress}%`,
-                                        background: `linear-gradient(135deg, ${titleColor} 0%, #8B5CF6 100%)`
+                                    width: `${Math.min(
+                                        100,
+                                        Math.max(0, syncedProgress?.overallProgress ?? 0)
+                                    )}%`,
+                                    background: `linear-gradient(
+                                        135deg,
+                                        ${titleColor} 0%,
+                                        ${titleColor}CC 100%
+                                    )`
                                     }}
                                 >
-                                    <div className="absolute inset-0 bg-white/30 rounded-full animate-pulse"></div>
+                                    <div className="absolute inset-0 bg-white/20 rounded-full animate-pulse"></div>
                                 </div>
                             </div>
+
+
+
 
                             {/* Estadísticas en grid */}
                             <div className="grid grid-cols-3 gap-4">
@@ -586,7 +596,7 @@ function CourseMakeLayoutContent() {
                             {syncedProgress.overallProgress > 0 && userProgress.currentItemId && (
                                 <Link
                                     to={`/make/courses/${course.id}/continue`}
-                                    className="mt-4 w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
+                                    className="mt-4 w-full flex items-center justify-center space-x-2 bg-gradient-to-r bg-[#25343F] text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
                                 >
                                     <Play className="h-5 w-5" />
                                     <span>Continuar</span>

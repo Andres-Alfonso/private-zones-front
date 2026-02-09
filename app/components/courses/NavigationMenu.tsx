@@ -7,7 +7,7 @@ const NavigationMenu = ({ course, className = "" }) => {
     { name: 'Foros', route: `/forums/course/${course?.id}`, icon: MessageSquare, isActive: () => location.pathname.startsWith('/forums/course/') },
     { name: 'Tareas', route: `/tasks/courses/${course?.id}`, icon: FileText, isActive: () => location.pathname.startsWith('/tasks/courses/') },
     { name: 'Evaluaciones', route: `/assessments/course/${course?.id}`, icon: ClipboardCheck, isActive: () => location.pathname.startsWith('/assessments/course/') },
-    { name: 'Actividades', route: `/activities/course/${course?.id}`, icon: Sparkles, isActive: () => location.pathname.startsWith('/activities/courses/') },
+    { name: 'Actividades', route: `/activities/course/${course?.id}`, icon: Sparkles, isActive: () => location.pathname.startsWith('/activities/course/') },
     { name: 'Módulos', route: `/make/courses/${course?.id || ''}`, icon: Layers, isActive: () => location.pathname.startsWith('/make/courses/') || location.pathname.startsWith('/modules/course/') },
     { name: 'Métricas', route: `/analysis/course/${course?.id}`, icon: BarChart3, isActive: () => location.pathname.startsWith('/analysis/courses/') },
     { name: 'Permisos', route: `/permits/course/${course?.id}`, icon: Shield, isActive: () => location.pathname.startsWith('/permits/courses/') }

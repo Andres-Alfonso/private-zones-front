@@ -47,6 +47,19 @@ export default defineConfig({
             // route(":courseId/activity/:activityId", "routes/courses/make/$courseId/activity/$activityId.tsx");
           });
 
+          route("activities", "routes/activities/_layout.tsx", () => {
+            route("course/:courseId", "routes/activities/_index.tsx", { index: true });
+            route("create", "routes/activities/create.tsx");
+            route("create/:gameType", "routes/activities/create.$gameType.tsx");
+            // route(":id", "routes/activities/$id.tsx");
+            // route(":id/edit", "routes/activities/$id.edit.tsx");
+
+
+            // Rutas para el juego de ahorcado
+            route(":activityId/games/hanging/create", "routes/activities/games/hanging/create.tsx");
+            route(":activityId/games/hanging/edit", "routes/activities/games/hanging/edit.tsx");
+          });
+
           // Rutas de gestion de contenidos
           route("contents", "routes/contents/_layout.tsx", () => {
             route("", "routes/contents/_index.tsx", { index: true });

@@ -78,7 +78,7 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
     
     // Generar rutas dinámicas
     const viewRoute = getActivityViewRoute(activity.id);
-    const editRoute = getActivityEditRoute(activity);
+    const editRoute = getActivityEditRoute(activity, activity.courseId);
     const metadataRoute = getActivityMetadataEditRoute(activity.id);
     
     return (

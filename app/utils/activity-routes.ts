@@ -6,7 +6,7 @@ import type { Activity, GameType } from "~/api/types/activity.types";
  * Mapa de tipos de actividad a sus identificadores de ruta
  */
 const activityGameTypeMap: Record<GameType, string> = {
-    word_search: 'word-search',
+    word_search: 'word_search',
     hanging: 'hanging',
     complete_phrase: 'complete-phrase',
     crossword: 'crossword',
@@ -54,18 +54,18 @@ export function getActivityMetadataEditRoute(activityId: string): string {
  * Obtiene la ruta para crear el contenido del juego específico
  * Ejemplo: /activities/123/games/hanging/create
  */
-export function getActivityGameCreateRoute(activityId: string, type: GameType): string {
+export function getActivityGameCreateRoute(activityId: string, type: GameType, courseId?: string): string {
     const gameTypeSlug = getGameTypeSlug(type);
-    return `/activities/${activityId}/games/${gameTypeSlug}/create`;
+    return `/activities/${activityId}/games/${gameTypeSlug}/create${courseId ? `?course=${courseId}` : ''}`;
 }
 
 /**
  * Obtiene la ruta para editar el contenido del juego específico
  * Ejemplo: /activities/123/games/hanging/edit
  */
-export function getActivityGameEditRoute(activityId: string, type: GameType): string {
+export function getActivityGameEditRoute(activityId: string, type: GameType, courseId?: string): string {
     const gameTypeSlug = getGameTypeSlug(type);
-    return `/activities/${activityId}/games/${gameTypeSlug}/edit`;
+    return `/activities/${activityId}/games/${gameTypeSlug}/edit${courseId ? `?course=${courseId}` : ''}`;
 }
 
 /**
@@ -91,9 +91,9 @@ export function hasGameConfigured(activity: Activity): boolean {
  * - Si el juego está configurado: ruta de edición del juego
  * - Si no está configurado: ruta de creación del juego
  */
-export function getActivityEditRoute(activity: Activity): string {
+export function getActivityEditRoute(activity: Activity, courseId?: string): string {
     if (hasGameConfigured(activity)) {
         return getActivityGameEditRoute(activity.id, activity.type);
     }
-    return getActivityGameCreateRoute(activity.id, activity.type);
+    return getActivityGameCreateRoute(activity.id, activity.type, courseId);
 }

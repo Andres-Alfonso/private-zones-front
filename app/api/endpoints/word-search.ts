@@ -2,42 +2,36 @@
 
 import { AxiosInstance } from 'axios';
 import apiClient from "../client";
-
-export interface WordSearchCreateRequest {
-    gridWidth: number;
-    gridHeight: number;
-    words: Array<{
-        word: string;
-        clue?: string;
-        category?: string;
-    }>;
-    allowedDirections: string[];
-    fillEmptyCells?: boolean;
-    caseSensitive?: boolean;
-    showWordList?: boolean;
-    showClues?: boolean;
-    pointsPerWord?: number;
-    bonusForSpeed?: number;
-    penaltyPerHint?: number;
-}
+import type { 
+    WordSearchGame,
+    CreateWordSearchGameRequest,
+    UpdateWordSearchGameRequest,
+    WordSearchPlayableData,
+    WordSearchValidationResult,
+    WordSearchHint,
+    GeneratedGrid
+} from "../types/word-search.types";
 
 const WORD_SEARCH_ENDPOINTS = {
     CREATE: (activityId: string) => `/v1/word-search/activity/${activityId}`,
     GET: (activityId: string) => `/v1/word-search/activity/${activityId}`,
+    UPDATE: (activityId: string) => `/v1/word-search/activity/${activityId}`,
     PLAY: (activityId: string) => `/v1/word-search/activity/${activityId}/play`,
     ADMIN_GRID: (activityId: string) => `/v1/word-search/activity/${activityId}/admin-grid`,
     VALIDATE: (activityId: string) => `/v1/word-search/activity/${activityId}/validate`,
-    UPDATE: (activityId: string) => `/v1/word-search/activity/${activityId}`,
     REGENERATE_SEED: (activityId: string) => `/v1/word-search/activity/${activityId}/regenerate-seed`,
     HINT: (activityId: string, wordIndex: number) => `/v1/word-search/activity/${activityId}/hint/${wordIndex}`,
 };
 
 export const WordSearchAPI = {
+    /**
+     * Crear configuración del juego de sopa de letras
+     */
     create: async (
         activityId: string,
-        data: WordSearchCreateRequest,
+        data: CreateWordSearchGameRequest,
         client?: AxiosInstance
-    ) => {
+    ): Promise<{ success: boolean; message: string; data: WordSearchGame }> => {
         try {
             const apiClientToUse = client || apiClient;
             const response = await apiClientToUse.post(
@@ -46,12 +40,18 @@ export const WordSearchAPI = {
             );
             return response.data;
         } catch (error) {
-            console.error('Error creating word search:', error);
+            console.error('Error creando sopa de letras:', error);
             throw error;
         }
     },
 
-    get: async (activityId: string, client?: AxiosInstance) => {
+    /**
+     * Obtener configuración del juego
+     */
+    get: async (
+        activityId: string,
+        client?: AxiosInstance
+    ): Promise<{ success: boolean; message: string; data: WordSearchGame }> => {
         try {
             const apiClientToUse = client || apiClient;
             const response = await apiClientToUse.get(
@@ -59,66 +59,19 @@ export const WordSearchAPI = {
             );
             return response.data;
         } catch (error) {
-            console.error('Error getting word search:', error);
+            console.error('Error obteniendo sopa de letras:', error);
             throw error;
         }
     },
 
-    getPlayableGrid: async (activityId: string, client?: AxiosInstance) => {
-        try {
-            const apiClientToUse = client || apiClient;
-            const response = await apiClientToUse.get(
-                WORD_SEARCH_ENDPOINTS.PLAY(activityId)
-            );
-            return response.data;
-        } catch (error) {
-            console.error('Error getting playable grid:', error);
-            throw error;
-        }
-    },
-
-    getAdminGrid: async (activityId: string, client?: AxiosInstance) => {
-        try {
-            const apiClientToUse = client || apiClient;
-            const response = await apiClientToUse.get(
-                WORD_SEARCH_ENDPOINTS.ADMIN_GRID(activityId)
-            );
-            return response.data;
-        } catch (error) {
-            console.error('Error getting admin grid:', error);
-            throw error;
-        }
-    },
-
-    validate: async (
-        activityId: string,
-        foundWords: Array<{
-            word: string;
-            startRow: number;
-            startCol: number;
-            endRow: number;
-            endCol: number;
-        }>,
-        client?: AxiosInstance
-    ) => {
-        try {
-            const apiClientToUse = client || apiClient;
-            const response = await apiClientToUse.post(
-                WORD_SEARCH_ENDPOINTS.VALIDATE(activityId),
-                { foundWords }
-            );
-            return response.data;
-        } catch (error) {
-            console.error('Error validating attempt:', error);
-            throw error;
-        }
-    },
-
+    /**
+     * Actualizar configuración del juego
+     */
     update: async (
         activityId: string,
-        data: Partial<WordSearchCreateRequest>,
+        data: UpdateWordSearchGameRequest,
         client?: AxiosInstance
-    ) => {
+    ): Promise<{ success: boolean; message: string; data: WordSearchGame }> => {
         try {
             const apiClientToUse = client || apiClient;
             const response = await apiClientToUse.put(
@@ -127,12 +80,85 @@ export const WordSearchAPI = {
             );
             return response.data;
         } catch (error) {
-            console.error('Error updating word search:', error);
+            console.error('Error actualizando sopa de letras:', error);
             throw error;
         }
     },
 
-    regenerateSeed: async (activityId: string, client?: AxiosInstance) => {
+    /**
+     * Generar grid para jugar (sin revelar posiciones)
+     */
+    getPlayableGrid: async (
+        activityId: string,
+        client?: AxiosInstance
+    ): Promise<{ success: boolean; message: string; data: WordSearchPlayableData }> => {
+        try {
+            const apiClientToUse = client || apiClient;
+            const response = await apiClientToUse.get(
+                WORD_SEARCH_ENDPOINTS.PLAY(activityId)
+            );
+            return response.data;
+        } catch (error) {
+            console.error('Error obteniendo grid de juego:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Generar grid completo para administradores
+     */
+    getAdminGrid: async (
+        activityId: string,
+        client?: AxiosInstance
+    ): Promise<{ success: boolean; message: string; data: GeneratedGrid }> => {
+        try {
+            const apiClientToUse = client || apiClient;
+            const response = await apiClientToUse.get(
+                WORD_SEARCH_ENDPOINTS.ADMIN_GRID(activityId)
+            );
+            return response.data;
+        } catch (error) {
+            console.error('Error obteniendo grid administrativo:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Validar intento del usuario
+     */
+    validateAttempt: async (
+        activityId: string,
+        data: {
+            foundWords: Array<{
+                word: string;
+                startRow: number;
+                startCol: number;
+                endRow: number;
+                endCol: number;
+            }>;
+        },
+        client?: AxiosInstance
+    ): Promise<{ success: boolean; message: string; data: WordSearchValidationResult }> => {
+        try {
+            const apiClientToUse = client || apiClient;
+            const response = await apiClientToUse.post(
+                WORD_SEARCH_ENDPOINTS.VALIDATE(activityId),
+                data
+            );
+            return response.data;
+        } catch (error) {
+            console.error('Error validando intento:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Regenerar seed para crear un nuevo tablero
+     */
+    regenerateSeed: async (
+        activityId: string,
+        client?: AxiosInstance
+    ): Promise<{ success: boolean; message: string; data: WordSearchGame }> => {
         try {
             const apiClientToUse = client || apiClient;
             const response = await apiClientToUse.post(
@@ -140,12 +166,19 @@ export const WordSearchAPI = {
             );
             return response.data;
         } catch (error) {
-            console.error('Error regenerating seed:', error);
+            console.error('Error regenerando seed:', error);
             throw error;
         }
     },
 
-    getHint: async (activityId: string, wordIndex: number, client?: AxiosInstance) => {
+    /**
+     * Obtener una pista
+     */
+    getHint: async (
+        activityId: string,
+        wordIndex: number,
+        client?: AxiosInstance
+    ): Promise<{ success: boolean; message: string; data: WordSearchHint }> => {
         try {
             const apiClientToUse = client || apiClient;
             const response = await apiClientToUse.get(
@@ -153,7 +186,7 @@ export const WordSearchAPI = {
             );
             return response.data;
         } catch (error) {
-            console.error('Error getting hint:', error);
+            console.error('Error obteniendo pista:', error);
             throw error;
         }
     },

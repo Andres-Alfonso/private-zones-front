@@ -58,6 +58,10 @@ export default defineConfig({
             // Rutas para el juego de ahorcado
             route(":activityId/games/hanging/create", "routes/activities/games/hanging/create.tsx");
             route(":activityId/games/hanging/edit", "routes/activities/games/hanging/edit.tsx");
+
+            // Rutas para el juego de sopa de letras
+            route(":activityId/games/word_search/create", "routes/activities/games/word_search/create.tsx");
+            route(":activityId/games/word_search/edit", "routes/activities/games/word_search/edit.tsx");
           });
 
           // Rutas de gestion de contenidos

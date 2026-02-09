@@ -105,7 +105,7 @@ export default function CoursesSection({ courses, textColor }: CoursesSectionPro
                 {courses.data.slice(0, 8).map((course: any) => (
                     <Link 
                         key={course.id} 
-                        to={`/courses/${course.id}`}
+                        to={`/make/courses/${course.id}`}
                         className="group block bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200/50 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] hover:border-blue-200"
                     >
                         {/* Thumbnail */}

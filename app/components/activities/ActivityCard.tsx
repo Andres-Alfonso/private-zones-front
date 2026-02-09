@@ -127,11 +127,11 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[activity.status]}`}>
                         {statusLabels[activity.status]}
                     </span>
-                    {activity.difficulty && (
+                    {/* {activity.difficulty && (
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${difficultyColors[activity.difficulty]}`}>
                             {difficultyLabels[activity.difficulty]}
                         </span>
-                    )}
+                    )} */}
                 </div>
 
                 {/* Stats */}
@@ -181,7 +181,7 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
                 </div>
 
                 {/* Acción secundaria - Editar metadatos */}
-                {gameConfigured && (
+                {/* {gameConfigured && (
                     <Link
                         to={metadataRoute}
                         className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
@@ -189,11 +189,11 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
                         <Settings className="h-4 w-4" />
                         <span>Configuración</span>
                     </Link>
-                )}
+                )} */}
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
+            {/* <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
                 <div className="flex items-center justify-between text-xs text-gray-500">
                     <span>Curso: {activity.courseName || 'Sin asignar'}</span>
                     <div className="flex items-center space-x-1">
@@ -206,7 +206,7 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
                         </span>
                     </div>
                 </div>
-            </div>
+            </div> */}
         </div>
     );
 }

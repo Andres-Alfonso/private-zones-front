@@ -34,7 +34,7 @@ export default function CreateActivity() {
     };
 
     const handleBack = () => {
-        navigate(`/activities?course=${courseId}`);
+        navigate(`/activities/course/${courseId}`);
     };
 
     return (

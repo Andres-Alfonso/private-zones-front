@@ -62,6 +62,10 @@ export default defineConfig({
             // Rutas para el juego de sopa de letras
             route(":activityId/games/word_search/create", "routes/activities/games/word_search/create.tsx");
             route(":activityId/games/word_search/edit", "routes/activities/games/word_search/edit.tsx");
+
+            // Rutas para el juego de completar la frase
+            route(":activityId/games/complete_phrase/create", "routes/activities/games/complete-phrase/create.tsx");
+            route(":activityId/games/complete_phrase/edit", "routes/activities/games/complete-phrase/edit.tsx");
           });
 
           // Rutas de gestion de contenidos

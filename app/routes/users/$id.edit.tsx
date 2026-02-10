@@ -76,104 +76,101 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 export const action: ActionFunction = async ({ request, params }) => {
   const userId = params.id;
   const formData = await request.formData();
-  const data = Object.fromEntries(formData);
-
-  const { state: tenantState } = useTenant();
-  const { tenant } = tenantState;
-
+  
   if (!userId) {
     throw new Response("Usuario no encontrado", { status: 404 });
+  }
+
+  const tenantId = formData.get("tenantId");
+  if (!tenantId) {
+    return json({ errors: { tenantId: "Tenant requerido" } }, { status: 400 });
   }
 
   // Procesar roles múltiples
   const roles = formData.getAll('roles').filter(role => role !== '');
   
-  // Validaciones básicas (sin contraseña ya que es opcional en edición)
+  // Parsear los objetos JSON
+  let profileConfig = {};
+  let notificationConfig = {};
+  
+  try {
+    const profileConfigRaw = formData.get('profileConfig');
+    const notificationConfigRaw = formData.get('notificationConfig');
+    
+    if (profileConfigRaw && typeof profileConfigRaw === 'string') {
+      profileConfig = JSON.parse(profileConfigRaw);
+    }
+    
+    if (notificationConfigRaw && typeof notificationConfigRaw === 'string') {
+      notificationConfig = JSON.parse(notificationConfigRaw);
+    }
+  } catch (error) {
+    console.error('Error parsing config JSON:', error);
+  }
+
+  // Validaciones básicas
   const errors: ActionData["errors"] = {};
   
-  if (!data.email || typeof data.email !== "string") {
+  const email = formData.get('email');
+  const name = formData.get('name');
+  const password = formData.get('password');
+  
+  if (!email || typeof email !== "string") {
     errors.email = "El email es requerido";
-  } else if (!/\S+@\S+\.\S+/.test(data.email)) {
+  } else if (!/\S+@\S+\.\S+/.test(email)) {
     errors.email = "El email no tiene un formato válido";
   }
 
   // Solo validar contraseña si se proporcionó
-  if (data.password && typeof data.password === "string" && data.password.length < 6) {
-    errors.password = "La contraseña debe tener al menos 6 caracteres";
-  }
+  // if (password && typeof password === "string" && password.trim() !== "" && password.length < 6) {
+  //   errors.password = "La contraseña debe tener al menos 6 caracteres";
+  // }
 
-  if (!data.name || typeof data.name !== "string") {
+  if (!name || typeof name !== "string") {
     errors.name = "El nombre es requerido";
   }
 
-  if (!data.tenantId || typeof data.tenantId !== "string") {
-    errors.tenantId = "Debe seleccionar un tenant";
-  }
-
   if (Object.keys(errors).length > 0) {
-    return json<ActionData>({ errors, values: data }, { status: 400 });
+    return json<ActionData>({ 
+      errors, 
+      values: Object.fromEntries(formData) 
+    }, { status: 400 });
   }
 
   try {
+
+    const isActiveValue = formData.get('isActive');
+
     // Construir el objeto usuario con todos los datos
     const userData: Partial<UserFormData> = {
-      // Datos básicos
-      email: String(data.email),
-      name: String(data.name),
-      lastName: String(data.lastName),
-      tenantId: tenant?.id,
-      isActive: data.isActive === 'true',
+      email: String(email),
+      name: String(name),
+      lastName: String(formData.get('lastName') || ''),
+      tenantId: tenantId as string,
+      isActive: isActiveValue === 'true',
       roleIds: roles.map(r => String(r)),
-
-      profileConfig: {
-        bio: String(data.bio),
-        phoneNumber: String(data.phoneNumber),
-        type_document: String(data.type_document),
-        documentNumber: String(data.documentNumber),
-        organization: String(data.organization),
-        charge: String(data.charge),
-        gender: String(data.gender),
-        city: String(data.city),
-        country: String(data.country),
-        address: String(data.address),
-        dateOfBirth: String(data.dateOfBirth),
-      },
-
-      // Notificaciones
-      notificationConfig: {
-        enableNotifications: data.enableNotifications === 'on',
-        smsNotifications: data.smsNotifications === 'on',
-        browserNotifications: data.browserNotifications === 'on',
-        securityAlerts: data.securityAlerts === 'on',
-        accountUpdates: data.accountUpdates === 'on',
-        systemUpdates: data.systemUpdates === 'on',
-        marketingEmails: data.marketingEmails === 'on',
-        newsletterEmails: data.newsletterEmails === 'on',
-        reminders: data.reminders === 'on',
-        mentions: data.mentions === 'on',
-        directMessages: data.directMessages === 'on',
-      },
+      profileConfig,
+      notificationConfig,
     };
 
     // Solo incluir contraseña si se proporcionó
-    if (data.password && typeof data.password === "string" && data.password.trim() !== "") {
-      userData.password = data.password;
+    if (password && typeof password === "string" && password.trim() !== "") {
+      userData.password = password;
     }
 
+    console.log('Datos del usuario a actualizar:', userData);
+    
     // Llamada a tu API para actualizar el usuario
     const updatedUser = await UsersAPI.update(userId, userData);
 
     if (!updatedUser) {
       return json<ActionData>({
         errors: { general: "Error al actualizar usuario. Intente nuevamente." },
-        values: data
+        values: Object.fromEntries(formData)
       }, { status: 500 });
     }
     
-    console.log('Datos del usuario a actualizar:', userData);
-    
-    // Simular éxito
-    return redirect(`/users/${userId}`);
+    return redirect(`/users`);
   } catch (error) {
     let errorMessage = "Error al actualizar el usuario.";
   
@@ -187,7 +184,7 @@ export const action: ActionFunction = async ({ request, params }) => {
 
     return json<ActionData>({
       errors: { general: errorMessage },
-      values: data,
+      values: Object.fromEntries(formData),
     }, { status: 500 });
   }
 };

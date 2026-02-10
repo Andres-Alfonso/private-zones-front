@@ -73,35 +73,40 @@ export default function UserForm({
       return hiddenInput;
     };
 
-    // Procesar cada campo del formData
-    Object.entries(formData).forEach(([key, value]) => {
-      if (value === undefined || value === null) return;
+    let normalizedProfileConfig:any = null;
+    if (formData.profileConfig) {
+      normalizedProfileConfig = { ...formData.profileConfig };
       
-      // Manejar roles por separado
-      if (key === 'roles' || key === 'roleIds') return;
+      // Limpiar campos que no deben enviarse si están vacíos
+      Object.keys(normalizedProfileConfig).forEach(key => {
+        const value = normalizedProfileConfig[key];
+        
+        // Eliminar campos vacíos o null
+        if (value === '' || value === null || value === undefined) {
+          delete normalizedProfileConfig[key];
+        }
+        
+        // Validación especial para dateOfBirth
+        if (key === 'dateOfBirth' && value) {
+          const date = new Date(value);
+          // Si la fecha es inválida, eliminarla
+          if (isNaN(date.getTime())) {
+            delete normalizedProfileConfig[key];
+          }
+        }
+      });
+    }
 
-      // Manejar objetos (profileConfig, notificationConfig)
-      if (typeof value === 'object' && !Array.isArray(value)) {
-        // Serializar como JSON
-        form.appendChild(createHiddenInput(key, JSON.stringify(value)));
-      }
-      // Manejar booleanos
-      else if (typeof value === 'boolean') {
-        form.appendChild(createHiddenInput(key, value ? 'on' : ''));
-      }
-      // Manejar arrays (excepto roles)
-      else if (Array.isArray(value)) {
-        value.forEach(item => {
-          form.appendChild(createHiddenInput(key, String(item)));
-        });
-      }
-      // Manejar valores primitivos
-      else {
-        form.appendChild(createHiddenInput(key, String(value)));
-      }
-    });
+    // Solo serializar objetos complejos (profileConfig, notificationConfig)
+    if (formData.profileConfig) {
+      form.appendChild(createHiddenInput('profileConfig', JSON.stringify(formData.profileConfig)));
+    }
+    
+    if (formData.notificationConfig) {
+      form.appendChild(createHiddenInput('notificationConfig', JSON.stringify(formData.notificationConfig)));
+    }
 
-    // Manejar roles específicamente
+    // Manejar roles específicamente si no hay checkboxes en el form
     if (formData.roleIds && Array.isArray(formData.roleIds)) {
       formData.roleIds.forEach(roleId => {
         form.appendChild(createHiddenInput('roles', roleId));

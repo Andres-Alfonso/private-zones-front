@@ -47,7 +47,9 @@ export default function BasicInfoForm({
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Información Básica</h3>
-        
+
+        <input type="hidden" name="tenantId" value={formData.tenantId || ''} />
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Email */}
           <div>
@@ -86,7 +88,7 @@ export default function BasicInfoForm({
                 type={showPassword ? "text" : "password"}
                 id="password"
                 name="password"
-                required
+                
                 value={formData.password || ''}
                 onChange={handleInputChange('password')}
                 className={`w-full px-3 py-2 pr-10 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${

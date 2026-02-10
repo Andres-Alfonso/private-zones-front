@@ -101,11 +101,11 @@ export default function ProfileInfoForm({
             <select
               id="type_document"
               name="type_document"
-              value={formData.profileConfig?.type_document || ''}
+              value={formData.profileConfig?.type_document || 'CC'}  // Default a CC si está vacío
               onChange={handleProfileConfigChange('type_document')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              <option value="">Seleccionar tipo</option>
+              {/* <option value="">Seleccionar tipo</option> */}
               {documentTypes.map((doc) => (
                 <option key={doc.value} value={doc.value}>
                   {doc.label}

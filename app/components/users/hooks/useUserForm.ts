@@ -24,7 +24,7 @@ export function useUserForm(initialValues?: Partial<UserFormData>) {
       bio: '',
       gender: '',
       charge: '',
-      type_document: '',
+      type_document: 'CC',
       documentNumber: '',
       organization: '',
       address: '',
@@ -73,6 +73,12 @@ export function useUserForm(initialValues?: Partial<UserFormData>) {
     if (initialValues) {
       // console.log('useUserForm - Valores iniciales recibidos:', initialValues);
       const merged = deepMerge(defaultValues, initialValues);
+
+      // ✅ Normalizar type_document si está vacío
+      if (merged.profileConfig && (!merged.profileConfig.type_document || merged.profileConfig.type_document === '')) {
+        merged.profileConfig.type_document = 'CC';
+      }
+
       // console.log('useUserForm - Valores después del merge:', merged);
       return merged;
     }
@@ -85,6 +91,12 @@ export function useUserForm(initialValues?: Partial<UserFormData>) {
     if (initialValues) {
       // console.log('useUserForm - Actualizando con nuevos valores iniciales:', initialValues);
       const merged = deepMerge(defaultValues, initialValues);
+
+      // ✅ Normalizar type_document si está vacío
+      if (merged.profileConfig && (!merged.profileConfig.type_document || merged.profileConfig.type_document === '')) {
+        merged.profileConfig.type_document = 'CC';
+      }
+
       // console.log('useUserForm - Estado actualizado:', merged);
       setFormData(merged);
     }

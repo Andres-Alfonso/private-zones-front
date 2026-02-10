@@ -1,7 +1,7 @@
 // app/routes/tenants/$id.edit.client.tsx
 
-import { json, redirect, LoaderFunction, ActionFunction } from '@remix-run/node';
-import { useLoaderData, useActionData, Form, useNavigation, useNavigate, useParams, redirectDocument } from '@remix-run/react';
+import { json, redirect, LoaderFunction, ActionFunction, redirectDocument } from '@remix-run/node';
+import { useLoaderData, useActionData, Form, useNavigation, useNavigate, useParams } from '@remix-run/react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Save, X, AlertCircle, Building2, Globe, User, MapPin, Palette, ArrowLeft } from 'lucide-react';
 import {
@@ -1455,7 +1455,6 @@ export default function ManageTenant() {
                                 id="contactPerson"
                                 name="contactPerson"
                                 label="Persona de Contacto"
-                                required
                                 error={getErrorByField('contactPerson')}
                                 disabled={isSubmitting}
                                 placeholder="Juan Pérez"
@@ -1468,7 +1467,6 @@ export default function ManageTenant() {
                                 id="phone"
                                 name="phone"
                                 label="Teléfono"
-                                required
                                 error={getErrorByField('phone')}
                                 disabled={isSubmitting}
                                 placeholder="+57 300 123 4567"
@@ -1482,7 +1480,6 @@ export default function ManageTenant() {
                             id="address"
                             name="address"
                             label="Dirección"
-                            required
                             error={getErrorByField('address')}
                             disabled={isSubmitting}
                             placeholder="Calle 123 #45-67"
@@ -1496,7 +1493,6 @@ export default function ManageTenant() {
                                 id="url_portal"
                                 name="url_portal"
                                 label="Dirección del Portal"
-                                required
                                 error={getErrorByField('url_portal')}
                                 disabled={isSubmitting}
                                 placeholder="https://portal.empresa-abc.com"
@@ -1509,7 +1505,6 @@ export default function ManageTenant() {
                                 id="nit"
                                 name="nit"
                                 label="Nit"
-                                required
                                 error={getErrorByField('nit')}
                                 disabled={isSubmitting}
                                 placeholder="123456789"

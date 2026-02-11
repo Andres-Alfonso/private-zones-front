@@ -1384,7 +1384,7 @@ export default function EditTenant() {
             </div>
             
             <div className="px-6 py-6 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Input
                   type="color"
                   id="primaryColor"
@@ -1406,7 +1406,7 @@ export default function EditTenant() {
                   value={formData.secondaryColor || '#ffffff'}
                   onChange={(e) => handleChange('secondaryColor', e.target.value)}
                 />
-              </div>
+              </div> */}
 
               <div className='grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-gray-200 pt-6'>
                 <div className="space-y-3">

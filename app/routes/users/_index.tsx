@@ -14,6 +14,7 @@ import {
 import { USERS_ENDPOINTS, UsersAPI } from "~/api/endpoints/users";
 import { formatUserName, getUserStatus, formatUserRoles } from "~/utils/userValidation";
 import Alert from "~/components/ui/Alert";
+import { createApiClientFromRequest } from "~/api/client";
 
 // Tipos basados en las entidades reales
 interface User {
@@ -131,21 +132,23 @@ export const loader: LoaderFunction = async ({ request }) => {
       // sortOrder: url.searchParams.get('sortOrder') as 'asc' | 'desc' || 'desc',
     };
 
-    // En producción, aquí harías las llamadas reales al API
     // const users = await UsersAPI.getAll(filters);
     // const stats = await UsersAPI.getStats();
     // const departments = await UsersAPI.getDepartments();
     // const roles = await UsersAPI.getRoles();
 
+
+    const apiClient = createApiClientFromRequest(request);
+
     // Realizar llamadas paralelas a la API
     const [users, stats, tenants, roles] = await Promise.all([
-      UsersAPI.getAll(filters),
-      UsersAPI.getStats(),
-      UsersAPI.getTenants(),
-      UsersAPI.getRoles()
+      UsersAPI.getAll(filters, apiClient),
+      UsersAPI.getStats(apiClient),
+      UsersAPI.getTenants(apiClient),
+      UsersAPI.getRoles(apiClient)
     ]);
 
-    
+
 
     return json<LoaderData>({ 
       users,

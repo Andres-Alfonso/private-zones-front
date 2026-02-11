@@ -55,7 +55,7 @@ export const USERS_ENDPOINTS = {
 
 export const UsersAPI = {
   // Obtener todos los usuarios con filtros
-  getAll: async (filters?: UserFilters): Promise<UserListResponse> => {
+  getAll: async (filters?: UserFilters, client?: AxiosInstance): Promise<UserListResponse> => {
     const params = new URLSearchParams();
     
     if (filters) {
@@ -65,41 +65,48 @@ export const UsersAPI = {
         }
       });
     }
+
+    const apiClientToUse = client || apiClient;
     
     const queryString = params.toString();
     const url = `${USERS_ENDPOINTS.BASE}${queryString ? `?${queryString}` : ''}`;
     
-    const response = await apiClient.get(url);
+    const response = await apiClientToUse.get(url);
     return response.data;
   },
 
   // Obtener estadísticas
-  getStats: async (): Promise<UserStats> => {
-    const response = await apiClient.get(USERS_ENDPOINTS.STATS);
+  getStats: async (client?: AxiosInstance): Promise<UserStats> => {
+    const apiClientToUse = client || apiClient;
+    const response = await apiClientToUse.get(USERS_ENDPOINTS.STATS);
     return response.data;
   },
 
   // Obtener roles disponibles
-  getRoles: async (): Promise<Array<{ id: string; name: string; description: string }>> => {
-    const response = await apiClient.get(USERS_ENDPOINTS.ROLES);
+  getRoles: async (client?: AxiosInstance): Promise<Array<{ id: string; name: string; description: string }>> => {
+    const apiClientToUse = client || apiClient;
+    const response = await apiClientToUse.get(USERS_ENDPOINTS.ROLES);
     return response.data;
   },
 
   // Obtener tenants disponibles
-  getTenants: async (): Promise<Array<{ id: string; name: string }>> => {
-    const response = await apiClient.get(USERS_ENDPOINTS.TENANTS);
+  getTenants: async (client?: AxiosInstance): Promise<Array<{ id: string; name: string }>> => {
+    const apiClientToUse = client || apiClient;
+    const response = await apiClientToUse.get(USERS_ENDPOINTS.TENANTS);
     return response.data;
   },
 
   // Obtener usuario por ID
-  getById: async (id: string): Promise<BackendUser> => {
-    const response = await apiClient.get(USERS_ENDPOINTS.BY_ID(id));
+  getById: async (id: string, client?: AxiosInstance): Promise<BackendUser> => {
+    const apiClientToUse = client || apiClient;
+    const response = await apiClientToUse.get(USERS_ENDPOINTS.BY_ID(id));
     return response.data;
   },
 
   // Crear nuevo usuario
-  create: async (userData: CreateUserRequest): Promise<User> => {
-    const response = await apiClient.post(USERS_ENDPOINTS.BASE, userData);
+  create: async (userData: CreateUserRequest, client?: AxiosInstance): Promise<User> => {
+    const apiClientToUse = client || apiClient;
+    const response = await apiClientToUse.post(USERS_ENDPOINTS.BASE, userData);
     return response.data;
   },
 

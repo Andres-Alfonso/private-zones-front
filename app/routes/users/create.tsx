@@ -8,6 +8,7 @@ import type { LoaderData, ActionData } from "~/components/users/types/user-form.
 import { UsersAPI } from "~/api/endpoints/users";
 import { commitSession, getSession } from "~/utils/session.server"; // Necesitarás crear este archivo
 import { CreateUserRequest } from "~/api/types/user.types";
+import { createApiClientFromRequest } from "~/api/client";
 
 export const meta: MetaFunction = () => {
   return [
@@ -17,9 +18,9 @@ export const meta: MetaFunction = () => {
 };
 
 export const loader: LoaderFunction = async ({ request }) => {
-  // Aquí cargarías los tenants y roles desde tu API/base de datos
-  const tenants = await UsersAPI.getTenants();
-  const roles = await UsersAPI.getRoles();
+  const apiClient = createApiClientFromRequest(request);
+  const tenants = await UsersAPI.getTenants(apiClient);
+  const roles = await UsersAPI.getRoles(apiClient);
 
   return json<LoaderData>({ tenants, roles });
 };
@@ -50,9 +51,9 @@ export const action: ActionFunction = async ({ request }) => {
     errors.name = "El nombre es requerido";
   }
 
-  if (!data.tenantId || typeof data.tenantId !== "string") {
-    errors.tenantId = "Debe seleccionar un tenant";
-  }
+  // if (!data.tenantId || typeof data.tenantId !== "string") {
+  //   errors.tenantId = "Debe seleccionar un tenant";
+  // }
 
   if (Object.keys(errors).length > 0) {
     return json<ActionData>({ errors, values: data }, { status: 400 });
@@ -98,8 +99,9 @@ export const action: ActionFunction = async ({ request }) => {
       },
     };
 
+    const apiClient = createApiClientFromRequest(request);
     // Crear el usuario
-    const user = await UsersAPI.create(userData);
+    const user = await UsersAPI.create(userData, apiClient);
 
     if (!user) {
       return json<ActionData>({
@@ -149,6 +151,7 @@ export default function CreateUser() {
   return (
     <UserForm
       mode="create"
+      tenantId={loaderData.tenantId}
       actionData={actionData}
       loaderData={loaderData}
     />

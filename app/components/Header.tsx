@@ -336,7 +336,7 @@ export default function Header() {
                   </MobileNavLink>
                 </RoleGuard>
                 
-                <RoleGuard requiredRoles={['superadmin', 'admin']}>
+                <RoleGuard requiredRoles={['superadmin']}>
                   <MobileNavLink 
                     to="/tenants" 
                     icon={<Building2 className="h-5 w-5" />}

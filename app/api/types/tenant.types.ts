@@ -284,6 +284,7 @@ export interface TenantFilters {
 
 // Interfaces para formularios
 export interface CreateTenantRequest {
+  tenantId?: string;
   name: string;
   slug: string;
   domain: string;

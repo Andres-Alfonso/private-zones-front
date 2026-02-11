@@ -40,11 +40,11 @@ export default defineConfig({
           route("make/courses", "routes/courses/make/_layout.tsx", () => {
             route(":courseId", "routes/courses/make/$courseId/_index.tsx", { index: true });
             route(":courseId/content/:contentId", "routes/courses/make/$courseId/content/$contentId.tsx");
+            route(":courseId/forum/:forumId", "routes/courses/make/$courseId/forum/$forumId.tsx");
             // route(":courseId/quiz/:quizId", "routes/courses/make/$courseId/quiz/$quizId.tsx");
             // route(":courseId/task/:taskId", "routes/courses/make/$courseId/task/$taskId.tsx");
-            // route(":courseId/forum/:forumId", "routes/courses/make/$courseId/forum/$forumId.tsx");
             // route(":courseId/survey/:surveyId", "routes/courses/make/$courseId/survey/$surveyId.tsx");
-            // route(":courseId/activity/:activityId", "routes/courses/make/$courseId/activity/$activityId.tsx");
+            route(":courseId/activity/:activityId", "routes/courses/make/$courseId/activity/$activityId.tsx");
           });
 
           route("activities", "routes/activities/_layout.tsx", () => {
@@ -54,6 +54,7 @@ export default defineConfig({
             // route(":id", "routes/activities/$id.tsx");
             // route(":id/edit", "routes/activities/$id.edit.tsx");
 
+            route(":id/preview", "routes/activities/$id.preview.tsx");
 
             // Rutas para el juego de ahorcado
             route(":activityId/games/hanging/create", "routes/activities/games/hanging/create.tsx");

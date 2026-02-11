@@ -40,7 +40,7 @@ export default defineConfig({
           route("make/courses", "routes/courses/make/_layout.tsx", () => {
             route(":courseId", "routes/courses/make/$courseId/_index.tsx", { index: true });
             route(":courseId/content/:contentId", "routes/courses/make/$courseId/content/$contentId.tsx");
-            route(":courseId/forum/:forumId", "routes/courses/make/$courseId/forum/$forumId.tsx");
+            // route(":courseId/forum/:forumId", "routes/courses/make/$courseId/forum/$forumId.tsx");
             // route(":courseId/quiz/:quizId", "routes/courses/make/$courseId/quiz/$quizId.tsx");
             // route(":courseId/task/:taskId", "routes/courses/make/$courseId/task/$taskId.tsx");
             // route(":courseId/survey/:surveyId", "routes/courses/make/$courseId/survey/$surveyId.tsx");

@@ -37,6 +37,7 @@ export interface CreateHangingGameRequest {
 export interface UpdateHangingGameRequest extends Partial<CreateHangingGameRequest> {}
 
 export interface HangingPlayableData {
+    word: string;
     wordLength: number;
     category?: string;
     maxAttempts: number;

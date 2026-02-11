@@ -36,10 +36,10 @@ export function getActivityCreateRoute(type: GameType, courseId?: string): strin
 
 /**
  * Obtiene la ruta para ver una actividad
- * Ejemplo: /activities/123
+ * Ejemplo: /activities/123/preview
  */
 export function getActivityViewRoute(activityId: string): string {
-    return `/activities/${activityId}`;
+    return `/activities/${activityId}/preview`;
 }
 
 /**

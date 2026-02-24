@@ -90,12 +90,14 @@ export const WordSearchAPI = {
      */
     getPlayableGrid: async (
         activityId: string,
+        fromModule: boolean,
         client?: AxiosInstance
     ): Promise<{ success: boolean; message: string; data: WordSearchPlayableData }> => {
         try {
             const apiClientToUse = client || apiClient;
             const response = await apiClientToUse.get(
-                WORD_SEARCH_ENDPOINTS.PLAY(activityId)
+                WORD_SEARCH_ENDPOINTS.PLAY(activityId),
+                { params: { fromModule } }
             );
             return response.data;
         } catch (error) {

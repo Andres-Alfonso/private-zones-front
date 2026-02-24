@@ -49,7 +49,7 @@ export default function WordSearchGame({ activityId, fromModule = false, onCompl
     const loadGame = async () => {
         try {
             setStatus('loading');
-            const response = await WordSearchAPI.getPlayableGrid(activityId);
+            const response = await WordSearchAPI.getPlayableGrid(activityId, fromModule);
             
             if (response.success) {
                 setGameData(response.data);
@@ -196,6 +196,10 @@ export default function WordSearchGame({ activityId, fromModule = false, onCompl
                 foundWords,
             });
 
+            // console.log('Respuesta de validación:', response);
+
+            // console.log(fromModule)
+
             if (response.success) {
                 setResult(response.data);
                 setStatus('completed');
@@ -232,7 +236,7 @@ export default function WordSearchGame({ activityId, fromModule = false, onCompl
     if (status === 'error') {
         return (
             <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-                <p className="text-red-800 mb-4">⚠️ {error}</p>
+                <p className="text-red-800 mb-4">⚠️ ups no se ha podido cargar la sopa de letras</p>
                 <button
                     onClick={loadGame}
                     className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"

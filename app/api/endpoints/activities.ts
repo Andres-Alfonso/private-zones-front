@@ -16,6 +16,7 @@ const ACTIVITY_ENDPOINTS = {
     UPDATE: (id: string) => `/v1/activities/${id}`,
     DELETE: (id: string) => `/v1/activities/${id}`,
     TOGGLE_ACTIVE: (id: string) => `/v1/activities/${id}/toggle-active`,
+    SAVE_PROGRESS: (activityId: string, courseId: string) => `/v1/activities/${activityId}/complete`,
 };
 
 export const ActivitiesAPI = {
@@ -214,4 +215,20 @@ export const ActivitiesAPI = {
             throw error;
         }
     },
+
+    saveProgress: async (
+        activityId: string,
+        courseId: string,
+        result: any,
+        client?: AxiosInstance
+    ): Promise<{ success: boolean; message: string }> => {
+        try {
+            const apiClientToUse = client || apiClient;
+            const response = await apiClientToUse.post(ACTIVITY_ENDPOINTS.SAVE_PROGRESS(activityId, courseId), result);
+            return response.data;
+        } catch (error) {
+            console.error('Error guardando progreso de actividad:', error);
+            throw error;
+        }
+    }
 };

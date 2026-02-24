@@ -57,23 +57,26 @@ export default function PlayActivity() {
             setIsSaving(true);
             setSaveError(null);
 
-            // Aquí deberías implementar la lógica para guardar el progreso
-            // Por ejemplo, llamar a un endpoint de ActivityAttempts
-            
-            // Simulación de guardado
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            const response = await ActivitiesAPI.saveProgress(activity.id, courseId, result);
 
-            console.log('Guardando progreso:', {
-                activityId: activity.id,
-                courseId,
-                result,
-            });
+            if(!response.success) {
+                throw new Error(response.message || 'Error al guardar el progreso');
+            }
+
+            // Simulación de guardado
+            // await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // console.log('Guardando progreso:', {
+            //     activityId: activity.id,
+            //     courseId,
+            //     result,
+            // });
 
             setSaveSuccess(true);
 
             // Esperar un momento para mostrar el mensaje de éxito
             setTimeout(() => {
-                navigate(`/courses/make/${courseId}`);
+                navigate(`/make/courses/${courseId}`);
             }, 2000);
 
         } catch (error: any) {
@@ -161,11 +164,11 @@ export default function PlayActivity() {
                         </div>
 
                         <div className="flex flex-col items-end space-y-2">
-                            <div className="bg-green-100 border-2 border-green-300 rounded-xl px-4 py-2">
+                            {/* <div className="bg-green-100 border-2 border-green-300 rounded-xl px-4 py-2">
                                 <p className="text-green-900 font-medium text-sm">
                                     ✓ Progreso guardado
                                 </p>
-                            </div>
+                            </div> */}
                             {activity?.maxScore && (
                                 <p className="text-sm text-gray-600">
                                     Puntos máximos: {activity.maxScore}
@@ -216,7 +219,8 @@ export default function PlayActivity() {
 
                 {saveError && (
                     <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
-                        <p className="text-red-800">⚠️ {saveError}</p>
+                        {/* <p className="text-red-800">⚠️ {saveError}</p> */}
+                        <p className="text-red-800">⚠️ Parece que no se ha podido guardar tu progreso</p>
                     </div>
                 )}
 

@@ -87,6 +87,7 @@ export const HangingAPI = {
      */
     getPlayableData: async (
         activityId: string,
+        fromModule: boolean,
         wordIndex?: number,
         client?: AxiosInstance
     ): Promise<{ success: boolean; message: string; data: HangingPlayableData }> => {
@@ -96,7 +97,7 @@ export const HangingAPI = {
                 ? `${HANGING_ENDPOINTS.PLAY(activityId)}?wordIndex=${wordIndex}`
                 : HANGING_ENDPOINTS.PLAY(activityId);
             
-            const response = await apiClientToUse.get(url);
+            const response = await apiClientToUse.get(url, { params: { fromModule } });
             return response.data;
         } catch (error) {
             console.error('Error obteniendo datos de juego:', error);

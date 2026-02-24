@@ -1,7 +1,7 @@
 // app/components/activities/games/hanging/HangingGame.tsx
 
 import { Lightbulb } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { HangingAPI } from '~/api/endpoints/hanging';
 import type { HangingPlayableData, HangingValidationResult, HangingHint } from '~/api/types/hanging.types';
 
@@ -11,54 +11,65 @@ interface HangingGameProps {
     onComplete?: (result: HangingValidationResult) => void;
 }
 
-type GameStatus = 'loading' | 'playing' | 'completed' | 'error';
+type GameStatus = 'loading' | 'playing' | 'word_completed' | 'completed' | 'error';
+
+// Resultado agregado que se construye al finalizar todas las palabras
+interface AggregatedResult {
+    totalScore: number;
+    totalCorrect: number;
+    totalErrors: number;
+    totalWords: number;
+    wordResults: HangingValidationResult[];
+    percentage: number;
+}
 
 export default function HangingGame({ activityId, fromModule = false, onComplete }: HangingGameProps) {
     const [status, setStatus] = useState<GameStatus>('loading');
     const [gameData, setGameData] = useState<HangingPlayableData | null>(null);
     const [currentWordIndex, setCurrentWordIndex] = useState(0);
-    
+
     const [guessedLetters, setGuessedLetters] = useState<string[]>([]);
     const [errors, setErrors] = useState(0);
     const [hintsUsed, setHintsUsed] = useState(0);
     const [hint, setHint] = useState<HangingHint | null>(null);
-    
-    const [result, setResult] = useState<HangingValidationResult | null>(null);
+
+    // Acumulador de resultados por palabra
+    const [wordResults, setWordResults] = useState<HangingValidationResult[]>([]);
+    const [aggregatedResult, setAggregatedResult] = useState<AggregatedResult | null>(null);
+    // Resultado de la palabra actual (para mostrar feedback rápido antes de avanzar)
+    const [currentWordResult, setCurrentWordResult] = useState<HangingValidationResult | null>(null);
+
     const [error, setError] = useState<string | null>(null);
+
+    // Ref para evitar doble submit por los useEffect concurrentes
+    const isSubmittingRef = useRef(false);
 
     const alphabet = 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ'.split('');
 
     const normalizeText = (text: string) => {
-        // Preservar la Ñ antes de normalizar
         const textWithPlaceholder = text.replace(/[ñÑ]/g, '█');
-        
-        // Normalizar (eliminar acentos de vocales)
         const normalized = textWithPlaceholder
             .normalize("NFD")
             .replace(/[\u0300-\u036f]/g, "")
             .toUpperCase();
-        
-        // Restaurar la Ñ
         return normalized.replace(/█/g, 'Ñ');
     };
 
-    // Función helper para verificar si una letra está en la palabra
     const isLetterInWord = (letter: string): boolean => {
         if (!gameData?.word) return false;
         const word = normalizeText(gameData.word);
         return word.includes(normalizeText(letter));
     };
 
-    // Cargar datos del juego
     useEffect(() => {
         loadGame();
     }, [activityId]);
 
-    const loadGame = async () => {
+    const loadGame = async (wordIndex = 0) => {
         try {
             setStatus('loading');
-            const response = await HangingAPI.getPlayableData(activityId, currentWordIndex);
-            
+            const response = await HangingAPI.getPlayableData(activityId, fromModule, wordIndex);
+
             if (response.success) {
                 setGameData(response.data);
                 setStatus('playing');
@@ -66,6 +77,8 @@ export default function HangingGame({ activityId, fromModule = false, onComplete
                 setErrors(0);
                 setHintsUsed(0);
                 setHint(null);
+                setCurrentWordResult(null);
+                isSubmittingRef.current = false;
             }
         } catch (err: any) {
             setError(err.response?.data?.message || 'Error al cargar el juego');
@@ -74,18 +87,16 @@ export default function HangingGame({ activityId, fromModule = false, onComplete
     };
 
     const handleLetterClick = (letter: string) => {
-        // Bloquear si ya adivinó la letra, no está jugando, o alcanzó el límite de errores
-        if (guessedLetters.includes(letter) || 
-            status !== 'playing' || 
+        if (
+            guessedLetters.includes(letter) ||
+            status !== 'playing' ||
             !gameData?.word ||
-            errors >= gameData.maxAttempts) {
-            return;
-        }
-        
+            errors >= gameData.maxAttempts
+        ) return;
+
         const newGuessed = [...guessedLetters, letter];
         setGuessedLetters(newGuessed);
 
-        // Validar si la letra está en la palabra
         const word = normalizeText(gameData.word);
         if (!word.includes(normalizeText(letter))) {
             setErrors(prev => prev + 1);
@@ -97,85 +108,119 @@ export default function HangingGame({ activityId, fromModule = false, onComplete
             const response = await HangingAPI.getHint(activityId, currentWordIndex);
             if (response.success) {
                 setHint(response.data);
-                setHintsUsed(hintsUsed + 1);
+                setHintsUsed(prev => prev + 1);
             }
         } catch (err: any) {
             console.error('Error obteniendo pista:', err);
         }
     };
 
-    const handleSubmit = async () => {
-        if (!gameData) return;
+    /**
+     * Valida la palabra actual contra la API y acumula el resultado.
+     * Si hay más palabras, avanza automáticamente.
+     * Si era la última, construye el resultado final y muestra la pantalla de fin.
+     */
+    const submitCurrentWord = async (currentGuessedLetters: string[]) => {
+        if (!gameData || isSubmittingRef.current) return;
+        isSubmittingRef.current = true;
 
         try {
             const response = await HangingAPI.validateAttempt(activityId, {
                 wordIndex: currentWordIndex,
-                guessedLetters,
+                guessedLetters: currentGuessedLetters,
                 hintsUsed,
             });
 
             if (response.success) {
-                setResult(response.data);
-                setStatus('completed');
+                const wordResult = response.data;
+                setCurrentWordResult(wordResult);
 
-                // Solo ejecutar guardado si viene desde módulo
-                if (fromModule && onComplete) {
-                    onComplete(response.data);
+                const updatedResults = [...wordResults, wordResult];
+                setWordResults(updatedResults);
+
+                const isLastWord =
+                    !gameData.hasMultipleWords ||
+                    currentWordIndex >= gameData.totalWords - 1;
+
+                if (isLastWord) {
+                    // Construir resultado agregado
+                    const totalScore = updatedResults.reduce((acc, r) => acc + r.score, 0);
+                    const totalCorrect = updatedResults.filter(r => r.isCorrect).length;
+                    const totalErrors = updatedResults.reduce((acc, r) => acc + r.errorsCount, 0);
+                    // Promedio de los porcentajes individuales que devuelve la API
+                    const percentage = updatedResults.reduce((acc, r) => acc + (r.percentage ?? (r.isCorrect ? 100 : 0)), 0) / updatedResults.length;
+
+                    const aggregated: AggregatedResult = {
+                        totalScore,
+                        totalCorrect,
+                        totalErrors,
+                        totalWords: updatedResults.length,
+                        wordResults: updatedResults,
+                        percentage,
+                    };
+
+                    setAggregatedResult(aggregated);
+                    setStatus('completed');
+
+                    // Notificar al módulo padre con los datos agregados de todas las palabras
+                    if (fromModule && onComplete) {
+                        onComplete({
+                            ...wordResult,
+                            score: aggregated.totalScore,
+                            percentage: aggregated.percentage,
+                        });
+                    }
+                } else {
+                    // Mostrar feedback breve y avanzar a la siguiente palabra
+                    setStatus('word_completed');
                 }
             }
         } catch (err: any) {
             setError(err.response?.data?.message || 'Error al validar respuestas');
+            isSubmittingRef.current = false;
         }
     };
 
     const handleNextWord = () => {
-        if (gameData && gameData.hasMultipleWords && currentWordIndex < gameData.totalWords - 1) {
-            setCurrentWordIndex(currentWordIndex + 1);
-            setStatus('loading');
-            loadGame();
-        }
+        const nextIndex = currentWordIndex + 1;
+        setCurrentWordIndex(nextIndex);
+        loadGame(nextIndex);
     };
 
     const handleRetry = () => {
         setCurrentWordIndex(0);
-        setResult(null);
-        setStatus('loading');
-        loadGame();
+        setWordResults([]);
+        setAggregatedResult(null);
+        setCurrentWordResult(null);
+        loadGame(0);
     };
 
-    // Verificar si ganó automáticamente
+    // Auto-submit cuando el jugador adivina todas las letras
     useEffect(() => {
         if (!gameData?.word || status !== 'playing') return;
-        
+
         const word = normalizeText(gameData.word);
         const uniqueLetters = new Set(word.split('').filter(l => l.trim() !== ''));
-        
-        // Verificar si todas las letras únicas fueron adivinadas
-        const allGuessed = Array.from(uniqueLetters).every(letter => 
+
+        const allGuessed = Array.from(uniqueLetters).every(letter =>
             guessedLetters.some(gl => normalizeText(gl) === letter)
         );
-        
-        // Si adivinó todas las letras, validar automáticamente
-        if (allGuessed) {
-            handleSubmit();
+
+        if (allGuessed && guessedLetters.length > 0) {
+            submitCurrentWord(guessedLetters);
         }
     }, [guessedLetters, gameData]);
 
+    // Auto-submit cuando se agotan los intentos
     useEffect(() => {
         if (!gameData || status !== 'playing') return;
-        
-        // Si alcanzó el máximo de errores, terminar el juego
+
         if (errors >= gameData.maxAttempts) {
-            handleSubmit();
+            submitCurrentWord(guessedLetters);
         }
     }, [errors, gameData]);
 
-    // Calcular errores actuales
-    useEffect(() => {
-        if (!result) return;
-        setErrors(result.errorsCount);
-    }, [result]);
-
+    // ─── Pantalla: Cargando ───────────────────────────────────────────────────
     if (status === 'loading') {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
@@ -187,12 +232,13 @@ export default function HangingGame({ activityId, fromModule = false, onComplete
         );
     }
 
+    // ─── Pantalla: Error ──────────────────────────────────────────────────────
     if (status === 'error') {
         return (
             <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
                 <p className="text-red-800 mb-4">⚠️ {error}</p>
                 <button
-                    onClick={loadGame}
+                    onClick={() => loadGame(currentWordIndex)}
                     className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                 >
                     Reintentar
@@ -201,61 +247,146 @@ export default function HangingGame({ activityId, fromModule = false, onComplete
         );
     }
 
-    if (status === 'completed' && result) {
+    // ─── Pantalla: Palabra completada → avanzar a la siguiente ───────────────
+    if (status === 'word_completed' && currentWordResult && gameData) {
         return (
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-8">
                 <div className="text-center mb-6">
-                    {result.isCorrect ? (
+                    {currentWordResult.isCorrect ? (
                         <>
                             <div className="text-6xl mb-4">🎉</div>
-                            <h2 className="text-3xl font-bold text-green-600 mb-2">¡Felicitaciones!</h2>
-                            <p className="text-gray-600">Has completado la palabra correctamente</p>
+                            <h2 className="text-3xl font-bold text-green-600 mb-2">¡Correcto!</h2>
+                            <p className="text-gray-600">
+                                La palabra era: <strong>{currentWordResult.correctWord}</strong>
+                            </p>
                         </>
                     ) : (
                         <>
                             <div className="text-6xl mb-4">😢</div>
-                            <h2 className="text-3xl font-bold text-red-600 mb-2">Game Over</h2>
-                            <p className="text-gray-600">Has agotado tus intentos</p>
+                            <h2 className="text-3xl font-bold text-red-600 mb-2">¡Sin intentos!</h2>
+                            <p className="text-gray-600">
+                                La palabra era: <strong>{currentWordResult.correctWord}</strong>
+                            </p>
                         </>
                     )}
                 </div>
 
-                <div className="bg-gray-50 rounded-xl p-6 mb-6">
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                        <div className="text-center">
-                            <p className="text-sm text-gray-600 mb-1">Palabra correcta</p>
-                            <p className="text-2xl font-bold text-gray-900">{result.correctWord}</p>
-                        </div>
-                        <div className="text-center">
-                            <p className="text-sm text-gray-600 mb-1">Puntaje</p>
-                            <p className="text-2xl font-bold text-blue-600">{result.score} pts</p>
-                        </div>
+                <div className="bg-gray-50 rounded-xl p-4 mb-6 grid grid-cols-3 gap-4 text-center">
+                    <div>
+                        <p className="text-sm text-gray-500">Puntaje</p>
+                        <p className="text-xl font-bold text-blue-600">{currentWordResult.score} pts</p>
                     </div>
+                    <div>
+                        <p className="text-sm text-gray-500">Aciertos</p>
+                        <p className="text-xl font-bold text-green-600">{currentWordResult.matchedLetters.length}</p>
+                    </div>
+                    <div>
+                        <p className="text-sm text-gray-500">Errores</p>
+                        <p className="text-xl font-bold text-red-600">{currentWordResult.errorsCount}</p>
+                    </div>
+                </div>
 
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div className="flex items-center justify-center space-x-2 text-green-600">
-                            <span>✓</span>
-                            <span>Aciertos: {result.matchedLetters.length}</span>
+                {/* Progreso general */}
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 text-center">
+                    <p className="text-blue-900 font-medium">
+                        Palabra {currentWordIndex + 1} de {gameData.totalWords}
+                    </p>
+                    <p className="text-sm text-blue-700 mt-1">
+                        Puntaje acumulado: {wordResults.reduce((acc, r) => acc + r.score, 0)} pts
+                    </p>
+                </div>
+
+                <div className="flex justify-center">
+                    <button
+                        onClick={handleNextWord}
+                        className="px-8 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+                    >
+                        Siguiente Palabra →
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    // ─── Pantalla: Resultado final (todas las palabras completadas) ───────────
+    if (status === 'completed' && aggregatedResult) {
+        return (
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-8">
+                <div className="text-center mb-6">
+                    {aggregatedResult.percentage === 100 ? (
+                        <>
+                            <div className="text-6xl mb-4">🏆</div>
+                            <h2 className="text-3xl font-bold text-green-600 mb-2">¡Perfecto!</h2>
+                            <p className="text-gray-600">Adivinaste todas las palabras</p>
+                        </>
+                    ) : aggregatedResult.percentage >= 50 ? (
+                        <>
+                            <div className="text-6xl mb-4">🎯</div>
+                            <h2 className="text-3xl font-bold text-blue-600 mb-2">¡Bien hecho!</h2>
+                            <p className="text-gray-600">Adivinaste la mayoría de las palabras</p>
+                        </>
+                    ) : (
+                        <>
+                            <div className="text-6xl mb-4">📚</div>
+                            <h2 className="text-3xl font-bold text-orange-600 mb-2">¡Sigue practicando!</h2>
+                            <p className="text-gray-600">Puedes mejorar tu puntaje</p>
+                        </>
+                    )}
+                </div>
+
+                {/* Stats generales */}
+                <div className="bg-gray-50 rounded-xl p-6 mb-6">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                        <div>
+                            <p className="text-sm text-gray-500 mb-1">Puntaje total</p>
+                            <p className="text-2xl font-bold text-blue-600">{aggregatedResult.totalScore} pts</p>
                         </div>
-                        <div className="flex items-center justify-center space-x-2 text-red-600">
-                            <span>✗</span>
-                            <span>Errores: {result.errorsCount}</span>
+                        <div>
+                            <p className="text-sm text-gray-500 mb-1">Porcentaje</p>
+                            <p className="text-2xl font-bold text-purple-600">
+                                {aggregatedResult.percentage.toFixed(0)}%
+                            </p>
+                        </div>
+                        <div>
+                            <p className="text-sm text-gray-500 mb-1">Palabras correctas</p>
+                            <p className="text-2xl font-bold text-green-600">
+                                {aggregatedResult.totalCorrect} / {aggregatedResult.totalWords}
+                            </p>
+                        </div>
+                        <div>
+                            <p className="text-sm text-gray-500 mb-1">Errores totales</p>
+                            <p className="text-2xl font-bold text-red-600">{aggregatedResult.totalErrors}</p>
                         </div>
                     </div>
                 </div>
 
-                <div className="flex space-x-3 justify-center">
-                    {gameData && gameData.hasMultipleWords && currentWordIndex < gameData.totalWords - 1 && (
-                        <button
-                            onClick={handleNextWord}
-                            className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+                {/* Detalle por palabra */}
+                <div className="space-y-2 mb-6">
+                    {aggregatedResult.wordResults.map((wr, index) => (
+                        <div
+                            key={index}
+                            className={`flex items-center justify-between p-3 rounded-lg ${
+                                wr.isCorrect ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
+                            }`}
                         >
-                            Siguiente Palabra →
-                        </button>
-                    )}
+                            <div className="flex items-center gap-3">
+                                <span className="text-lg">{wr.isCorrect ? '✓' : '✗'}</span>
+                                <div>
+                                    <p className="font-medium">{wr.correctWord}</p>
+                                    <p className="text-xs opacity-70">
+                                        {wr.matchedLetters.length} aciertos · {wr.errorsCount} errores
+                                    </p>
+                                </div>
+                            </div>
+                            <span className="font-bold">{wr.score} pts</span>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="flex justify-center">
                     <button
                         onClick={handleRetry}
-                        className="px-6 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-colors"
+                        className="px-6 py-3 bg-[#25343F] text-white rounded-xl hover:shadow-lg transition-all"
                     >
                         Volver a Intentar
                     </button>
@@ -266,11 +397,11 @@ export default function HangingGame({ activityId, fromModule = false, onComplete
 
     if (!gameData) return null;
 
-    // Renderizar el muñeco del ahorcado basado en errores
+    // ─── Pantalla: Jugando ────────────────────────────────────────────────────
+
     const renderHangman = () => {
         const maxAttempts = gameData.maxAttempts;
-        const parts = ['cabeza', 'cuerpo', 'brazo izq', 'brazo der', 'pierna izq', 'pierna der'];
-        
+
         return (
             <div className="bg-gray-50 rounded-xl p-8 text-center">
                 <div className="text-6xl mb-4">
@@ -284,7 +415,7 @@ export default function HangingGame({ activityId, fromModule = false, onComplete
                     Errores: {errors} / {maxAttempts}
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2 mt-3">
-                    <div 
+                    <div
                         className={`h-2 rounded-full transition-all ${
                             errors >= maxAttempts ? 'bg-red-600' : 'bg-orange-500'
                         }`}
@@ -295,33 +426,30 @@ export default function HangingGame({ activityId, fromModule = false, onComplete
         );
     };
 
-    // Mostrar la palabra con letras adivinadas
     const renderWord = () => {
         if (!gameData?.word) return null;
-        
+
         const word = gameData.word;
-        const letters = word.split('');
-        
+
         return (
             <div className="flex flex-wrap justify-center gap-2 my-8">
-                {letters.map((char, index) => {
+                {word.split('').map((char, index) => {
                     const normalizedChar = normalizeText(char);
                     const isGuessed = guessedLetters.some(l => normalizeText(l) === normalizedChar);
-                    const isHint = hint?.revealedPosition === index;
+                    const isHintLetter = hint?.revealedPosition === index;
 
-                    // Si es un espacio, no mostrar raya
                     if (char === ' ') return <div key={index} className="w-8" />;
 
                     return (
                         <div
                             key={index}
                             className={`w-10 h-14 border-2 rounded-lg flex items-center justify-center text-2xl font-bold uppercase shadow-sm transition-colors
-                                ${isGuessed || isHint 
-                                    ? 'bg-green-100 border-green-400 text-green-700' 
+                                ${isGuessed || isHintLetter
+                                    ? 'bg-green-100 border-green-400 text-green-700'
                                     : 'bg-white border-gray-300 text-transparent'
                                 }`}
                         >
-                            {isGuessed || isHint ? char : '_'}
+                            {isGuessed || isHintLetter ? char : '_'}
                         </div>
                     );
                 })}
@@ -349,6 +477,11 @@ export default function HangingGame({ activityId, fromModule = false, onComplete
                         <p className="text-sm text-gray-600">Letras: {gameData.wordLength}</p>
                     )}
                     <p className="text-sm text-gray-600">Pistas usadas: {hintsUsed}</p>
+                    {wordResults.length > 0 && (
+                        <p className="text-sm font-medium text-blue-600 mt-1">
+                            Acumulado: {wordResults.reduce((acc, r) => acc + r.score, 0)} pts
+                        </p>
+                    )}
                 </div>
             </div>
 
@@ -379,19 +512,20 @@ export default function HangingGame({ activityId, fromModule = false, onComplete
                         const isGuessed = guessedLetters.includes(letter);
                         const isGameOver = errors >= gameData.maxAttempts;
                         const isDisabled = isGuessed || isGameOver;
+
                         return (
                             <button
                                 key={letter}
                                 onClick={() => handleLetterClick(letter)}
-                                disabled={isGuessed}
+                                disabled={isDisabled}
                                 className={`
                                     py-3 px-2 rounded-lg font-semibold text-sm transition-all
                                     ${isDisabled
-                                        ? isGameOver 
-                                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed' // Juego terminado
+                                        ? isGameOver
+                                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                             : isLetterInWord(letter)
-                                                ? 'bg-green-500 text-white cursor-not-allowed' // Correcta
-                                                : 'bg-red-500 text-white cursor-not-allowed'   // Incorrecta
+                                                ? 'bg-green-500 text-white cursor-not-allowed'
+                                                : 'bg-red-500 text-white cursor-not-allowed'
                                         : 'bg-blue-500 text-white hover:bg-blue-600 active:scale-95'
                                     }
                                 `}
@@ -403,7 +537,7 @@ export default function HangingGame({ activityId, fromModule = false, onComplete
                 </div>
             </div>
 
-            {/* Letras adivinadas */}
+            {/* Letras intentadas */}
             {guessedLetters.length > 0 && (
                 <div className="bg-gray-50 rounded-xl p-4 mb-6">
                     <p className="text-sm text-gray-600 mb-2">Letras intentadas:</p>
@@ -432,7 +566,7 @@ export default function HangingGame({ activityId, fromModule = false, onComplete
                 </button>
 
                 <button
-                    onClick={handleSubmit}
+                    onClick={() => submitCurrentWord(guessedLetters)}
                     disabled={guessedLetters.length === 0 || status !== 'playing'}
                     className="px-8 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >

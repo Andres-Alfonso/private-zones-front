@@ -82,6 +82,9 @@ export default defineConfig({
             // route(":id/edit", "routes/contents/$id.edit.tsx");
           });
 
+          route("api/contents/upload", "routes/api/contents/upload.tsx");
+          route("api/contents/:contentId/signed-url", "routes/api/contents/$contentId/signed-url.tsx");
+
           // Rutas de gestion de tareas
           route("tasks", "routes/tasks/_layout.tsx", () => {
             route("", "routes/tasks/_index.tsx", { index: true });

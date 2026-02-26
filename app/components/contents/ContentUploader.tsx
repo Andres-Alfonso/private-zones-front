@@ -1,27 +1,43 @@
 // app/components/contents/ContentUploader.tsx
-
-import { useState, useRef } from "react";
-import { Upload, Link as LinkIcon, AlertCircle, File, X, CheckCircle } from "lucide-react";
+import { useState, useRef, useCallback } from "react";
+import { Upload, Link as LinkIcon, AlertCircle, File, X, Loader2 } from "lucide-react";
 
 interface ContentUploaderProps {
   contentType: string;
   contentUrl: string;
+  courseId: string;
   selectedFile?: File | null;
+  uploadedUrl?: string | null;
+  isUploading?: boolean;
+  uploadProgress?: number;
   onUrlChange: (url: string) => void;
   onFileChange: (file: File | null) => void;
+  onUploadComplete: (url: string, key: string) => void;
+  onUploadStart?: () => void;
   error?: string;
 }
 
-export const ContentUploader = ({ 
-  contentType, 
-  contentUrl, 
+export const ContentUploader = ({
+  contentType,
+  contentUrl,
+  courseId,
   selectedFile,
-  onUrlChange, 
+  uploadedUrl,
+  isUploading = false,
+  uploadProgress = 0,
+  onUrlChange,
   onFileChange,
-  error 
+  onUploadComplete,
+  onUploadStart,
+  error,
 }: ContentUploaderProps) => {
-  const [uploadMode, setUploadMode] = useState<'url' | 'file'>(contentType === 'scorm' ? 'file' : 'url');
+  const [uploadMode, setUploadMode] = useState<'url' | 'file'>(
+    contentType === 'scorm' ? 'file' : 'url'
+  );
   const [dragActive, setDragActive] = useState(false);
+  const [localProgress, setLocalProgress] = useState(0);
+  const [localUploading, setLocalUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const getInstructions = () => {
@@ -29,274 +45,304 @@ export const ContentUploader = ({
       case 'video':
         return {
           title: 'Subir Video',
-          description: 'Sube un archivo de video o proporciona una URL',
-          formats: 'MP4, WebM, MOV (máx. 500MB)',
-          placeholder: 'https://ejemplo.com/video.mp4 o https://youtube.com/watch?v=...',
-          accept: 'video/*,.mp4,.webm,.mov'
+          description: 'MP4, WebM, MOV (máx. 500MB)',
+          placeholder: 'https://youtube.com/watch?v=...',
+          accept: 'video/mp4,video/webm,video/quicktime',
         };
       case 'document':
         return {
           title: 'Subir Documento',
-          description: 'Sube un documento o proporciona una URL',
-          formats: 'PDF, DOC, DOCX, PPT, PPTX (máx. 50MB)',
+          description: 'PDF, DOC, DOCX, PPT, PPTX (máx. 50MB)',
           placeholder: 'https://ejemplo.com/documento.pdf',
-          accept: '.pdf,.doc,.docx,.ppt,.pptx'
+          accept: '.pdf,.doc,.docx,.ppt,.pptx',
         };
       case 'image':
         return {
           title: 'Subir Imagen',
-          description: 'Sube una imagen o proporciona una URL',
-          formats: 'JPG, PNG, GIF, SVG (máx. 10MB)',
+          description: 'JPG, PNG, GIF, SVG, WEBP (máx. 10MB)',
           placeholder: 'https://ejemplo.com/imagen.jpg',
-          accept: 'image/*,.jpg,.jpeg,.png,.gif,.svg'
+          accept: 'image/*',
         };
       case 'embed':
         return {
           title: 'Contenido Embebido',
-          description: 'Proporciona la URL del contenido a embebir',
-          formats: 'CodePen, YouTube, Vimeo, simuladores, etc.',
-          placeholder: 'https://codepen.io/usuario/pen/codigo',
-          accept: ''
+          description: 'YouTube, Vimeo, CodePen, etc.',
+          placeholder: 'https://youtube.com/embed/...',
+          accept: '',
         };
       case 'scorm':
         return {
           title: 'Paquete SCORM',
-          description: 'Sube un archivo ZIP con el paquete SCORM',
-          formats: 'ZIP con estructura SCORM (máx. 100MB)',
-          placeholder: 'Selecciona archivo ZIP del paquete SCORM',
-          accept: '.zip'
+          description: 'ZIP con estructura SCORM (máx. 100MB)',
+          placeholder: '',
+          accept: '.zip,application/zip',
         };
       default:
-        return {
-          title: 'Subir Contenido',
-          description: 'Selecciona un tipo de contenido primero',
-          formats: '',
-          placeholder: '',
-          accept: ''
-        };
+        return { title: '', description: '', placeholder: '', accept: '' };
     }
   };
 
   const instructions = getInstructions();
 
-  // Validar tipos de archivo
-  const validateFile = (file: File): boolean => {
-    const maxSizes = {
-      video: 500 * 1024 * 1024, // 500MB
-      document: 50 * 1024 * 1024, // 50MB
-      image: 10 * 1024 * 1024, // 10MB
-      scorm: 100 * 1024 * 1024 // 100MB
-    };
+  // ── Upload via proxy de Remix (maneja auth automáticamente) ──
+  const handleFileSelect = useCallback(async (file: File) => {
+    setUploadError(null);
+    onFileChange(file);
+    onUploadStart?.();
+    setLocalUploading(true);
+    setLocalProgress(0);
 
-    const maxSize = maxSizes[contentType as keyof typeof maxSizes];
-    if (file.size > maxSize) {
-      alert(`El archivo es demasiado grande. Máximo permitido: ${maxSize / (1024 * 1024)}MB`);
-      return false;
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('contentType', contentType);
+      formData.append('courseId', courseId);
+
+      const result = await new Promise<{ url: string; key: string }>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+
+        // Progreso real hasta el servidor de Remix
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable) {
+            setLocalProgress(Math.round((e.loaded / e.total) * 100));
+          }
+        });
+
+        xhr.addEventListener('load', () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const data = JSON.parse(xhr.responseText);
+              resolve({ url: data.data.url, key: data.data.key });
+            } catch {
+              reject(new Error('Respuesta inválida del servidor'));
+            }
+          } else {
+            try {
+              const err = JSON.parse(xhr.responseText);
+              reject(new Error(err.error || err.message || `Error ${xhr.status}`));
+            } catch {
+              reject(new Error(`Error ${xhr.status}: ${xhr.statusText}`));
+            }
+          }
+        });
+
+        xhr.addEventListener('error', () =>
+          reject(new Error('Error de red. Verifica tu conexión.'))
+        );
+        xhr.addEventListener('timeout', () =>
+          reject(new Error('El archivo tardó demasiado. Intenta con un archivo más pequeño.'))
+        );
+
+        // Timeout según tipo: videos 10min, resto 3min
+        xhr.timeout = contentType === 'video'
+          ? 10 * 60 * 1000
+          : 3 * 60 * 1000;
+
+        // ✅ Apunta al proxy de Remix — mismo origen, sin CORS, sin token manual
+        // El proxy reenvía al NestJS usando createApiClientFromRequest
+        xhr.open('POST', '/api/contents/upload');
+
+        // No necesitas setear Authorization — las cookies se envían automáticamente
+        // porque es el mismo origen (Remix maneja el token server-side)
+        xhr.send(formData);
+      });
+
+      onUploadComplete(result.url, result.key);
+
+    } catch (err: any) {
+      console.error('Upload error:', err);
+      setUploadError(err.message || 'Error al subir el archivo');
+      onFileChange(null);
+      setLocalUploading(false);
+      setLocalProgress(0);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    } finally {
+      setLocalUploading(false);
+      setLocalProgress(0);
     }
-
-    // Validar extensiones específicas para SCORM
-    if (contentType === 'scorm' && !file.name.toLowerCase().endsWith('.zip')) {
-      alert('Solo se permiten archivos ZIP para paquetes SCORM');
-      return false;
-    }
-
-    return true;
-  };
-
-  // Manejar selección de archivo
-  const handleFileSelect = (file: File) => {
-    if (validateFile(file)) {
-      onFileChange(file);
-      // Si es un archivo, limpiar la URL
-      onUrlChange('');
-    }
-  };
-
-  // Manejar drag and drop
-  const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
-  };
+  }, [contentType, courseId, onFileChange, onUploadComplete, onUploadStart]);
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+    if (e.dataTransfer.files?.[0]) {
       handleFileSelect(e.dataTransfer.files[0]);
     }
   };
 
-  // Formatear tamaño del archivo
-  const formatFileSize = (bytes: number): string => {
+  const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
   };
 
+  const actuallyUploading = isUploading || localUploading;
+  const actualProgress = localProgress || uploadProgress;
+  const displayError = uploadError || error;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">{instructions.title}</h3>
-        <p className="text-gray-600 text-sm">{instructions.description}</p>
-        {instructions.formats && (
-          <p className="text-gray-500 text-xs mt-1">Formatos soportados: {instructions.formats}</p>
-        )}
+        <h3 className="text-lg font-semibold text-gray-900 mb-1">{instructions.title}</h3>
+        <p className="text-gray-500 text-xs">{instructions.description}</p>
       </div>
 
-      {/* Selector de modo de subida (excepto para embed; scorm solo archivo) */}
+      {/* Toggle URL / Archivo */}
       {contentType !== 'embed' && contentType !== 'scorm' && (
-        <div className="flex space-x-4 mb-4">
+        <div className="flex space-x-2">
           <button
             type="button"
             onClick={() => {
               setUploadMode('url');
-              onFileChange(null); // Limpiar archivo seleccionado
+              setUploadError(null);
+              onFileChange(null);
             }}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
               uploadMode === 'url'
                 ? 'bg-blue-500 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            <LinkIcon className="h-4 w-4 inline mr-2" />
-            URL
+            <LinkIcon className="h-3.5 w-3.5" /> URL
           </button>
           <button
             type="button"
             onClick={() => {
               setUploadMode('file');
-              onUrlChange(''); // Limpiar URL
+              setUploadError(null);
+              onUrlChange('');
             }}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
               uploadMode === 'file'
                 ? 'bg-blue-500 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            <Upload className="h-4 w-4 inline mr-2" />
-            Subir Archivo
+            <Upload className="h-3.5 w-3.5" /> Subir archivo
           </button>
         </div>
       )}
 
       {/* Campo URL */}
       {(uploadMode === 'url' || contentType === 'embed') && contentType !== 'scorm' && (
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            URL del Contenido *
-          </label>
-          <input
-            type="url"
-            value={contentUrl}
-            onChange={(e) => {
-              onUrlChange(e.target.value);
-              onFileChange(null); // Limpiar archivo si se escribe URL
-            }}
-            placeholder={instructions.placeholder}
-            className={`w-full px-4 py-3 bg-white/60 backdrop-blur-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 ${
-              error ? 'border-red-300 focus:border-red-500' : 'border-gray-200/50 focus:border-blue-500/50'
-            }`}
-          />
-        </div>
+        <input
+          type="url"
+          value={contentUrl}
+          onChange={(e) => onUrlChange(e.target.value)}
+          placeholder={instructions.placeholder}
+          className={`w-full px-4 py-3 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 ${
+            displayError ? 'border-red-300' : 'border-gray-200'
+          }`}
+        />
       )}
 
-      {/* Zona de subida de archivos */}
+      {/* Zona de carga de archivo */}
       {(uploadMode === 'file' || contentType === 'scorm') && contentType !== 'embed' && (
         <div>
-          {/* Input oculto para archivos */}
           <input
             ref={fileInputRef}
             type="file"
             accept={instructions.accept}
             onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) {
-                handleFileSelect(file);
-              }
+              if (e.target.files?.[0]) handleFileSelect(e.target.files[0]);
             }}
             className="hidden"
           />
 
-          {/* Mostrar archivo seleccionado */}
-          {selectedFile ? (
+          {/* Estado: subiendo */}
+          {actuallyUploading && (
+            <div className="border border-blue-200 bg-blue-50 rounded-xl p-4">
+              <div className="flex items-center gap-3 mb-3">
+                <Loader2 className="h-5 w-5 text-blue-500 animate-spin" />
+                <span className="text-sm font-medium text-blue-700">
+                  Subiendo {selectedFile?.name}...
+                </span>
+              </div>
+              <div className="w-full bg-blue-200 rounded-full h-2">
+                <div
+                  className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${actualProgress}%` }}
+                />
+              </div>
+              <p className="text-xs text-blue-600 mt-1 text-right">{actualProgress}%</p>
+            </div>
+          )}
+
+          {/* Estado: archivo subido con éxito */}
+          {!actuallyUploading && uploadedUrl && selectedFile && (
             <div className="bg-green-50 border border-green-200 rounded-xl p-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center gap-3">
                   <div className="p-2 bg-green-100 rounded-lg">
-                    <File className="h-5 w-5 text-green-600" />
+                    <File className="h-4 w-4 text-green-600" />
                   </div>
                   <div>
-                    <p className="font-medium text-green-900">{selectedFile.name}</p>
-                    <p className="text-sm text-green-600">{formatFileSize(selectedFile.size)}</p>
+                    <p className="text-sm font-medium text-green-900">{selectedFile.name}</p>
+                    <p className="text-xs text-green-600">
+                      {formatFileSize(selectedFile.size)} · Subido ✓
+                    </p>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onFileChange(null);
-                      if (fileInputRef.current) {
-                        fileInputRef.current.value = '';
-                      }
-                    }}
-                    className="p-1 text-green-600 hover:text-green-800 transition-colors"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onFileChange(null);
+                    onUploadComplete('', '');
+                    setUploadError(null);
+                    if (fileInputRef.current) fileInputRef.current.value = '';
+                  }}
+                  className="p-1 text-green-600 hover:text-green-800"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
             </div>
-          ) : (
-            /* Zona drag and drop */
+          )}
+
+          {/* Estado: sin archivo (o error) */}
+          {!actuallyUploading && !uploadedUrl && (
             <div
-              onDragEnter={handleDrag}
-              onDragLeave={handleDrag}
-              onDragOver={handleDrag}
+              onDragEnter={(e) => { e.preventDefault(); setDragActive(true); }}
+              onDragLeave={(e) => { e.preventDefault(); setDragActive(false); }}
+              onDragOver={(e) => e.preventDefault()}
               onDrop={handleDrop}
-              className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors bg-white/40 ${
-                dragActive 
-                  ? 'border-blue-400 bg-blue-50' 
+              className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${
+                dragActive
+                  ? 'border-blue-400 bg-blue-50'
+                  : displayError
+                  ? 'border-red-300 bg-red-50/30'
                   : 'border-gray-300 hover:border-blue-400'
               }`}
             >
-              <Upload className={`mx-auto h-12 w-12 mb-4 ${
-                dragActive ? 'text-blue-500' : 'text-gray-400'
-              }`} />
-              <div className="space-y-2">
-                <p className={`font-medium ${
-                  dragActive ? 'text-blue-700' : 'text-gray-600'
-                }`}>
-                  {dragActive ? 'Suelta el archivo aquí' : 'Arrastra y suelta tu archivo aquí'}
-                </p>
-                <p className="text-gray-500 text-sm">o</p>
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                >
-                  Seleccionar archivo
-                </button>
-              </div>
-              <p className="text-gray-400 text-xs mt-4">{instructions.formats}</p>
+              <Upload
+                className={`mx-auto h-10 w-10 mb-3 ${
+                  dragActive ? 'text-blue-500' : 'text-gray-400'
+                }`}
+              />
+              <p className="text-sm font-medium text-gray-600 mb-1">
+                {dragActive ? 'Suelta aquí' : 'Arrastra tu archivo o'}
+              </p>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="px-4 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                Seleccionar archivo
+              </button>
+              <p className="text-xs text-gray-400 mt-3">{instructions.description}</p>
             </div>
           )}
         </div>
       )}
 
-      {error && (
-        <div className="flex items-center space-x-2 text-red-600 text-sm">
-          <AlertCircle className="h-4 w-4" />
-          <span>{error}</span>
+      {/* Error (del upload o del padre) */}
+      {displayError && (
+        <div className="flex items-center gap-2 text-red-600 text-sm">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span>Ups, ocurrió un error</span>
         </div>
       )}
     </div>

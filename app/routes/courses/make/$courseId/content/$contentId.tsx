@@ -93,79 +93,41 @@ export const meta: MetaFunction = ({ data }: { data: LoaderData }) => {
 export const loader: LoaderFunction = async ({ request, params }) => {
     const { courseId, contentId } = params;
 
-    if( !contentId){
+    if (!contentId) {
         throw new Error('Content ID is required');
     }
 
     try {
-
         const authenticatedApiClient = createApiClientFromRequest(request);
 
-        // 🔄 API CALLS - Reemplazar con llamadas reales
+        // 1. Obtener los datos base del contenido
         const content = await ContentAPI.getById(contentId, {
             includeCourse: true,
             includeModule: true,
             includeNavigation: true,
         }, true, authenticatedApiClient);
 
-        // Datos mockeados para demostración
-        const mockContent: ContentData = {
-            id: contentId || 'content_3',
-            title: 'Formularios HTML: Elementos Interactivos',
-            description: 'Aprende a crear formularios web interactivos utilizando HTML5. Descubre los diferentes tipos de inputs, validación de datos y mejores prácticas para la experiencia del usuario.',
-            content: {
-                type: 'video',
-                videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-                videoThumbnail: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=800&h=450&fit=crop',
-                videoDuration: 1440, // 24 minutes in seconds
-                textContent: `
-                # Formularios HTML: Elementos Interactivos
-
-                A continuación veremos diferentes tipos de formularios y cómo implementarlos correctamente.
-                `
-            },
-            module: {
-                id: '1',
-                title: 'Fundamentos de HTML'
-            },
-            course: {
-                id: courseId || '1',
-                title: 'Introducción al Desarrollo Web Moderno',
-                colorTitle: '#2563eb'
-            },
-            navigation: {
-                previousItem: {
-                    id: '2',
-                    title: 'Etiquetas y elementos HTML',
-                    type: 'content',
-                    referenceId: 'content_2'
-                },
-                nextItem: {
-                    id: '4',
-                    title: 'Evaluación HTML Básico',
-                    type: 'quiz',
-                    referenceId: 'quiz_1'
-                }
-            },
-            userProgress: {
-                isCompleted: false,
-                timeSpent: 420, // 7 minutes
-                bookmarked: false,
-                lastPosition: 180 // 3 minutes into video
-            },
-            metadata: {
-                duration: 1440, // 24 minutes
-                difficulty: 'beginner',
-                tags: ['HTML', 'Formularios', 'Validación', 'Interactividad'],
-                createdAt: '2024-01-15T00:00:00Z',
-                updatedAt: '2024-03-10T00:00:00Z'
+        // 2. Intentar resolver la URL firmada
+        try {
+            const signedRes = await authenticatedApiClient.get(`/v1/contents/${contentId}/signed-url`);
+            
+            // 🔥 MODIFICACIÓN CLAVE: 
+            // Sobrescribimos la URL original con la URL firmada (privada) que nos da el backend
+            if (signedRes.data && signedRes.data.url) {
+                content.content.contentUrl = signedRes.data.url;
+                // Opcional: puedes agregar un flag para que el frontend sepa que es privada
+                content.content.isPrivate = signedRes.data.signed === true;
             }
-        };
+        } catch (err) {
+            // Si falla, no hacemos nada; se queda con la contentUrl original por defecto
+            console.warn(`[contents/$id] Usando URL original por error en signed-url:`, err);
+        }
 
         return json<LoaderData>({
             content: content,
             error: null
         });
+        
     } catch (error: any) {
         console.error('Error loading content:', error);
         return json<LoaderData>({
@@ -608,6 +570,20 @@ function ContentViewContent() {
         video.currentTime = Math.max(0, Math.min(video.duration, video.currentTime + seconds));
     };
 
+    const getFileExtension = (url: string): string => {
+        try {
+            const pathname = new URL(url).pathname; // extrae solo el path, sin ?X-AMZ-...
+            return pathname.split('.').pop()?.toLowerCase() || '';
+        } catch {
+            return url.split('?')[0].split('.').pop()?.toLowerCase() || '';
+        }
+    };
+
+    const isPdf = (url?: string): boolean => {
+        if (!url) return false;
+        return getFileExtension(url) === 'pdf';
+    };
+
     const progressa = duration > 0 ? (currentTime / duration) * 100 : 0;
     const progressColor = content.course.colorTitle;
 
@@ -648,17 +624,17 @@ function ContentViewContent() {
                         )}
 
                         {!progress.isCompleted && (
-                        <Form method="post" className="inline">
-                            <input type="hidden" name="_action" value="complete" />
-                            <button
-                            type="submit"
-                            disabled={isSubmitting}
-                            className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 disabled:opacity-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
-                            >
-                            <CheckCircle className="h-4 w-4" />
-                            <span>Marcar como completado</span>
-                            </button>
-                        </Form>
+                            <Form method="post" className="inline">
+                                <input type="hidden" name="_action" value="complete" />
+                                <button
+                                type="submit"
+                                disabled={isSubmitting}
+                                className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 disabled:opacity-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+                                >
+                                <CheckCircle className="h-4 w-4" />
+                                <span>Marcar como completado</span>
+                                </button>
+                            </Form>
                         )}
 
                         {/* <Form method="post" className="inline">
@@ -908,121 +884,124 @@ function ContentViewContent() {
                                     </>
                                 )}
 
+                                
                                 {content.content.type === 'document' && (
-                                    <>
-                                        <div className="w-full aspect-[4/3] bg-gray-900 flex items-center justify-center relative">
-                                            {content.content.contentUrl?.toLowerCase().endsWith('.pdf') ? (
-                                                <iframe
-                                                    src={`${content.content.contentUrl}#page=${currentPage}&zoom=${Math.round(zoomLevel * 100)}`}
-                                                    className="w-full h-full"
-                                                    title={content.title}
-                                                />
-                                            ) : (
-                                                <div className="text-center text-white p-8">
-                                                    <FileText className="h-20 w-20 mx-auto mb-4 text-gray-400" />
-                                                    <h3 className="text-lg font-semibold mb-2">{content.title}</h3>
-                                                    <p className="text-sm text-gray-400 mb-4">
-                                                        {content.content.contentUrl?.split('.').pop()?.toUpperCase()} Document
-                                                    </p>
-                                                    <a
-                                                        href={content.content.contentUrl}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
-                                                    >
-                                                        Abrir documento
-                                                    </a>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* Document Controls */}
-                                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4 transition-opacity duration-200 group-hover:opacity-100 opacity-0">
-                                            {/* Page Navigation (for PDFs) */}
-                                            {content.content.contentUrl?.toLowerCase().endsWith('.pdf') && (
-                                                <div className="mb-4">
-                                                    <div className="flex items-center justify-center space-x-4">
-                                                        <button
-                                                            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                                                            disabled={currentPage <= 1}
-                                                            className="text-white hover:text-blue-400 transition-colors p-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                        >
-                                                            <ChevronLeft className="h-5 w-5" />
-                                                        </button>
-                                                        
-                                                        <span className="text-white text-sm">
-                                                            Página {currentPage}
-                                                        </span>
-                                                        
-                                                        <button
-                                                            onClick={() => setCurrentPage(currentPage + 1)}
-                                                            className="text-white hover:text-blue-400 transition-colors p-1"
-                                                        >
-                                                            <ChevronRight className="h-5 w-5" />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {/* Controls */}
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center space-x-3">
-                                                    {content.content.contentUrl?.toLowerCase().endsWith('.pdf') && (
-                                                        <>
-                                                            <button
-                                                                onClick={() => setZoomLevel(Math.max(0.5, zoomLevel - 0.25))}
-                                                                className="text-white hover:text-blue-400 transition-colors p-1"
-                                                                title="Zoom Out"
-                                                            >
-                                                                <ZoomOut className="h-5 w-5" />
-                                                            </button>
-
-                                                            <span className="text-white text-sm min-w-[60px] text-center">
-                                                                {Math.round(zoomLevel * 100)}%
-                                                            </span>
-
-                                                            <button
-                                                                onClick={() => setZoomLevel(Math.min(3, zoomLevel + 0.25))}
-                                                                className="text-white hover:text-blue-400 transition-colors p-1"
-                                                                title="Zoom In"
-                                                            >
-                                                                <ZoomIn className="h-5 w-5" />
-                                                            </button>
-                                                        </>
-                                                    )}
-                                                </div>
-
-                                                <div className="flex items-center space-x-3">
-                                                    <button
-                                                        onClick={handleDownload}
-                                                        className="bg-white/20 backdrop-blur-sm rounded-full p-2 text-white hover:bg-white/30 transition-all duration-200 transform hover:scale-110"
-                                                        title="Descargar documento"
-                                                    >
-                                                        <Download className="h-5 w-5" />
-                                                    </button>
-
-                                                    {content.content.contentUrl?.toLowerCase().endsWith('.pdf') && (
-                                                        <button
-                                                            onClick={toggleDocumentFullscreen}
-                                                            className="text-white hover:text-blue-400 transition-colors p-1"
-                                                        >
-                                                            {isDocumentFullscreen ?
-                                                                <Minimize className="h-5 w-5" /> :
-                                                                <Maximize className="h-5 w-5" />
-                                                            }
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Completion Indicator */}
-                                        {progress.isCompleted && (
-                                            <div className="absolute top-4 right-4 bg-green-500 rounded-full p-2">
-                                                <Check className="h-4 w-4 text-white" />
+                                <>
+                                    <div className="w-full aspect-[4/3] bg-gray-900 flex items-center justify-center relative">
+                                        {isPdf(content.content.contentUrl) ? (
+                                            <iframe
+                                            src={`${content.content.contentUrl}#toolbar=0&navpanes=0`}
+                                            className="w-full h-full"
+                                            title={content.title}
+                                            />
+                                        ) : (
+                                            <div className="text-center text-white p-8">
+                                                <FileText className="h-20 w-20 mx-auto mb-4 text-gray-400" />
+                                                <h3 className="text-lg font-semibold mb-2">{content.title}</h3>
+                                                <p className="text-sm text-gray-400 mb-4">
+                                                    {/* ✅ extensión sin los query params de la firma */}
+                                                    {getFileExtension(content.content.contentUrl).toUpperCase()} Document
+                                                </p>
+                                                <a
+                                                    href={content.content.contentUrl}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+                                                >
+                                                    Abrir documento
+                                                </a>
                                             </div>
                                         )}
-                                    </>
+                                    </div>
+
+                                    {/* Document Controls */}
+                                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4 transition-opacity duration-200 group-hover:opacity-100 opacity-0">
+                                    
+                                    {/* Page Navigation (for PDFs) */}
+                                    {/* {isPdf(content.content.contentUrl) && (
+                                        <div className="mb-4">
+                                        <div className="flex items-center justify-center space-x-4">
+                                            <button
+                                            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                                            disabled={currentPage <= 1}
+                                            className="text-white hover:text-blue-400 transition-colors p-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                            <ChevronLeft className="h-5 w-5" />
+                                            </button>
+
+                                            <span className="text-white text-sm">
+                                            Página {currentPage}
+                                            </span>
+
+                                            <button
+                                            onClick={() => setCurrentPage(currentPage + 1)}
+                                            className="text-white hover:text-blue-400 transition-colors p-1"
+                                            >
+                                            <ChevronRight className="h-5 w-5" />
+                                            </button>
+                                        </div>
+                                        </div>
+                                    )} */}
+
+                                    {/* Controls */}
+                                    {/* <div className="flex items-center justify-between">
+                                        <div className="flex items-center space-x-3">
+                                        {isPdf(content.content.contentUrl) && (
+                                            <>
+                                            <button
+                                                onClick={() => setZoomLevel(Math.max(0.5, zoomLevel - 0.25))}
+                                                className="text-white hover:text-blue-400 transition-colors p-1"
+                                                title="Zoom Out"
+                                            >
+                                                <ZoomOut className="h-5 w-5" />
+                                            </button>
+
+                                            <span className="text-white text-sm min-w-[60px] text-center">
+                                                {Math.round(zoomLevel * 100)}%
+                                            </span>
+
+                                            <button
+                                                onClick={() => setZoomLevel(Math.min(3, zoomLevel + 0.25))}
+                                                className="text-white hover:text-blue-400 transition-colors p-1"
+                                                title="Zoom In"
+                                            >
+                                                <ZoomIn className="h-5 w-5" />
+                                            </button>
+                                            </>
+                                        )}
+                                        </div>
+
+                                        <div className="flex items-center space-x-3">
+                                        <button
+                                            onClick={handleDownload}
+                                            className="bg-white/20 backdrop-blur-sm rounded-full p-2 text-white hover:bg-white/30 transition-all duration-200 transform hover:scale-110"
+                                            title="Descargar documento"
+                                        >
+                                            <Download className="h-5 w-5" />
+                                        </button>
+
+                                        {isPdf(content.content.contentUrl) && (
+                                            <button
+                                            onClick={toggleDocumentFullscreen}
+                                            className="text-white hover:text-blue-400 transition-colors p-1"
+                                            >
+                                            {isDocumentFullscreen
+                                                ? <Minimize className="h-5 w-5" />
+                                                : <Maximize className="h-5 w-5" />
+                                            }
+                                            </button>
+                                        )}
+                                        </div>
+                                    </div> */}
+                                    </div>
+
+                                    {/* Completion Indicator */}
+                                    {progress.isCompleted && (
+                                    <div className="absolute top-4 right-4 bg-green-500 rounded-full p-2">
+                                        <Check className="h-4 w-4 text-white" />
+                                    </div>
+                                    )}
+                                </>
                                 )}
 
                                 {content.content.type === 'embed' && (
@@ -1104,7 +1083,7 @@ function ContentViewContent() {
                                 )}
 
                                 {/* Content Info Overlay */}
-                                <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-sm rounded-lg px-3 py-2 text-white text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                {/* <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-sm rounded-lg px-3 py-2 text-white text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                                     <div className="flex items-center space-x-2">
                                         {content.content.type === 'video' && <Play className="h-4 w-4" />}
                                         {content.content.type === 'image' && <Image className="h-4 w-4" />}
@@ -1118,7 +1097,7 @@ function ContentViewContent() {
                                             Duración: {formatTime(content.metadata.duration)}
                                         </div>
                                     )}
-                                </div>
+                                </div> */}
 
                                 {/* Bookmark Indicator */}
                                 {content.userProgress.bookmarked && (

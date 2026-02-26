@@ -18,7 +18,7 @@ import { request } from "node_modules/axios/index.cjs";
 import { createApiClientFromRequest } from "~/api/client";
 import { CoursesAPI } from "~/api/endpoints/courses";
 import { CourseBasic } from "~/api/types/course.types";
-import { ContentAPI } from "~/api/endpoints/contents";
+import { ContentAPI, CreateContentDto } from "~/api/endpoints/contents";
 
 // Tipos para el formulario
 interface ContentFormData {
@@ -87,101 +87,67 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 // Action para procesar el formulario
 export const action: ActionFunction = async ({ request }) => {
   const formData = await request.formData();
+
+  const title = formData.get('title') as string;
+  const description = formData.get('description') as string;
+  const contentType = formData.get('contentType') as string;
+  const contentUrl = formData.get('contentUrl') as string;
+  const courseId = formData.get('courseId') as string;
+  const metadata = JSON.parse((formData.get('metadata') as string) || '{}');
+
+  const errors: FormErrors = {};
+  if (!title?.trim()) errors.title = 'El título es obligatorio';
+  if (!contentType) errors.contentType = 'Selecciona un tipo de contenido';
+  if (!courseId) errors.courseId = 'Selecciona un curso';
+  if (!contentUrl?.trim()) errors.contentUrl = 'Debes proporcionar contenido';
+
+  if (Object.keys(errors).length > 0) {
+    return json({ errors, fields: { title, description, contentType, contentUrl, courseId } }, { status: 400 });
+  }
+
+  const url = new URL(request.url);
+  const course = url.searchParams.get('course');
+
   
-  try {
-    const url = new URL(request.url);
-    const urlParams = new URLSearchParams(url.search);
-    const course = urlParams.get('course');
-
-    // Obtener datos del formulario
-    const title = formData.get('title') as string;
-    const description = formData.get('description') as string;
-    const contentType = formData.get('contentType') as string;
-    const contentUrl = formData.get('contentUrl') as string;
-    const courseId = formData.get('courseId') as string;
-    const metadata = JSON.parse((formData.get('metadata') as string) || '{}');
-    const file = formData.get('file') as File | null;
-
-    // Validaciones básicas
-    const errors: FormErrors = {};
-
-    if (!title?.trim()) {
-      errors.title = 'El título es obligatorio';
-    }
-
-    if (!contentType) {
-      errors.contentType = 'Selecciona un tipo de contenido';
-    }
-
-    if (!courseId) {
-      errors.courseId = 'Selecciona un curso';
-    }
-
-    // Validar que tenga URL o archivo
-    if (!contentUrl?.trim() && !file) {
-      if (contentType === 'scorm') {
-        errors.file = 'Debes seleccionar un archivo ZIP para SCORM';
-      } else {
-        errors.contentUrl = 'Debes proporcionar una URL o subir un archivo';
-      }
-    }
-
-    // Si hay errores, devolver errores
-    if (Object.keys(errors).length > 0) {
-      return json({ 
-        errors,
-        fields: { title, description, contentType, contentUrl, courseId, metadata }
-      }, { status: 400 });
-    }
-
-    // Simular procesamiento de archivo si existe
-    if (file && file.size > 0) {
-      console.log(`Procesando archivo: ${file.name} (${file.size} bytes)`);
-    }
-
-    // Simular creación del contenido
-    console.log('Creando contenido:', {
-      title,
-      description,
-      contentType,
-      contentUrl: file ? `uploaded-files/${file.name}` : contentUrl,
-      courseId,
-      metadata
-    });
-
-    // Simular delay de creación
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    const contentData = {
+  const contentData = {
       title: title,
       description,
       type: contentType,
-      contentUrl: file ? `uploaded-files/${file.name}` : contentUrl,
+      contentUrl: contentUrl,
       courseId,
       metadata
     };
 
-    const authenticatedApiClient = createApiClientFromRequest(request);
-    const response = await ContentAPI.create(contentData, authenticatedApiClient);
+  const authenticatedApiClient = createApiClientFromRequest(request);
+  const response = await ContentAPI.create(
+    contentData,
+    authenticatedApiClient,
+  );
 
-    if (response.success) {
-      return redirect(`/contents/course/${course}`);
-    } else {
-      throw new Error(response.message || 'Error desconocido');
-    }
-
-  } catch (error: any) {
-    console.error('Error al crear contenido:', error);
-    return json({ 
-      errors: { general: error.message || 'Error al crear el contenido' },
-      fields: Object.fromEntries(formData)
-    }, { status: 500 });
+  if (response.success) {
+    return redirect(`/contents/course/${course}`);
   }
+
+  return json({ errors: { general: response.message } }, { status: 500 });
 };
 
 // Componente principal
 export default function CreateContent() {
   const { coursesResult, course } = useLoaderData<LoaderData>();
+
+  const [uploadedFileUrl, setUploadedFileUrl] = useState<string>('');
+  const [uploadedFileKey, setUploadedFileKey] = useState<string>('');
+  const [isUploading, setIsUploading] = useState(false);
+
+  // Cuando el upload termina, actualizar la URL en el formData:
+  const handleUploadComplete = (url: string, key: string) => {
+    setUploadedFileUrl(url);
+    setUploadedFileKey(key);
+    setIsUploading(false);
+    if (url) {
+      handleFormChange('contentUrl', url);
+    }
+  };
   
   const actionData = useActionData<{ 
     errors?: FormErrors; 
@@ -236,9 +202,10 @@ export default function CreateContent() {
   };
 
   // Determinar si el formulario es válido
-  const isValid = formData.title && 
-                 formData.contentType && 
-                 (formData.contentUrl || selectedFile);
+  const isValid = formData.title &&
+               formData.contentType &&
+               (formData.contentUrl || uploadedFileUrl) &&
+               !isUploading;
 
   // Manejar cambios en el formulario
   const handleFormChange = (field: string, value: any) => {
@@ -360,21 +327,21 @@ export default function CreateContent() {
                     <ContentUploader
                       contentType={formData.contentType}
                       contentUrl={formData.contentUrl}
+                      courseId={formData.courseId}
                       selectedFile={selectedFile}
-                      onUrlChange={(url) => {
-                        handleFormChange('contentUrl', url);
-                        // Si se escribe URL, limpiar archivo
-                        if (url && selectedFile) {
-                          setSelectedFile(null);
-                        }
-                      }}
+                      uploadedUrl={uploadedFileUrl}
+                      isUploading={isUploading}
+                      onUrlChange={(url) => handleFormChange('contentUrl', url)}
                       onFileChange={(file) => {
                         setSelectedFile(file);
-                        // Si se selecciona archivo, limpiar URL
-                        if (file && formData.contentUrl) {
+                        if (!file) {
+                          setUploadedFileUrl('');
+                          setUploadedFileKey('');
                           handleFormChange('contentUrl', '');
                         }
                       }}
+                      onUploadComplete={handleUploadComplete}
+                      onUploadStart={() => setIsUploading(true)}
                       error={errors.contentUrl || errors.file}
                     />
                   </div>

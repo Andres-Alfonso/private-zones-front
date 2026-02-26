@@ -5,6 +5,7 @@ import { ContentCreateResponse } from "../types/content.types";
 
 const CONTENTS_ENDPOINTS = {
     BASE: '/v1/contents',
+    UPLOAD: '/v1/contents/upload',
     BY_ID: (id: string) => `/v1/contents/${id}`,
     COMPLETE: (id: string) => `/v1/contents/${id}/complete`,
     PROGRESS: (id: string) => `/v1/contents/${id}/progress`,
@@ -44,6 +45,7 @@ export interface ContentResponse {
         htmlContent?: string;
         pdfUrl?: string;
         interactiveUrl?: string;
+        contentUrl?: string;
     };
     module: {
         id: string;
@@ -84,6 +86,15 @@ export interface ContentResponse {
     };
 }
 
+export interface CreateContentDto {
+  title: string;
+  description?: string;
+  contentType: 'video' | 'image' | 'document' | 'embed' | 'scorm'; // <- debe coincidir con el backend
+  contentUrl: string;
+  courseId: string;
+  metadata?: Record<string, any>;
+}
+
 export const ContentAPI = {
     async getById(
         contentId: string,
@@ -96,7 +107,7 @@ export const ContentAPI = {
 
         const params = new URLSearchParams();
 
-        if(options){
+        if (options) {
             if (options.includeCourse) {
                 params.append("includeCourse", "true");
             }
@@ -159,11 +170,33 @@ export const ContentAPI = {
         return response.data;
     },
     async create(
-        data: Partial<ContentResponse> = {},
+        data: Partial<CreateContentDto> = {},
         client?: AxiosInstance
     ): Promise<ContentCreateResponse> {
         const apiClientToUse = client || apiClient;
-        const response = await apiClientToUse.post<ContentResponse>(CONTENTS_ENDPOINTS.CREATE, {...data});
+        const response = await apiClientToUse.post<ContentResponse>(CONTENTS_ENDPOINTS.CREATE, { ...data });
         return response.data;
     }
+};
+
+
+export const ContentsUploadAPI = {
+    // Subir archivo y obtener URL antes de crear el contenido
+    uploadFile: async (
+        file: File,
+        contentType: string,
+        courseId: string,
+        apiClient: AxiosInstance,
+    ) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('contentType', contentType);
+        formData.append('courseId', courseId);
+
+        const response = await apiClient.post(CONTENTS_ENDPOINTS.UPLOAD, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+
+        return response.data;
+    },
 };

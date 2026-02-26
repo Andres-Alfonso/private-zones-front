@@ -80,7 +80,7 @@ export const ContentPreview = ({
                 <h4 className="text-xl font-bold text-gray-900 mb-2">{formData.title}</h4>
                 {course && (
                   <p className="text-sm text-gray-600 mb-3">
-                    Curso: {course.title} • {course.category} • Por {course.instructor}
+                    Curso: {course.title}
                   </p>
                 )}
                 {formData.description && (
@@ -170,7 +170,7 @@ export const ContentPreview = ({
               <div className="bg-green-50 rounded-xl p-4">
                 <h5 className="font-semibold text-green-900 mb-2">Destino</h5>
                 <p className="text-green-700">{course.title}</p>
-                <p className="text-sm text-green-600">{course.category}</p>
+                {/* <p className="text-sm text-green-600">{course.category}</p> */}
               </div>
             )}
           </div>

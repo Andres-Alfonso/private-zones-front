@@ -79,6 +79,7 @@ export interface UserFormData {
 }
 
 export interface LoaderData {
+  tenantId?: string;
   tenants: Tenant[];
   roles: Role[];
 }

@@ -12,6 +12,7 @@ import { useEffect } from "react";
 
 interface UserFormProps {
   mode: 'create' | 'edit';
+  tenantId: string | undefined;
   initialData?: Partial<UserFormData>;
   actionData?: ActionData;
   loaderData: LoaderData;
@@ -20,6 +21,7 @@ interface UserFormProps {
 
 export default function UserForm({ 
   mode, 
+  tenantId,
   initialData, 
   actionData, 
   loaderData,
@@ -121,9 +123,10 @@ export default function UserForm({
           <FormTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
           <div className="p-6">
-            {activeTab === 'basic' && (
+            <div className={activeTab === 'basic' ? 'block' : 'hidden'}>
               <BasicInfoForm
                 errors={actionData?.errors}
+                tenantId={tenantId}
                 tenants={tenants}
                 roles={roles}
                 selectedRoles={selectedRoles}
@@ -133,21 +136,21 @@ export default function UserForm({
                 formData={formData}
                 onFieldChange={updateField}
               />
-            )}
+            </div>
 
-            {activeTab === 'profile' && (
+            <div className={activeTab === 'profile' ? 'block' : 'hidden'}>
               <ProfileInfoForm 
                 formData={formData}
                 onFieldChange={updateField}
               />
-            )}
+            </div>
 
-            {activeTab === 'notifications' && (
+            <div className={activeTab === 'notifications' ? 'block' : 'hidden'}>
               <NotificationSettings 
                 formData={formData}
                 onFieldChange={updateField}
               />
-            )}
+            </div>
           </div>
         </div>
 

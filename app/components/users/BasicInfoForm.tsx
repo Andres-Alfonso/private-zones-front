@@ -18,11 +18,13 @@ interface BasicInfoFormProps {
   
   // Nuevas props para manejar el estado
   formData: Partial<UserFormData>;
+  tenantId: string | undefined;
   onFieldChange: (field: keyof UserFormData, value: any) => void;
 }
 
 export default function BasicInfoForm({
   errors,
+  tenantId,
   tenants,
   roles,
   selectedRoles,

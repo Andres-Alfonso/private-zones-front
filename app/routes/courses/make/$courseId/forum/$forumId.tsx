@@ -64,7 +64,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     const authenticatedApiClient = createApiClientFromRequest(request);
 
     // Obtener datos del foro
-    const forum = await ForumsAPI.getById(forumId, authenticatedApiClient);
+    const forum = await ForumsAPI.getById(forumId, authenticatedApiClient, true);
 
     // Incrementar contador de vistas
     await ForumsAPI.incrementViewCount(forumId, authenticatedApiClient);
@@ -114,14 +114,27 @@ export const action: ActionFunction = async ({ request, params }) => {
         const content = formData.get("content") as string;
         const parentCommentId = formData.get("parentCommentId") as string;
 
-        await ForumsAPI.addComment(
-          forumId,
-          {
-            content,
-            parentCommentId: parentCommentId || undefined,
-          },
-          authenticatedApiClient
-        );
+        console.log("add-comment payload:", { content, parentCommentId, forumId });
+
+        try {
+          const result = await ForumsAPI.addComment(
+            forumId,
+            {
+              content,
+              parentCommentId: parentCommentId || undefined,
+            },
+            authenticatedApiClient
+          );
+          console.log("add-comment result:", result); // <-- agrega esto
+        } catch (err: any) {
+          console.error("add-comment error:", {
+            message: err.message,
+            status: err.response?.status,
+            data: err.response?.data,   // <-- esto te mostrará el error del backend
+          });
+          throw err;
+        }
+
         return json<ActionData>({ success: true, action: "add-comment" });
       }
 
@@ -224,30 +237,10 @@ function ForumViewContent() {
     );
   }
 
+  console.log("Rendering forum view with data:", forum);
+
   return (
     <div className="min-h-screen bg-white">
-      {/* Forum Header */}
-      <div className="bg-white/90 backdrop-blur-sm border-b border-gray-200/50 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex-1 min-w-0">
-            <nav className="flex items-center space-x-2 text-sm text-gray-500 mb-2">
-              <Link
-                to={`/make/courses/${forum.course.id}`}
-                className="hover:text-blue-600 transition-colors"
-              >
-                {forum.course.title}
-              </Link>
-              <span>/</span>
-              <span>Foros</span>
-              <span>/</span>
-              <span className="text-gray-900 font-medium">{forum.title}</span>
-            </nav>
-            <h1 className="text-2xl font-bold text-gray-900 truncate">
-              {forum.title}
-            </h1>
-          </div>
-        </div>
-      </div>
 
       {/* Action Messages */}
       {actionData?.error && (
@@ -287,52 +280,8 @@ function ForumViewContent() {
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-6">
             <div className="flex justify-between space-x-4">
               {/* Previous Item */}
-              {forum.navigation.previousItem ? (
-                <div className="flex-1">
-                  <Link
-                    to={`/make/courses/${forum.course.id}/${forum.navigation.previousItem.type}/${forum.navigation.previousItem.referenceId}#main-content`}
-                    className="flex items-center space-x-3 p-3 rounded-xl border border-gray-200/50 hover:border-blue-200 hover:bg-blue-50/30 transition-all duration-200 group w-full"
-                  >
-                    <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-blue-100 transition-colors">
-                      <ArrowLeft className="h-4 w-4 text-gray-600 group-hover:text-blue-600" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs text-gray-500 uppercase tracking-wide">
-                        Anterior
-                      </div>
-                      <div className="font-medium text-gray-900 text-sm truncate">
-                        {forum.navigation.previousItem.title}
-                      </div>
-                    </div>
-                  </Link>
-                </div>
-              ) : (
-                <div className="flex-1" />
-              )}
+              
 
-              {/* Next Item */}
-              {forum.navigation.nextItem ? (
-                <div className="flex-1 text-right">
-                  <Link
-                    to={`/make/courses/${forum.course.id}/${forum.navigation.nextItem.type}/${forum.navigation.nextItem.referenceId}#main-content`}
-                    className="flex items-center justify-end space-x-3 p-3 rounded-xl bg-green-50/60 border border-green-200/50 hover:border-green-200 hover:bg-green-50/30 transition-all duration-200 group w-full"
-                  >
-                    <div className="flex-1 min-w-0 text-right">
-                      <div className="text-xs text-green-500 uppercase tracking-wide">
-                        Siguiente
-                      </div>
-                      <div className="font-medium text-green-900 text-sm truncate">
-                        {forum.navigation.nextItem.title}
-                      </div>
-                    </div>
-                    <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-green-100 transition-colors">
-                      <ArrowRight className="h-4 w-4 text-green-600 group-hover:text-green-600" />
-                    </div>
-                  </Link>
-                </div>
-              ) : (
-                <div className="flex-1" />
-              )}
             </div>
           </div>
         </div>

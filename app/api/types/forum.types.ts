@@ -14,7 +14,7 @@ export enum CommentReactionType {
 
 export interface ForumAuthor {
   id: string;
-  firstName: string;
+  name: string;
   lastName: string;
   email: string;
   avatar?: string;

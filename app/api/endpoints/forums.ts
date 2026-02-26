@@ -261,12 +261,14 @@ export const ForumsAPI = {
    */
   async getById(
     forumId: string,
-    client?: AxiosInstance
+    client?: AxiosInstance,
+    fromModule?: boolean,
   ): Promise<ForumGetByIdResponse> {
     try {
       const apiClientToUse = client || apiClient;
       const response = await apiClientToUse.get<ForumGetByIdResponse>(
-        FORUMS_ENDPOINTS.BY_ID(forumId)
+        FORUMS_ENDPOINTS.BY_ID(forumId),
+        { params: { fromModule } }
       );
       return response.data;
     } catch (error) {

@@ -80,18 +80,18 @@ export default function ForumHeader({ forum }: ForumHeaderProps) {
             {forum.author.avatar ? (
               <img
                 src={forum.author.avatar}
-                alt={`${forum.author.firstName} ${forum.author.lastName}`}
+                alt={`${forum.author.name} ${forum.author.lastName}`}
                 className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
               />
             ) : (
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold">
-                {forum.author.firstName[0]}
+                {forum.author.name[0]}
                 {forum.author.lastName[0]}
               </div>
             )}
             <div>
               <div className="font-medium text-gray-900">
-                {forum.author.firstName} {forum.author.lastName}
+                {forum.author.name} {forum.author.lastName}
               </div>
               <div className="text-xs text-gray-500">Autor del tema</div>
             </div>

@@ -76,12 +76,12 @@ export default function CommentItem({
             {comment.author.avatar ? (
               <img
                 src={comment.author.avatar}
-                alt={`${comment.author.firstName} ${comment.author.lastName}`}
+                alt={`${comment.author.name} ${comment.author.lastName}`}
                 className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
               />
             ) : (
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
-                {comment.author.firstName[0]}
+                {comment.author.name[0]}
                 {comment.author.lastName[0]}
               </div>
             )}
@@ -90,7 +90,7 @@ export default function CommentItem({
             <div>
               <div className="flex items-center space-x-2">
                 <span className="font-semibold text-gray-900">
-                  {comment.author.firstName} {comment.author.lastName}
+                  {comment.author.name} {comment.author.lastName}
                 </span>
                 {isAuthor && (
                   <span className="px-2 py-0.5 text-xs bg-blue-100 text-blue-800 rounded-full font-medium">

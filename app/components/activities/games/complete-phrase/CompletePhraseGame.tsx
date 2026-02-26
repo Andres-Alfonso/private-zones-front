@@ -1,24 +1,25 @@
 // app/components/activities/games/complete-phrase/CompletePhraseGame.tsx
 
 import { useState, useEffect } from 'react';
-import { 
-    Lightbulb, 
-    Star, 
-    ThumbsUp, 
-    ClipboardList, 
-    CheckCircle, 
-    XCircle, 
+import {
+    Lightbulb,
+    Star,
+    ThumbsUp,
+    ClipboardList,
+    CheckCircle,
+    XCircle,
     AlertTriangle,
     RotateCcw,
     ArrowRight,
-    Loader2
+    Loader2,
+    Save,
 } from 'lucide-react';
 import { CompletePhraseAPI } from '~/api/endpoints/complete-phrase';
-import type { 
-    CompletePhrasePlayableData, 
-    CompletePhraseValidationResult, 
+import type {
+    CompletePhrasePlayableData,
+    CompletePhraseValidationResult,
     CompletePhraseHint,
-    BlankType 
+    BlankType,
 } from '~/api/types/complete-phrase.types';
 
 interface CompletePhraseGameProps {
@@ -34,19 +35,26 @@ interface Answer {
     answer: string;
 }
 
-export default function CompletePhraseGame({ activityId, fromModule = false, onComplete }: CompletePhraseGameProps) {
+export default function CompletePhraseGame({
+    activityId,
+    fromModule = false,
+    onComplete,
+}: CompletePhraseGameProps) {
     const [status, setStatus] = useState<GameStatus>('loading');
     const [gameData, setGameData] = useState<CompletePhrasePlayableData | null>(null);
     const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
-    
+
     const [answers, setAnswers] = useState<Answer[]>([]);
     const [hintsUsed, setHintsUsed] = useState(0);
     const [hints, setHints] = useState<Record<number, CompletePhraseHint>>({});
-    
+
     const [result, setResult] = useState<CompletePhraseValidationResult | null>(null);
+    const [allResults, setAllResults] = useState<CompletePhraseValidationResult[]>([]);
+    const [progressSaved, setProgressSaved] = useState(false);
+    const [savingProgress, setSavingProgress] = useState(false);
+
     const [error, setError] = useState<string | null>(null);
 
-    // Cargar datos del juego
     useEffect(() => {
         loadGame();
     }, [activityId, currentPhraseIndex]);
@@ -54,14 +62,13 @@ export default function CompletePhraseGame({ activityId, fromModule = false, onC
     const loadGame = async () => {
         try {
             setStatus('loading');
-            const response = await CompletePhraseAPI.getPlayableData(activityId, currentPhraseIndex);
-            
+            const response = await CompletePhraseAPI.getPlayableData(activityId, fromModule, currentPhraseIndex);
+
             if (response.success) {
                 setGameData(response.data);
                 setStatus('playing');
-                
-                // Inicializar respuestas vacías
-                const initialAnswers = response.data.blanks.map(blank => ({
+
+                const initialAnswers = response.data.blanks.map((blank) => ({
                     blankId: blank.id,
                     answer: '',
                 }));
@@ -76,7 +83,7 @@ export default function CompletePhraseGame({ activityId, fromModule = false, onC
     };
 
     const handleAnswerChange = (blankId: number, value: string) => {
-        setAnswers(answers.map(answer => 
+        setAnswers(answers.map((answer) =>
             answer.blankId === blankId ? { ...answer, answer: value } : answer
         ));
     };
@@ -93,6 +100,43 @@ export default function CompletePhraseGame({ activityId, fromModule = false, onC
         }
     };
 
+    const saveActivityProgress = async (results: CompletePhraseValidationResult[]) => {
+        if (progressSaved || !fromModule) return;
+
+        try {
+            setSavingProgress(true);
+
+            const avgScore = results.reduce((sum, r) => sum + r.score, 0) / results.length;
+            const avgPercentage = results.reduce((sum, r) => sum + r.percentage, 0) / results.length;
+            const allPerfect = results.every((r) => r.isPerfect);
+
+            await CompletePhraseAPI.completeItem(activityId, {
+                score: Math.round(avgScore),
+                percentage: Math.round(avgPercentage),
+                metadata: {
+                    completedVia: 'complete_phrase',
+                    totalPhrases: results.length,
+                    allPerfect,
+                    hintsUsed,
+                    phraseResults: results.map((r, i) => ({
+                        phraseIndex: i,
+                        score: r.score,
+                        percentage: r.percentage,
+                        correctBlanks: r.correctBlanks,
+                        incorrectBlanks: r.incorrectBlanks,
+                    })),
+                },
+            });
+
+            setProgressSaved(true);
+            console.log('Progreso guardado exitosamente');
+        } catch (error) {
+            console.error('Error guardando progreso de actividad:', error);
+        } finally {
+            setSavingProgress(false);
+        }
+    };
+
     const handleSubmit = async () => {
         if (!gameData) return;
 
@@ -104,12 +148,38 @@ export default function CompletePhraseGame({ activityId, fromModule = false, onC
             });
 
             if (response.success) {
-                setResult(response.data);
+                const currentResult = response.data;
+                const updatedResults = [...allResults, currentResult];
+
+                setAllResults(updatedResults);
+                setResult(currentResult);
                 setStatus('completed');
 
-                // Solo ejecutar guardado si viene desde módulo
-                if (fromModule && onComplete) {
-                    onComplete(response.data);
+                const isLastPhrase =
+                    !gameData.hasMutiplePhrases ||
+                    currentPhraseIndex >= gameData.totalPhrases - 1;
+
+                if (isLastPhrase) {
+                    if (fromModule) {
+                        await saveActivityProgress(updatedResults);
+                    }
+
+                    // Solo llamar onComplete en la última frase con resultados agregados
+                    if (fromModule && onComplete) {
+                        const aggregatedResult: CompletePhraseValidationResult = {
+                            ...currentResult,
+                            score: Math.round(
+                                updatedResults.reduce((sum, r) => sum + r.score, 0) / updatedResults.length
+                            ),
+                            percentage: Math.round(
+                                updatedResults.reduce((sum, r) => sum + r.percentage, 0) / updatedResults.length
+                            ),
+                            correctBlanks: updatedResults.reduce((sum, r) => sum + r.correctBlanks, 0),
+                            incorrectBlanks: updatedResults.reduce((sum, r) => sum + r.incorrectBlanks, 0),
+                            isPerfect: updatedResults.every((r) => r.isPerfect),
+                        };
+                        onComplete(aggregatedResult);
+                    }
                 }
             }
         } catch (err: any) {
@@ -118,19 +188,27 @@ export default function CompletePhraseGame({ activityId, fromModule = false, onC
     };
 
     const handleNextPhrase = () => {
-        if (gameData && gameData.hasMutiplePhrases && currentPhraseIndex < gameData.totalPhrases - 1) {
+        if (
+            gameData &&
+            gameData.hasMutiplePhrases &&
+            currentPhraseIndex < gameData.totalPhrases - 1
+        ) {
             setCurrentPhraseIndex(currentPhraseIndex + 1);
             setResult(null);
+            setStatus('playing');
+            // allResults se mantiene acumulado, no se resetea
         }
     };
 
     const handleRetry = () => {
         setCurrentPhraseIndex(0);
         setResult(null);
+        setAllResults([]);
+        setProgressSaved(false);
+        setSavingProgress(false);
         loadGame();
     };
 
-    // Función para parsear la frase y reemplazar los marcadores con líneas visuales
     const renderPhraseWithBlanks = (phrase: string) => {
         const parts: (string | number)[] = [];
         let currentText = '';
@@ -138,13 +216,11 @@ export default function CompletePhraseGame({ activityId, fromModule = false, onC
 
         while (i < phrase.length) {
             if (phrase[i] === '{') {
-                // Guardar el texto acumulado
                 if (currentText) {
                     parts.push(currentText);
                     currentText = '';
                 }
 
-                // Buscar el número dentro de {}
                 let j = i + 1;
                 let numberStr = '';
                 while (j < phrase.length && phrase[j] !== '}') {
@@ -157,14 +233,13 @@ export default function CompletePhraseGame({ activityId, fromModule = false, onC
                     parts.push(blankNumber);
                 }
 
-                i = j + 1; // Saltar el }
+                i = j + 1;
             } else {
                 currentText += phrase[i];
                 i++;
             }
         }
 
-        // Agregar cualquier texto restante
         if (currentText) {
             parts.push(currentText);
         }
@@ -179,7 +254,6 @@ export default function CompletePhraseGame({ activityId, fromModule = false, onC
                             </span>
                         );
                     } else {
-                        // Es un número (marcador de blanco)
                         return (
                             <span
                                 key={index}
@@ -197,13 +271,13 @@ export default function CompletePhraseGame({ activityId, fromModule = false, onC
     };
 
     const renderBlank = (blank: any, index: number) => {
-        const answer = answers.find(a => a.blankId === blank.id);
+        const answer = answers.find((a) => a.blankId === blank.id);
         const hint = hints[blank.id];
-        const detail = result?.details.find(d => d.blankId === blank.id);
+        const detail = result?.details.find((d) => d.blankId === blank.id);
 
-        const blankClass = result 
-            ? detail?.isCorrect 
-                ? 'border-green-500 bg-green-50' 
+        const blankClass = result
+            ? detail?.isCorrect
+                ? 'border-green-500 bg-green-50'
                 : 'border-red-500 bg-red-50'
             : 'border-blue-300 focus:border-blue-500';
 
@@ -225,7 +299,7 @@ export default function CompletePhraseGame({ activityId, fromModule = false, onC
                                 </button>
                             )}
                         </div>
-                        
+
                         {hint && (
                             <div className="text-base text-gray-600 mb-2 bg-yellow-50 p-3 rounded-lg border-l-4 border-yellow-400">
                                 {hint.hint && (
@@ -234,11 +308,15 @@ export default function CompletePhraseGame({ activityId, fromModule = false, onC
                                         <span>{hint.hint}</span>
                                     </p>
                                 )}
-                                {hint.firstLetter && <p>Primera letra: <strong>{hint.firstLetter}</strong></p>}
+                                {hint.firstLetter && (
+                                    <p>
+                                        Primera letra: <strong>{hint.firstLetter}</strong>
+                                    </p>
+                                )}
                                 {hint.wordLength && <p>Longitud: {hint.wordLength} letras</p>}
                             </div>
                         )}
-                        
+
                         <input
                             type="text"
                             value={answer?.answer || ''}
@@ -247,7 +325,7 @@ export default function CompletePhraseGame({ activityId, fromModule = false, onC
                             className={`w-full px-4 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all ${blankClass}`}
                             placeholder="Escribe tu respuesta..."
                         />
-                        
+
                         {result && detail && !detail.isCorrect && (
                             <p className="text-xs text-red-600 mt-1">
                                 Respuesta correcta: <strong>{detail.correctAnswer}</strong>
@@ -273,7 +351,7 @@ export default function CompletePhraseGame({ activityId, fromModule = false, onC
                                 </button>
                             )}
                         </div>
-                        
+
                         {hint && hint.hint && (
                             <div className="text-xs text-gray-600 mb-2 bg-yellow-50 p-3 rounded-lg border-l-4 border-yellow-400">
                                 <p className="flex items-center gap-1.5">
@@ -282,7 +360,7 @@ export default function CompletePhraseGame({ activityId, fromModule = false, onC
                                 </p>
                             </div>
                         )}
-                        
+
                         <select
                             value={answer?.answer || ''}
                             onChange={(e) => handleAnswerChange(blank.id, e.target.value)}
@@ -296,7 +374,7 @@ export default function CompletePhraseGame({ activityId, fromModule = false, onC
                                 </option>
                             ))}
                         </select>
-                        
+
                         {result && detail && !detail.isCorrect && (
                             <p className="text-xs text-red-600 mt-1">
                                 Respuesta correcta: <strong>{detail.correctAnswer}</strong>
@@ -306,13 +384,14 @@ export default function CompletePhraseGame({ activityId, fromModule = false, onC
                 );
 
             case 'drag_drop':
-                // Simplificado como SELECT por ahora
                 return renderBlank({ ...blank, type: 'select' }, index);
 
             default:
                 return null;
         }
     };
+
+    // ==================== ESTADOS DE UI ====================
 
     if (status === 'loading') {
         return (
@@ -344,8 +423,13 @@ export default function CompletePhraseGame({ activityId, fromModule = false, onC
     }
 
     if (status === 'completed' && result) {
+        const isLastPhrase =
+            !gameData?.hasMutiplePhrases ||
+            currentPhraseIndex >= (gameData?.totalPhrases ?? 1) - 1;
+
         return (
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-8">
+                {/* Header de resultado */}
                 <div className="text-center mb-6">
                     {result.isPerfect ? (
                         <>
@@ -374,6 +458,7 @@ export default function CompletePhraseGame({ activityId, fromModule = false, onC
                     )}
                 </div>
 
+                {/* Stats de esta frase */}
                 <div className="bg-gray-50 rounded-xl p-6 mb-6">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div className="text-center">
@@ -382,7 +467,9 @@ export default function CompletePhraseGame({ activityId, fromModule = false, onC
                         </div>
                         <div className="text-center">
                             <p className="text-sm text-gray-600 mb-1">Porcentaje</p>
-                            <p className="text-2xl font-bold text-purple-600">{result.percentage.toFixed(1)}%</p>
+                            <p className="text-2xl font-bold text-purple-600">
+                                {result.percentage.toFixed(1)}%
+                            </p>
                         </div>
                         <div className="text-center">
                             <p className="text-sm text-gray-600 mb-1">Correctas</p>
@@ -395,7 +482,37 @@ export default function CompletePhraseGame({ activityId, fromModule = false, onC
                     </div>
                 </div>
 
-                {/* Mostrar detalles de cada respuesta */}
+                {/* Progreso guardado — solo si es la última frase y viene de módulo */}
+                {isLastPhrase && fromModule && (
+                    <div
+                        className={`flex items-center gap-2 justify-center mb-6 px-4 py-3 rounded-xl text-sm font-medium ${
+                            savingProgress
+                                ? 'bg-blue-50 text-blue-600 border border-blue-200'
+                                : progressSaved
+                                ? 'bg-green-50 text-green-700 border border-green-200'
+                                : 'bg-yellow-50 text-yellow-700 border border-yellow-200'
+                        }`}
+                    >
+                        {savingProgress ? (
+                            <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                <span>Guardando progreso...</span>
+                            </>
+                        ) : progressSaved ? (
+                            <>
+                                <CheckCircle className="h-4 w-4" />
+                                <span>Progreso guardado correctamente</span>
+                            </>
+                        ) : (
+                            <>
+                                <AlertTriangle className="h-4 w-4" />
+                                <span>No se pudo guardar el progreso</span>
+                            </>
+                        )}
+                    </div>
+                )}
+
+                {/* Detalle de respuestas */}
                 <div className="space-y-3 mb-6">
                     {result.details.map((detail, index) => (
                         <div
@@ -410,7 +527,12 @@ export default function CompletePhraseGame({ activityId, fromModule = false, onC
                                 <div className="flex-1">
                                     <p className="text-sm text-gray-600 mb-1">Espacio {index + 1}</p>
                                     <p className="font-medium">
-                                        Tu respuesta: <span className={detail.isCorrect ? 'text-green-700' : 'text-red-700'}>
+                                        Tu respuesta:{' '}
+                                        <span
+                                            className={
+                                                detail.isCorrect ? 'text-green-700' : 'text-red-700'
+                                            }
+                                        >
                                             {detail.userAnswer || '(vacío)'}
                                         </span>
                                     </p>
@@ -430,16 +552,19 @@ export default function CompletePhraseGame({ activityId, fromModule = false, onC
                     ))}
                 </div>
 
+                {/* Acciones */}
                 <div className="flex flex-wrap gap-3 justify-center">
-                    {gameData && gameData.hasMutiplePhrases && currentPhraseIndex < gameData.totalPhrases - 1 && (
-                        <button
-                            onClick={handleNextPhrase}
-                            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
-                        >
-                            <span>Siguiente Frase</span>
-                            <ArrowRight size={18} />
-                        </button>
-                    )}
+                    {gameData &&
+                        gameData.hasMutiplePhrases &&
+                        currentPhraseIndex < gameData.totalPhrases - 1 && (
+                            <button
+                                onClick={handleNextPhrase}
+                                className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+                            >
+                                <span>Siguiente Frase</span>
+                                <ArrowRight size={18} />
+                            </button>
+                        )}
                     <button
                         onClick={handleRetry}
                         className="flex items-center gap-2 px-6 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-colors"
@@ -454,6 +579,8 @@ export default function CompletePhraseGame({ activityId, fromModule = false, onC
 
     if (!gameData) return null;
 
+    // ==================== ESTADO PLAYING ====================
+
     return (
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-8">
             {/* Header */}
@@ -463,9 +590,6 @@ export default function CompletePhraseGame({ activityId, fromModule = false, onC
                     {gameData.category && (
                         <p className="text-sm text-gray-600 mt-1">Categoría: {gameData.category}</p>
                     )}
-                    {/* {gameData.difficulty && (
-                        <p className="text-sm text-gray-600 mt-1">Dificultad: {gameData.difficulty}</p>
-                    )} */}
                 </div>
                 <div className="text-right">
                     {gameData.hasMutiplePhrases && (
@@ -477,7 +601,7 @@ export default function CompletePhraseGame({ activityId, fromModule = false, onC
                 </div>
             </div>
 
-            {/* Frase con líneas visuales */}
+            {/* Frase con blancos visuales */}
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-8 mb-8 shadow-sm">
                 {renderPhraseWithBlanks(gameData.phrase)}
                 <p className="text-sm text-gray-600 text-center mt-4">
@@ -485,7 +609,7 @@ export default function CompletePhraseGame({ activityId, fromModule = false, onC
                 </p>
             </div>
 
-            {/* Blancos */}
+            {/* Inputs de respuestas */}
             <div className="mb-6 space-y-4">
                 {gameData.blanks.map((blank, index) => renderBlank(blank, index))}
             </div>
@@ -494,10 +618,10 @@ export default function CompletePhraseGame({ activityId, fromModule = false, onC
             <div className="flex justify-center">
                 <button
                     onClick={handleSubmit}
-                    disabled={answers.some(a => !a.answer.trim())}
-                    className="px-8 py-3 bg-gradient-to-r bg-[#25343F] text-white rounded-xl font-semibold hover:shadow-lg transform hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                    disabled={answers.some((a) => !a.answer.trim())}
+                    className="px-8 py-3 bg-[#25343F] text-white rounded-xl font-semibold hover:shadow-lg transform hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 >
-                    Validar Palabra
+                    Validar Respuestas
                 </button>
             </div>
         </div>

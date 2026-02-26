@@ -19,9 +19,29 @@ const COMPLETE_PHRASE_ENDPOINTS = {
     VALIDATE: (activityId: string) => `/v1/complete-phrase/activity/${activityId}/validate`,
     HINT: (activityId: string, phraseIndex: number, blankId: number) => 
         `/v1/complete-phrase/activity/${activityId}/hint/${phraseIndex}/${blankId}`,
+    COMPLETE_ITEM: (itemId: string) => `/v1/user-progress/items/${itemId}/complete`,
 };
 
 export const CompletePhraseAPI = {
+
+    async completeItem(
+        itemId: string,
+        data: { score?: number; percentage?: number; metadata?: Record<string, any> },
+        client?: AxiosInstance
+    ) {
+        try {
+            const apiClientToUse = client || apiClient;
+            const response = await apiClientToUse.put(
+                COMPLETE_PHRASE_ENDPOINTS.COMPLETE_ITEM(itemId),
+                data
+            );
+            return response.data;
+        } catch (error) {
+            console.error('Error completando item:', error);
+            throw error;
+        }
+    },
+
     /**
      * Crear configuración del juego de completar frases
      */
@@ -88,6 +108,7 @@ export const CompletePhraseAPI = {
      */
     getPlayableData: async (
         activityId: string,
+        fromModule: boolean,
         phraseIndex?: number,
         client?: AxiosInstance
     ): Promise<{ success: boolean; message: string; data: CompletePhrasePlayableData }> => {
@@ -97,7 +118,7 @@ export const CompletePhraseAPI = {
                 ? `${COMPLETE_PHRASE_ENDPOINTS.PLAY(activityId)}?phraseIndex=${phraseIndex}`
                 : COMPLETE_PHRASE_ENDPOINTS.PLAY(activityId);
             
-            const response = await apiClientToUse.get(url);
+            const response = await apiClientToUse.get(url, { params: { fromModule } });
             return response.data;
         } catch (error) {
             console.error('Error obteniendo datos de juego:', error);

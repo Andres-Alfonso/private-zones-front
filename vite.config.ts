@@ -45,6 +45,7 @@ export default defineConfig({
             // route(":courseId/task/:taskId", "routes/courses/make/$courseId/task/$taskId.tsx");
             // route(":courseId/survey/:surveyId", "routes/courses/make/$courseId/survey/$surveyId.tsx");
             route(":courseId/activity/:activityId", "routes/courses/make/$courseId/activity/$activityId.tsx");
+            route(":courseId/forum/:forumId", "routes/courses/make/$courseId/forum/$forumId.tsx");
           });
 
           route("activities", "routes/activities/_layout.tsx", () => {

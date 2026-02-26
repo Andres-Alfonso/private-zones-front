@@ -56,7 +56,7 @@ export default function ModuleCard({
   if (viewMode === 'grid') {
     return (
       <NavLink 
-        to={`/module/${module.id}`}
+        to={`/modules/${module.id}?course=${module.courseId}`}
         className="block bg-white/70 backdrop-blur-sm rounded-xl shadow-md border border-gray-200/60 hover:bg-white/90 hover:shadow-lg transition-all duration-300 overflow-hidden group cursor-pointer"
         onClick={handleCardClick}
       >

@@ -1,16 +1,18 @@
 // app/api/endpoints/modules.ts
 import { AxiosInstance } from "axios";
 import apiClient from "../client";
-import { CourseModule, CreateModuleData, ModuleApiResponse, ModulesResponse } from "../types/modules.types";
+import { AvailableItems, CourseModule, CreateModuleData, ModuleApiResponse, ModuleDetail, ModuleItemsApiResponse, ModulesResponse } from "../types/modules.types";
 // import { ContentCreateResponse } from "../types/content.types";
 
 const MODULES_ENDPOINTS = {
     BASE: '/v1/modules',
     BY_ID: (id: string) => `/v1/modules/${id}`,
+    GET_MODULE_ITEMS: (moduleId: string) => `/v1/modules/${moduleId}/items`,
     GET_ALL: (courseId: string | null = null) => {
         return courseId ? `/v1/modules/course/${courseId}` : '/v1/modules';
     },
     CREATE: '/v1/modules/create',
+    GET_AVAILABLE_ITEMS: (courseId: string) => `/v1/modules/${courseId}/available-items`,
 };
 
 // Tipos para las opciones y respuesta
@@ -189,6 +191,62 @@ export const ModuleAPI = {
         console.error('Error en getByCourse:', error);
         return null;
         }
+    },
+
+    async getModuleItems(moduleId: string, apiClient: AxiosInstance): Promise<ModuleDetail | null> {
+        try {
+            const response = await apiClient.get<ModuleItemsApiResponse>(
+                MODULES_ENDPOINTS.GET_MODULE_ITEMS(moduleId)
+            );
+
+            if (response.data.success) {
+                return response.data.data as ModuleDetail;
+            }
+
+            console.error('Error al obtener módulo:', response.data.message);
+            return null;
+        } catch (error) {
+            console.error('Error en getModuleItems:', error);
+            return null;
+        }
+    },
+
+    async getAvailableItemsByCourse(
+        courseId: string,
+        client?: AxiosInstance,
+    ): Promise<AvailableItems | null> {
+        const apiClientToUse = client || apiClient;
+        try {
+            const response = await apiClientToUse.get(MODULES_ENDPOINTS.GET_AVAILABLE_ITEMS(courseId));
+            return response.data?.data ?? null;
+        } catch {
+            return null;
+        }
+    },
+
+    async addModuleItem(
+        moduleId: string,
+        data: { type: string; referenceId: string },
+        client?: AxiosInstance,
+    ): Promise<{ success: boolean; message: string; data?: any }> {
+        const apiClientToUse = client || apiClient;
+        const response = await apiClientToUse.post(
+            `/v1/modules/${moduleId}/items`,
+            data,
+        );
+        return response.data;
+    },
+
+    async removeModuleItem(
+        moduleId: string,
+        itemId: string,
+        client?: AxiosInstance,
+    ): Promise<{ success: boolean; message: string }> {
+        const apiClientToUse = client || apiClient;
+        const response = await apiClientToUse.delete(
+            `/v1/modules/${moduleId}/items/${itemId}`,
+        );
+        return response.data;
     },
 
     /**

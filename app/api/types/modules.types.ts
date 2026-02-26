@@ -1,6 +1,7 @@
 // types/modules.ts
 export interface ModuleItem {
   id: string;
+  courseId: string;
   tenantId: string;
   title: string;
   thumbnailImagePath: string | null;
@@ -21,6 +22,58 @@ export interface ModuleFilters {
   limit: number;
 }
 
+export interface AvailableResource {
+    id: string;
+    title: string;
+    subtitle?: string;
+}
+
+export interface AvailableItems {
+    content:  AvailableResource[];
+    forum:    AvailableResource[];
+    task:     AvailableResource[];
+    quiz:     AvailableResource[];
+    survey:   AvailableResource[];
+    activity: AvailableResource[];
+}
+
+export type ModuleItemType = "content" | "forum" | "task" | "quiz" | "survey" | "activity";
+
+
+export interface ModuleItemData {
+    id: string;
+    type: ModuleItemType;
+    referenceId: string;
+    order: number;
+    content?: {
+        id: string;
+        title: string;
+        contentType: string;
+        contentUrl: string;
+        description?: string;
+    } | null;
+}
+
+export interface ModuleDetail {
+    id: string;
+    title: string;
+    description?: string;
+    courseId: string;
+    thumbnailImagePath?: string;
+    createdAt: string;
+    updatedAt: string;
+    configuration?: {
+        isActive: boolean;
+        order: number;
+        approvalPercentage: number;
+    };
+    items: ModuleItemData[];
+    course?: {
+        id: string;
+        tenantId: string;
+    };
+}
+
 export interface ModulePagination {
   page: number;
   limit: number;
@@ -39,6 +92,12 @@ export interface ModuleApiResponse {
   success: boolean;
   message: string;
   data: CourseModule;
+}
+
+export interface ModuleItemsApiResponse {
+  success: boolean;
+  message: string;
+  data: ModuleDetail;
 }
 
 // export interface ModuleItem {

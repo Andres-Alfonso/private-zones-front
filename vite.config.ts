@@ -84,6 +84,7 @@ export default defineConfig({
 
           route("api/contents/upload", "routes/api/contents/upload.tsx");
           route("api/contents/:contentId/signed-url", "routes/api/contents/$contentId/signed-url.tsx");
+          route("api/forums/upload-thumbnail", "routes/api/forums/upload-thumbnail.tsx");
 
           // Rutas de gestion de tareas
           route("tasks", "routes/tasks/_layout.tsx", () => {

@@ -65,6 +65,7 @@ export const action: ActionFunction = async ({ request }) => {
     const expirationDate = formData.get('expirationDate') as string;
     const tags = JSON.parse((formData.get('tags') as string) || '[]');
     const file = formData.get('file') as File | null;
+    const thumbnailTempKey = formData.get('thumbnailTempKey') as string;
     const courseId = formData.get('courseId') as string;
 
     // Validaciones básicas
@@ -92,13 +93,7 @@ export const action: ActionFunction = async ({ request }) => {
     }
 
     // Procesar archivo si existe
-    let finalThumbnailUrl = thumbnailUrl;
-    if (file && file.size > 0) {
-      console.log(`Procesando archivo: ${file.name} (${file.size} bytes)`);
-      // Aquí se subiría el archivo al servidor/storage
-      // finalThumbnailUrl = await uploadFile(file);
-      finalThumbnailUrl = `uploaded-files/${file.name}`;
-    }
+    const finalThumbnailUrl = thumbnailUrl;
 
     // Preparar datos para el API
     const forumData = {
@@ -106,6 +101,7 @@ export const action: ActionFunction = async ({ request }) => {
       description: description || undefined,
       category: category || undefined,
       thumbnail: finalThumbnailUrl || undefined,
+      thumbnailTempKey: thumbnailTempKey || undefined,
       isActive,
       isPinned,
       expirationDate: expirationDate ? new Date(expirationDate) : undefined,
@@ -148,6 +144,9 @@ export default function CreateForum() {
   }>();
   const navigation = useNavigation();
   const navigate = useNavigate();
+
+  const [thumbnailTempKey, setThumbnailTempKey] = useState<string>('');
+  const [thumbnailPreviewUrl, setThumbnailPreviewUrl] = useState<string>('');
   
   const [showPreview, setShowPreview] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -276,17 +275,35 @@ export default function CreateForum() {
                 <ThumbnailUploader
                   thumbnailUrl={formData.thumbnailUrl}
                   selectedFile={selectedFile}
+                  tempKey={thumbnailTempKey}
+                  previewUrl={thumbnailPreviewUrl}
                   onUrlChange={(url) => {
                     handleFormChange('thumbnailUrl', url);
-                    if (url && selectedFile) {
+                    if (url) {
+                      // Si el usuario escribe una URL, limpiar el archivo subido
+                      setThumbnailTempKey('');
+                      setThumbnailPreviewUrl('');
                       setSelectedFile(null);
                     }
                   }}
                   onFileChange={(file) => {
                     setSelectedFile(file);
-                    if (file && formData.thumbnailUrl) {
+                    // Generar preview local inmediato mientras sube
+                    if (file) {
+                      setThumbnailPreviewUrl(URL.createObjectURL(file));
                       handleFormChange('thumbnailUrl', '');
                     }
+                  }}
+                  onUploadComplete={(tempKey, tempUrl) => {
+                    setThumbnailTempKey(tempKey);
+                    // tempUrl no es pública, pero el blob local ya sirve de preview
+                    // Si quieres usar tempUrl en vez del blob: setThumbnailPreviewUrl(tempUrl);
+                  }}
+                  onClear={() => {
+                    setSelectedFile(null);
+                    setThumbnailTempKey('');
+                    setThumbnailPreviewUrl('');
+                    handleFormChange('thumbnailUrl', '');
                   }}
                   error={errors.thumbnailUrl || errors.file}
                 />
@@ -339,6 +356,7 @@ export default function CreateForum() {
           <input type="hidden" name="isPinned" value={String(formData.isPinned)} />
           <input type="hidden" name="expirationDate" value={formData.expirationDate} />
           <input type="hidden" name="tags" value={JSON.stringify(formData.tags)} />
+          <input type="hidden" name="thumbnailTempKey" value={thumbnailTempKey} />
           {courseId && <input type="hidden" name="courseId" value={courseId} />}
         </Form>
 
